@@ -1,0 +1,102 @@
+---
+title: ""
+format: 
+  html:
+    theme: journal
+    css: custom.css
+    title: "Lemuel de Lemos Romão"
+editor: visual
+knitr:
+  opts_chunk: 
+    echo: false
+    message: false
+    warning: false
+---
+
+```{r}
+#| include: false
+#| cache: false
+library(readr)
+library(dplyr)
+library(shiny)
+dados_cv <- read_delim("dados_cv.csv", delim = ";", 
+                       escape_double = FALSE, locale = locale(encoding = "WINDOWS-1252"), 
+                       trim_ws = TRUE)
+```
+
+::: columns
+::: {#sidebar .column width="30%"}
+<center><a href='https://www.linkedin.com/in/lemuelemos/' target='_blank'> ![](https://avatars.githubusercontent.com/u/17839354?v=4){width="80%" style="border-radius: 50%; padding-top: 5px;"}</center>
+
+</a>
+
+<center><span style="font-size: 1.5em;"> 
+<a href='https://wa.me/55849812305109' target='_blank'><i class="fa-brands fa-whatsapp"></i></a>
+<a href='https://github.com/lemuelemos' target='_blank'><i class="fa-brands fa-github"></i></a> 
+<a href='mailto:lemuelemos@gmail.com'><i class="fa fa-envelope"></i></a> 
+<a href='https://www.linkedin.com/in/lemuelemos/' target='_blank'><i class="fa-brands fa-linkedin-in"></i></a>
+</center>
+
+</span> Olá, eu sou o **Lemuel!** Atualmente, exerço a função de **líder operacional** (Head Operacional) em um escritório de assessoria de investimentos. Na prática, isso significa que sou responsável por uma equipe de duas pessoas no **backoffice** e encarregado de gerenciar os dados, desde o [ETL]{style="text-decoration: underline;"} até o processo de transformar números em [relatórios]{style="text-decoration: underline;"} nos mais diversos [formatos]{style="text-decoration: underline;"}. Se precisar de alguém para dar um toque de criatividade nos dados e se tornar seu **faxineiro de dados (data janitor)**, estou aqui!
+
+### Idiomas
+
+**Portuguese:** Nativo <br> **English:** Proficiente
+
+### Linguagens e Ferramentas
+
+<i class="fab fa-r-project"></i> `R / tidyverse / Shiny / Plumber / RMarkdown / Quarto` <br> <i class="fab fa-github"></i> `GitHub` <br> <i class="fab fa-python"></i> `Python / Selenium / Pandas / Streamlit` <br> <i class="fab fa-aws"></i> `AWS` <br>
+
+### Formação Acadêmica
+-**Ciências Econômicas** <br> Local: **UFRN 2010 - 2015** <br>
+-**Mestrado Economia** <br> Local: **UFRN 2016 - 2017** <br>
+-**Doutorado Finanças** <br> Local: **UFRN 2018 - 2023**
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="68%"}
+<!-- Functions -->
+
+<!-- Main content -->
+## <i class="fa-solid fa-suitcase"></i> Experiência Profissional
+
+```{r}
+
+tbl_experiencia <- function(dados_cv,intituicao){
+  dados_cv %>%
+    dplyr::filter(secao == "profissional") %>%
+    dplyr::filter(Intituição == intituicao) %>%
+    select(-secao,-Intituição) %>%
+    mutate(Fim = as.character(Fim)) %>% 
+    mutate(Fim = case_when(is.na(Fim) ~ "Atual",
+                           .default = Fim)) %>% 
+    gt::gt(janitor::make_clean_names(intituicao)) %>%
+    gt::tab_header(
+      title = gt::md(paste0("**",intituicao,"**"))
+    ) %>% 
+    gt::tab_options(table.width = gt::pct(100)) %>% 
+    espnscrapeR::gt_theme_538()
+}
+
+lapply(unique(dados_cv$Intituição),function(intituicao){
+  tbl_experiencia(dados_cv,intituicao) %>% 
+    gt::as_raw_html()
+}) -> lista_experiencia
+
+purrr::map(lista_experiencia,htmltools::HTML) %>% 
+  htmltools::tagList()
+
+
+```
+
+<p class="small">
+Currículo feito com o [Quarto](https://quarto.org/). Última Atualização em `r format.Date(Sys.Date(), "%b %d, %Y")`. <br> Código Disponível em <i class="fa-brands fa-github"></i> [GitHub](https://github.com/lemuelemos/cv/blob/main/index.qmd). <br> License: [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/).
+</p>
+:::
+:::
+
+```{=html}
+<script src="https://kit.fontawesome.com/2794920b14.js" crossorigin="anonymous"></script>
+```

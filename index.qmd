@@ -1,0 +1,21 @@
+---
+title: "Mutual Blog"
+image: 'https://avatars.githubusercontent.com/u/17839354?v=4'
+about:
+  template: jolla
+  links:
+    - icon: twitter
+      text: Twitter
+      href: "https://twitter.com/lemuelemos"
+    - icon: linkedin
+      text: LinkedIn
+      href: "https://www.linkedin.com/in/lemuelemos/"
+    - icon: github
+      text: Github
+      href: "https://github.com/lemuelemos"
+comments: false
+toc: false
+---
+
+## Lemuel de Lemos Romão
+
