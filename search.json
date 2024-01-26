@@ -1,0 +1,37 @@
+[
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this blog"
+  },
+  {
+    "objectID": "curriculo.html",
+    "href": "curriculo.html",
+    "title": "Lemuel de Lemos Romão",
+    "section": "",
+    "text": "Olá, eu sou o Lemuel! Atualmente, exerço a função de líder operacional (Head Operacional) em um escritório de assessoria de investimentos. Na prática, isso significa que sou responsável por uma equipe de duas pessoas no backoffice e encarregado de gerenciar os dados, desde o ETL até o processo de transformar números em relatórios nos mais diversos formatos. Se precisar de alguém para dar um toque de criatividade nos dados e se tornar seu faxineiro de dados (data janitor), estou aqui!\n\n\nPortuguese: Nativo  English: Proficiente\n\n\n\n R / tidyverse / Shiny / Plumber / RMarkdown / Quarto   GitHub   Python / Selenium / Pandas / Streamlit   AWS \n\n\n\n-Ciências Econômicas  Local: UFRN 2010 - 2015  -Mestrado Economia  Local: UFRN 2016 - 2017  -Doutorado Finanças  Local: UFRN 2018 - 2023\n\n\n\n\n\n\n\n\n\n\n\n\n  \n  \n  \n    \n      Axios Investimentos\n    \n    \n    \n      Função\n      Local\n      Inicio\n      Fim\n      Descrição\n    \n  \n  \n    Operador de Renda variável\nNatal, RN\njul/19\nmar/20\nAtuava no processo de automatização da mesa de renda variável, o qual envolvia a geração de ordens para diversos clientes com o objetivo de aderir às trocas de ativos sugeridos nas carteiras recomendadas pelas researchs que utilizamos. Esse processo incluiu a criação de um dashboard que gerenciava todas as etapas, desde o cadastro dos clientes e carteiras até a geração de baskets de ordens, as quais eram utilizadas para alimentar as plataformas de negociação.\n  \n  \n  \n\n\n\n  \n  \n  \n    \n      7RD Investimentos\n    \n    \n    \n      Função\n      Local\n      Inicio\n      Fim\n      Descrição\n    \n  \n  \n    BI\nNatal, RN\njul/20\nabr/22\nDesenvolvi ferramentas de BI na empresa, proporcionando dados para gestores e assessores por meio de dashboards. Criei um sistema eficiente para calcular comissões e desenvolvi robôs automatizando rotinas administrativas.\n    Operador de Renda variável\nNatal, RN\nnov/21\njan/23\nAtuava como operador na mesa de operações, auxiliando os clientes no processo de envio de ordens de renda variável. Além disso, desenvolvi um dashboard de controle de produção da mesa, que indicava diariamente a produção em nível de operador, assessor e cliente.\n    Head Operacional\nNatal, RN\nmar/22\nAtual\nAtuo como líder operacional, gerenciando os processos de análise de dados do escritório e as operações operacionais. Aqui, lidero o time de backoffice, composto principalmente por assessores em treinamento, e resolvo problemas mais complexos quando necessário. Além dos processos operacionais habituais, também estou envolvido na automação das rotinas financeiras, como o cálculo de impostos e comissões.\n  \n  \n  \n\n\n\n\n\nCurrículo feito com o Quarto. Última Atualização em jan 25, 2024.  Código Disponível em  GitHub.  License: CC BY-SA 2.0."
+  },
+  {
+    "objectID": "curriculo.html#experiência-profissional",
+    "href": "curriculo.html#experiência-profissional",
+    "title": "Lemuel de Lemos Romão",
+    "section": "",
+    "text": "Axios Investimentos\n    \n    \n    \n      Função\n      Local\n      Inicio\n      Fim\n      Descrição\n    \n  \n  \n    Operador de Renda variável\nNatal, RN\njul/19\nmar/20\nAtuava no processo de automatização da mesa de renda variável, o qual envolvia a geração de ordens para diversos clientes com o objetivo de aderir às trocas de ativos sugeridos nas carteiras recomendadas pelas researchs que utilizamos. Esse processo incluiu a criação de um dashboard que gerenciava todas as etapas, desde o cadastro dos clientes e carteiras até a geração de baskets de ordens, as quais eram utilizadas para alimentar as plataformas de negociação.\n  \n  \n  \n\n\n\n  \n  \n  \n    \n      7RD Investimentos\n    \n    \n    \n      Função\n      Local\n      Inicio\n      Fim\n      Descrição\n    \n  \n  \n    BI\nNatal, RN\njul/20\nabr/22\nDesenvolvi ferramentas de BI na empresa, proporcionando dados para gestores e assessores por meio de dashboards. Criei um sistema eficiente para calcular comissões e desenvolvi robôs automatizando rotinas administrativas.\n    Operador de Renda variável\nNatal, RN\nnov/21\njan/23\nAtuava como operador na mesa de operações, auxiliando os clientes no processo de envio de ordens de renda variável. Além disso, desenvolvi um dashboard de controle de produção da mesa, que indicava diariamente a produção em nível de operador, assessor e cliente.\n    Head Operacional\nNatal, RN\nmar/22\nAtual\nAtuo como líder operacional, gerenciando os processos de análise de dados do escritório e as operações operacionais. Aqui, lidero o time de backoffice, composto principalmente por assessores em treinamento, e resolvo problemas mais complexos quando necessário. Além dos processos operacionais habituais, também estou envolvido na automação das rotinas financeiras, como o cálculo de impostos e comissões.\n  \n  \n  \n\n\n\n\n\nCurrículo feito com o Quarto. Última Atualização em jan 25, 2024.  Código Disponível em  GitHub.  License: CC BY-SA 2.0."
+  },
+  {
+    "objectID": "posts/post-with-code/index.html",
+    "href": "posts/post-with-code/index.html",
+    "title": "Post With Code",
+    "section": "",
+    "text": "This is a post with executable code.\n\n1 + 1\n\n[1] 2"
+  }
+]
