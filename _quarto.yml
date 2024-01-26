@@ -1,5 +1,6 @@
 project:
   type: website
+  output-dir: docs
 
 website:
   title: "Mutual Blog"
@@ -20,3 +21,6 @@ format:
 editor: visual
 execute:
   freeze: auto
+  
+
+  
