@@ -18,6 +18,3 @@ toc: false
 ---
 
 ## Lemuel de Lemos Romão
-
-
-
