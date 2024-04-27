@@ -3,8 +3,8 @@ title: ""
 format: 
   html:
     theme: journal
-    css: custom.css
-    title: "Lemuel de Lemos Romão"
+    css: styles.css
+    title: " "
 editor: visual
 knitr:
   opts_chunk: 
@@ -54,6 +54,8 @@ dados_cv <- read_delim("dados_cv.csv", delim = ";",
 <!-- Functions -->
 
 <!-- Main content -->
+
+## **Lemuel de Lemos Romão**
 
 ## <i class="fa-solid fa-suitcase"></i> Experiência Profissional
 
