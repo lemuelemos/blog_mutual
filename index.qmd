@@ -1,6 +1,16 @@
 ---
 title: "Mutual Blog"
 image: 'https://avatars.githubusercontent.com/u/17839354?v=4'
+listing:
+  - id: posts
+    contents: posts/**/*/index.qmd
+    type: grid
+    fields: [image, date, title, subtitle, categories, author, reading-time]  
+    sort: "date desc"
+    #categories: cloud
+    sort-ui: false
+    filter-ui: false
+    page-size: 3
 about:
   template: jolla
   links:

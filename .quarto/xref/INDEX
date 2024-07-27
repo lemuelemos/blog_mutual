@@ -13,5 +13,8 @@
   },
   "curriculo.qmd": {
     "curriculo.html": "eac9faed"
+  },
+  "posts/index.qmd": {
+    "index.html": "41deeee3"
   }
 }
