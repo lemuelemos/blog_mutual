@@ -1,0 +1,15 @@
+{
+  "hash": "3fd13dddf90b4640451e4a273cc9ac71",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Desempenho dos Fundos de Renda Fixa\"\nauthor: \"Lemuel Lemos\"\ndate: \"2025-01-07\"\ncategories: [fundos de investimentos, desempenho, renda fixa]\nimage: \"image.jpg\"\n---\n\n\n\nThis is a post with executable code.\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n1 + 1\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 2\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

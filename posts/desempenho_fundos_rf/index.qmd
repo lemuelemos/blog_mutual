@@ -1,0 +1,13 @@
+---
+title: "Desempenho dos Fundos de Renda Fixa"
+author: "Lemuel Lemos"
+date: "2025-01-07"
+categories: [fundos de investimentos, desempenho, renda fixa]
+image: "image.jpg"
+---
+
+This is a post with executable code.
+
+```{r}
+1 + 1
+```
