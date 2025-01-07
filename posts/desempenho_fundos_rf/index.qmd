@@ -6,4 +6,6 @@ categories: [fundos de investimentos, desempenho, renda fixa]
 image: "image.jpg"
 ---
 
+
 No início de 2014, concluí minha tese sobre fundos de investimento e fiquei com a ideia de publicar posts regulares sobre o tema. O objetivo é construir uma base de conhecimento e compartilhar insights relevantes. Apesar da existência de páginas que comparam fundos, ainda vemos poucas pessoas discutindo os resultados da indústria de forma mais ampla, analisando aspectos como captação, desempenho em rentabilidade, risco e diversas outras métricas. Aqui, buscamos observar os dados de maneira agregada, em vez de focar em fundos específicos.
+
