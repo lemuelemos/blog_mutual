@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -163,7 +197,37 @@ ul.task-list li input[type="checkbox"] {
 
 
 
-<p>No início de 2014, concluí minha tese sobre fundos de investimento e fiquei com a ideia de publicar posts regulares sobre o tema. O objetivo é construir uma base de conhecimento e compartilhar insights relevantes. Apesar da existência de páginas que comparam fundos, ainda vemos poucas pessoas discutindo os resultados da indústria de forma mais ampla, analisando aspectos como captação, desempenho em rentabilidade, risco e diversas outras métricas. Aqui, buscamos observar os dados de maneira agregada, em vez de focar em fundos específicos.</p>
+<p>Desde que concluí minha tese sobre fundos de investimento, no início de 2014, venho considerando publicar posts regulares sobre o tema. O objetivo é construir uma base de conhecimento e compartilhar insights relevantes. Embora existam páginas que comparam fundos, ainda são raras as discussões que abordam a indústria de forma mais abrangente, analisando aspectos como captação, rentabilidade, risco e diversas outras métricas. Neste espaço, a proposta é analisar os dados de forma agregada, sem focar em fundos individuais.</p>
+<p>Neste primeiro post, abordaremos questões mais técnicas, como o download dos dados, tratamento, integração de bases e outros processos necessários para nossas análises. Começaremos analisando as três principais classes de fundos: renda fixa, multimercados e ações. Esta será a primeira de uma série de três publicações, cada uma dedicada a uma das classes mencionadas.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>fundos_175 <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"fundos-175-caracteristicas-publico-22-02-2025-12-01-14.xlsx"</span>, </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">col_types =</span> <span class="fu">c</span>(<span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"numeric"</span>, </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"text"</span>, </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"text"</span>, <span class="st">"text"</span>, <span class="st">"numeric"</span>, <span class="st">"numeric"</span>))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(fundos_175)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 22
+  `Código ANBIMA` Estrutura `Nome Comercial`    `CNPJ da Classe` `CNPJ do Fundo`
+  &lt;chr&gt;           &lt;chr&gt;     &lt;chr&gt;               &lt;chr&gt;            &lt;chr&gt;          
+1 S0000188352     Subclasse SUBORDINADA         08692888000182   08692888000182 
+2 S0000201677     Subclasse ECO MULTI FIDC SUB… 09009924000123   09009924000123 
+3 S0000229008     Subclasse FIDC MULTISETORIAL… 09414255000175   09414255000175 
+4 S0000229342     Subclasse SM FIDC MULTISSETO… 09239216000189   09239216000189 
+5 S0000237868     Subclasse PRASS FIDC II SUBO… 11198684000102   11198684000102 
+6 S0000252212     Subclasse FIDC TRENDBANK B.F… 08927488000109   08927488000109 
+# ℹ 17 more variables: Status &lt;chr&gt;, `Data de Início de Atividade` &lt;chr&gt;,
+#   `Quantidade de Subclasses` &lt;dbl&gt;, `Categoria ANBIMA` &lt;chr&gt;,
+#   `Tipo ANBIMA` &lt;chr&gt;, `Composição do Fundo` &lt;chr&gt;,
+#   `Aberto Estatutariamente` &lt;chr&gt;, `Fundo ESG` &lt;chr&gt;,
+#   `Tributação Alvo` &lt;chr&gt;, Administrador &lt;chr&gt;, `Gestor Principal` &lt;chr&gt;,
+#   `Primeiro Aporte` &lt;chr&gt;, `Tipo de Investidor` &lt;chr&gt;,
+#   `Característica do Investidor` &lt;chr&gt;, `Cota de Abertura` &lt;chr&gt;, …</code></pre>
+</div>
+</div>
 
 
 
