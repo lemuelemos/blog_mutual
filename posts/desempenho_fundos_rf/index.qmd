@@ -1,25 +1,17 @@
 ---
 title: "Desempenho dos Fundos de Renda Fixa"
 author: "Lemuel Lemos"
-date: "2025-01-07"
+date: "2025-02-24"
 categories: [fundos de investimentos, desempenho, renda fixa]
 image: "image.jpg"
 ---
 
-
 Desde que concluí minha tese sobre fundos de investimento, no início de 2014, venho considerando publicar posts regulares sobre o tema. O objetivo é construir uma base de conhecimento e compartilhar insights relevantes. Embora existam páginas que comparam fundos, ainda são raras as discussões que abordam a indústria de forma mais abrangente, analisando aspectos como captação, rentabilidade, risco e diversas outras métricas. Neste espaço, a proposta é analisar os dados de forma agregada, sem focar em fundos individuais.
 
-Neste primeiro post, abordaremos questões mais técnicas, como o download dos dados, tratamento, integração de bases e outros processos necessários para nossas análises. Começaremos analisando as três principais classes de fundos: renda fixa, multimercados e ações. Esta será a primeira de uma série de três publicações, cada uma dedicada a uma das classes mencionadas. 
+Neste primeiro post, abordaremos questões mais técnicas, como o download dos dados, tratamento, integração de bases e outros processos necessários para nossas análises. Começaremos analisando as três principais classes de fundos: renda fixa, multimercados e ações. Esta será a primeira de uma série de três publicações, cada uma dedicada a uma das classes mencionadas.
 
-```{r}
-library(readxl)
-fundos_175 <- read_excel("fundos-175-caracteristicas-publico-22-02-2025-12-01-14.xlsx", 
-                         col_types = c("text", "text", "text", 
-                                       "text", "text", "text", "text", "numeric", 
-                                       "text", "text", "text", "text", "text", 
-                                       "text", "text", "text", "text", "text", 
-                                       "text", "text", "numeric", "numeric"))
+Vamos cobrir todas as etapas do processo, como coleta dos dados, limpeza, manipulação e armazenamento. Além do processamento dos dados, vamos criar nossas análises sobre essas informações, a fim de entender o comportamento da indústria de fundos.
 
-head(fundos_175)
-```
+### Fonte de Dados
 
+Vamos utilizar como base de dados primária os dados presentes na <a href="https://dados.cvm.gov.br/group/fundos-de-investimento" target="_blank">CVM</a>, de onde pegaremos todos os dados referentes aos dados de cotas, dados cadastrais e o que é chamado de extrato de informações. Além disso, vamos utilizar dados fornecidos pela ANBIMA. Vamos utilizar as classificações dos fundos presentes nos dados cadastrais que a instituição utiliza. A escolha de utilização da classificação ANBIMA, está no fato de que durante o processo de tratamento de dados em minha tese de doutorado, percebi algumas inconsistências na base da CVM. 
