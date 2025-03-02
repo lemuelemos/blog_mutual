@@ -145,6 +145,10 @@ DBI::dbWriteTable(con,"fundos_175_anbima",fundos_175_anbima)
 rm(fundos_175_anbima)
 ```
 
+**Texto revisado e sugestões de melhoria:**
+
+Aqui, como os dados filtrados resultaram em uma quantidade menor, o tamanho da base nos permite trabalhar tudo dentro do R sem problemas de desempenho. O `DuckDB` é fundamental para filtrar e unir as bases, pois o tempo de execução é bastante reduzido devido à sua maior eficiência ao lidar com grandes volumes de dados. Apenas a base de FI, por exemplo, possui cerca de 20 milhões de linhas, o que deixaria a análise diretamente no R muito lenta. Ao reduzir o tamanho da base, passamos a poder trabalhar tudo dentro do próprio R, sem precisar utilizar o `DuckDB`. É isso que fazemos a seguir.
+
 
 ```{r}
 informes_diarios_fi %>% 
