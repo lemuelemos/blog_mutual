@@ -185,12 +185,15 @@ fundos_rf %>%
   reactable::reactable(
     pagination = FALSE,  # Remove a paginação da tabela
     columns = list(
-      `Tipo ANBIMA` = reactable::colDef(width = 400),  # Garante mais espaço para os nomes longos
+      # Garante mais espaço para os nomes longos
+      `Tipo ANBIMA` = reactable::colDef(width = 400), 
       Quantidade = reactable::colDef(
         align = "right",
-        format = reactable::colFormat(separators = TRUE)  # Formata números com separador de milhar
+        # Formata números com separador de milhar
+        format = reactable::colFormat(separators = TRUE)
       )
     ),
-    defaultColDef = reactable::colDef(minWidth = 100)  # Garante que todas as colunas tenham um tamanho mínimo
+    # Garante que todas as colunas tenham um tamanho mínimo
+    defaultColDef = reactable::colDef(minWidth = 100)  
   )
 ```
