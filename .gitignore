@@ -4,3 +4,5 @@
 .Ruserdata
 /.quarto/
 
+posts/desempenho_fundos_rf/fundos_db.duckdb
+fundos_db.duckdb

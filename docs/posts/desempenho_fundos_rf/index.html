@@ -2,13 +2,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="pt" xml:lang="pt"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.554">
+<meta name="generator" content="quarto-1.6.34">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Lemuel Lemos">
 
-<title>Mutual Blog - Desempenho dos Fundos de Renda Fixa</title>
+<title>Desempenho dos Fundos de Renda Fixa – Mutual Blog</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -36,10 +70,10 @@ ul.task-list li input[type="checkbox"] {
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-f23ab18612d661d7bd56dbc0c0fd3817.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-274c3d255ff4b40ad85bc0e900837b3c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -67,6 +101,22 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Procurar"
   }
 }</script>
+<script src="../../site_libs/core-js-2.5.3/shim.min.js"></script>
+
+<script src="../../site_libs/react-18.2.0/react.min.js"></script>
+
+<script src="../../site_libs/react-18.2.0/react-dom.min.js"></script>
+
+<script src="../../site_libs/reactwidget-2.0.0/react-tools.umd.cjs"></script>
+
+<link href="../../site_libs/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet">
+
+<script src="../../site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+
+<link href="../../site_libs/reactable-0.4.4/reactable.css" rel="stylesheet">
+
+<script src="../../site_libs/reactable-binding-0.4.4/reactable.js"></script>
+
 
 
 <link rel="stylesheet" href="../../styles.css">
@@ -84,7 +134,7 @@ ul.task-list li input[type="checkbox"] {
     </a>
   </div>
             <div id="quarto-search" class="" title="Procurar"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Alternar de navegação" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Alternar de navegação" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -113,7 +163,7 @@ ul.task-list li input[type="checkbox"] {
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
-          <div class="quarto-navbar-tools">
+            <div class="quarto-navbar-tools">
 </div>
       </div> <!-- /container-fluid -->
     </nav>
@@ -144,7 +194,7 @@ ul.task-list li input[type="checkbox"] {
       <div>
       <div class="quarto-title-meta-heading">Data de Publicação</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">24 de fevereiro de 2025</p>
+        <p class="date">1 de março de 2025</p>
       </div>
     </div>
     
@@ -168,7 +218,167 @@ ul.task-list li input[type="checkbox"] {
 <p>Vamos cobrir todas as etapas do processo, como coleta dos dados, limpeza, manipulação e armazenamento. Além do processamento dos dados, vamos criar nossas análises sobre essas informações, a fim de entender o comportamento da indústria de fundos.</p>
 <section id="fonte-de-dados" class="level3">
 <h3 class="anchored" data-anchor-id="fonte-de-dados">Fonte de Dados</h3>
-<p>Vamos utilizar como base de dados primária os dados presentes na <a href="https://dados.cvm.gov.br/group/fundos-de-investimento" target="_blank">CVM</a>, de onde pegaremos todos os dados referentes aos dados de cotas, dados cadastrais e o que é chamado de extrato de informações. Além disso, vamos utilizar dados fornecidos pela ANBIMA. Vamos utilizar as classificações dos fundos presentes nos dados cadastrais que a instituição utiliza. A escolha de utilização da classificação ANBIM, está no fato de que durante o processo de tratamento de dados em minha tese de doutorado, percebi algumas inconsistências na base da CVM.</p>
+<p>Vamos utilizar como base de dados primária os dados presentes na <a href="https://dados.cvm.gov.br/group/fundos-de-investimento" target="_blank">CVM</a>, de onde pegaremos todos os dados referentes aos dados de cotas, dados cadastrais e o que é chamado de extrato de informações. Além disso, vamos utilizar dados fornecidos pela ANBIMA. Vamos utilizar as classificações dos fundos presentes nos dados cadastrais que a instituição utiliza. A escolha de utilização da classificação ANBIMA, está no fato de que durante o processo de tratamento de dados em minha tese de doutorado, percebi algumas inconsistências na base da CVM.</p>
+</section>
+<section id="aquisição-de-dados" class="level3">
+<h3 class="anchored" data-anchor-id="aquisição-de-dados">Aquisição de dados</h3>
+<p>Os primeiros dados que iremos baixar são aqueles referentes às cotas, ao PL e à captação dos fundos de investimento disponíveis no portal de dados abertos da <a href="https://dados.cvm.gov.br/group/fundos-de-investimento" target="_blank">CVM</a>. O nome da base é: <a href="https://dados.cvm.gov.br/dataset/fi-doc-inf_diario" target="_blank">Informe Diário</a>.</p>
+<p>A CVM nos alerta que esses dados podem ser reapresentados em até M-11, além de dividi-los em dois repositórios: um contendo dados históricos desde 2000 até 2020, e outro com dados de 2021 até os dias atuais. Vamos baixar ambos. Faremos o download de arquivos compactados, que serão descompactados e carregados em nossa base de dados. Após a descompactação, uniremos todos os arquivos em uma única base.</p>
+<p>Para lidar com o grande volume de dados, vamos paralelizar nossa execução usando o pacote <code>furrr</code>. Além disso, utilizaremos os pacotes <code>dplyr</code> e <code>tidyr</code> para realizar a manipulação dos dados em memória, enquanto o <code>pins</code> nos servirá como repositório para armazená-los. Para nosso banco de dados, adotaremos o <strong>DuckDB</strong>, o que nos permitirá trabalhar de forma eficiente com grandes tabelas em disco, e contaremos ainda com o pacote <code>dbplyr</code> para manipular os dados diretamente no banco.</p>
+<p>Primeira coisa que vamos fazer é carrregar os pacotes necessários e conectar ao nosso banco. Lembro que se você for fazer isos em sua máquina o caminho que está sendo utilizando no parâmetro <code>dbdir</code> tem que ser relativo a sua própria pasta.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dbplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(furrr)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Conectando a base de dados</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dbdir =</span> <span class="st">"fundos_db.duckdb"</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                 <span class="at">read_only =</span> <span class="cn">FALSE</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Para obter o conjunto completo de dados, vamos acessar os endereços <a href="https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/">HIST</a> e <a href="https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/">DADOS</a> para baixar todos os arquivos disponíveis. Para otimizar essa etapa, utilizaremos as funções de paralelização do pacote <code>furrr</code>, configurando quatro clusters para realizar as requisições simultaneamente e, assim, agilizar o processo de download.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Criando a sequência de datas para criar as urls de download</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>anos_download <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">2000</span>,<span class="dv">2020</span>,<span class="dv">1</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>meses_download <span class="ot">&lt;-</span> <span class="fu">format</span>(<span class="fu">seq</span>(<span class="fu">as.Date</span>(<span class="st">"2021-01-01"</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">as.Date</span>(<span class="st">"2025-01-01"</span>),</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                             <span class="at">by =</span> <span class="st">"month"</span>),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                         <span class="st">"%Y%m"</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Definindo o número de workers</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>multisession, </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>             <span class="at">workers =</span> <span class="dv">6</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Fazendo donwload dos arquivos de 2000 a 2020</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(anos_download, <span class="cf">function</span>(ano){</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">600</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/inf_diario_fi_"</span>,</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>                ano,</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>                <span class="st">".zip"</span>)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  destfile <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"./informe_diario/"</span>,ano,<span class="st">".zip"</span>)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  utils<span class="sc">::</span><span class="fu">download.file</span>(url,destfile,<span class="at">mode =</span> <span class="st">"wb"</span>)</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>},<span class="at">.progress =</span> T)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>zipfiles <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">"./informe_diario/"</span>,<span class="at">full.names =</span> T)</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(zipfiles,<span class="cf">function</span>(path){</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unzip</span>(path,<span class="at">exdir =</span> <span class="st">"./informe_diario/"</span>)</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>             </span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Fazendo donwload dos arquivos de 2021 a janeiro de 2025 </span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(meses_download, <span class="cf">function</span>(mes){</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">600</span>)</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_"</span>,</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>                mes,</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>                <span class="st">".zip"</span>)</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>  destfile <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"./informe_diario/"</span>,mes,<span class="st">".zip"</span>)</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(url,destfile)</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Dezipando arquivos </span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>zipfiles <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">"./informe_diario/"</span>,<span class="at">full.names =</span> T)</span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(zipfiles,<span class="cf">function</span>(path){</span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unzip</span>(path,<span class="at">exdir =</span> <span class="st">"./informe_diario/"</span>)</span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="co"># Deletando arquivos baixados</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">file.remove</span>(<span class="fu">list.files</span>(<span class="st">"./posts/desempenho_fundos_rf/informe_diario/"</span>,</span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">full.names =</span> T)))</span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Excluindo os workers da paralelização</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>sequential)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Depois de baixar todos os arquivos, precisamos ler cada um dos CSVs e unificá-los em um único objeto. Essa etapa pode ser bastante exigente em termos de recursos e, por isso, pode não rodar tão facilmente em alguns computadores. No meu caso, como a minha máquina tem 32 GB de memória, consegui processar tudo sem maiores problemas.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>arquivos_csv <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">"./informe_diario/"</span>,<span class="at">full.names =</span> T,<span class="at">pattern =</span> <span class="st">".csv"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>multisession, <span class="at">workers =</span> <span class="dv">6</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_map</span>(arquivos_csv, <span class="cf">function</span>(arquivo){</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">read_delim</span>(arquivo, </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">delim =</span> <span class="st">";"</span>, <span class="at">escape_double =</span> <span class="cn">FALSE</span>, <span class="at">trim_ws =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>},<span class="at">.progress =</span> T) <span class="ot">-&gt;</span> informes_diarios</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>sequential)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>informes_diarios <span class="sc">%&gt;%</span> </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="ot">-&gt;</span> informes_diarios</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Deltando o objeto com todos os CSVs lidos.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DBI<span class="sc">::</span><span class="fu">dbWriteTable</span>(con,<span class="st">"informes_diarios"</span>,informes_diarios)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(informes_diarios)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="etl-dos-dados" class="level3">
+<h3 class="anchored" data-anchor-id="etl-dos-dados">ETL dos Dados</h3>
+<p>Primeiro passo para começarmos o ETL de nossos dados consiste em conetarmos com nossa base de dados. Vamos utilizar a função do <code>dplyr</code> <code>tbl</code>. Isso nos permite lidar com a tabela que está no nosso banco do DuckDB como se fosse um DF dentro de nosso projeto. Os arquivos que baixamos possuem todos os tipos de fundos. Aqui vamos nos concentrar nos fundos de investimentos tradicionais, os conhecido por fazerem parte da instrução CVM 175. Para fazer isso vamos filtrar nossa base somente com estes fundos, onde vamos filtrar somente os fundos com a designação <strong>FI</strong> na base.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>informes_diarios_fi <span class="ot">&lt;-</span> <span class="fu">tbl</span>(con,<span class="st">"informes_diarios"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(TP_FUNDO <span class="sc">==</span> <span class="st">"FI"</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Vamos começar integrando à base de dados fornecida pela ANBIMA. Primeiro, leremos o arquivo e o salvaremos em nossa base do DuckDB. Em seguida, faremos a união das duas fontes de dados, o que nos permitirá filtrar apenas as classes de fundos que desejamos para este primeiro momento, focando nos fundos de renda fixa.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fundos_175_anbima <span class="ot">&lt;-</span> readxl<span class="sc">::</span><span class="fu">read_excel</span>(<span class="st">"fundos-175-caracteristicas-publico-22-02-2025-12-01-14.xlsx"</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>DBI<span class="sc">::</span><span class="fu">dbWriteTable</span>(con,<span class="st">"fundos_175_anbima"</span>,fundos_175_anbima)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(fundos_175_anbima)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>informes_diarios_fi <span class="sc">%&gt;%</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">CNPJ_FUNDO =</span> <span class="fu">sql</span>(<span class="st">"regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl</span>(con,<span class="st">"fundos_175_anbima"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(<span class="st">`</span><span class="at">Código ANBIMA</span><span class="st">`</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>             Estrutura,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">CNPJ do Fundo</span><span class="st">`</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Nome Comercial</span><span class="st">`</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>             Status,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Composição do Fundo</span><span class="st">`</span>,</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Aberto Estatutariamente</span><span class="st">`</span>,</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>              <span class="st">`</span><span class="at">Tributação Alvo</span><span class="st">`</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Primeiro Aporte</span><span class="st">`</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Tipo de Investidor</span><span class="st">`</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Característica do Investidor</span><span class="st">`</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Cota de Abertura</span><span class="st">`</span>,</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Aplicação Inicial Mínima</span><span class="st">`</span>,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Prazo Pagamento Resgate em dias</span><span class="st">`</span>),</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"CNPJ_FUNDO"</span> <span class="ot">=</span> <span class="st">"CNPJ do Fundo"</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"Renda Fixa"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()<span class="ot">-&gt;</span> fundos_rf</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Depois de realizar esses processamentos, vamos conferir a quantidade de fundos com os quais trabalharemos.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(CNPJ_FUNDO,<span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,<span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(<span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,<span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>n) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">Quantidade =</span> n) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  reactable<span class="sc">::</span><span class="fu">reactable</span>(</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">pagination =</span> <span class="cn">FALSE</span>,  <span class="co"># Remove a paginação da tabela</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">list</span>(</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span> <span class="ot">=</span> reactable<span class="sc">::</span><span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">400</span>),  <span class="co"># Garante mais espaço para os nomes longos</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">Quantidade =</span> reactable<span class="sc">::</span><span class="fu">colDef</span>(</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">align =</span> <span class="st">"right"</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">format =</span> reactable<span class="sc">::</span><span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)  <span class="co"># Formata números com separador de milhar</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">defaultColDef =</span> reactable<span class="sc">::</span><span class="fu">colDef</span>(<span class="at">minWidth =</span> <span class="dv">100</span>)  <span class="co"># Garante que todas as colunas tenham um tamanho mínimo</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="reactable html-widget html-fill-item" id="htmlwidget-e4c83f05747b8e1f2ca6" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-e4c83f05747b8e1f2ca6">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Categoria ANBIMA":["Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa"],"Tipo ANBIMA":["Renda Fixa Duração Livre Crédito Livre","Renda Fixa Duração Livre Grau de Investimento","Renda Fixa Duração Baixa Grau de Investimento","Renda Fixa Duração Livre Soberano","Renda Fixa Duração Baixa Soberano","Renda Fixa Indexados","Renda Fixa Simples","Renda Fixa Duração Média Grau de Investimento","Renda Fixa Investimento no Exterior","Renda Fixa Duração Alta Grau de Investimento","Renda Fixa Duração Baixa Crédito Livre","Renda Fixa Duração Média Crédito Livre","Renda Fixa Duração Alta Crédito Livre","Renda Fixa Duração Média Soberano","Renda Fixa Duração Alta Soberano","Renda Fixa Dívida Externa"],"Quantidade":[1011,832,501,284,243,169,123,104,71,61,35,33,18,17,16,5]},"columns":[{"id":"Categoria ANBIMA","name":"Categoria ANBIMA","type":"character","minWidth":100},{"id":"Tipo ANBIMA","name":"Tipo ANBIMA","type":"character","minWidth":100,"width":400},{"id":"Quantidade","name":"Quantidade","type":"numeric","minWidth":100,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"}],"pagination":false,"dataKey":"7128c4a99ebb2cd57f9343337694fba9"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
 
 
 </section>
@@ -209,18 +419,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -252,7 +451,27 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
       var filterRegex = new RegExp('/' + window.location.host + '/');
@@ -260,7 +479,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }
     // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
     for (var i=0; i<links.length; i++) {
       const link = links[i];
       if (!isInternal(link.href)) {
@@ -357,7 +576,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       if (window.Quarto?.typesetMath) {
         window.Quarto.typesetMath(note);
       }
-      // TODO in 1.5, we should make sure this works without a callout special case
       if (note.classList.contains("callout")) {
         return note.outerHTML;
       } else {
