@@ -258,7 +258,7 @@ Em contraste, **FIDIV** (Dívida Estadual/Municipal) e **FIEX** (Investimento no
 
 ## Extrato de Infomações
 
-Pra fins de explocação de dados, vamos utilizar outra base de CVM conhecida como [Extrato de Informações](https://dados.cvm.gov.br/dataset/fi-doc-extrato) onde temos diversas informações relevantes dos fundos, que dizem respeito a informações qualitativas dos fundos de investimentos. 
+Pra fins de explocação de dados, vamos utilizar outra base de CVM conhecida como <a href="https://dados.cvm.gov.br/dataset/fi-doc-extrato" target="_blank">Extrato de Informações</a> onde temos diversas informações relevantes dos fundos, que dizem respeito a informações qualitativas dos fundos de investimentos. 
 
 
 ```{r extrato de informações, eval=F}
