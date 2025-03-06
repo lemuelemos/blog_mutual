@@ -231,12 +231,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dbplyr)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(furrr)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Conectando a base de dados</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dbdir =</span> <span class="st">"fundos_db.duckdb"</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                 <span class="at">read_only =</span> <span class="cn">FALSE</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(reactable)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Conectando a base de dados</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dbdir =</span> <span class="st">"fundos_db.duckdb"</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                 <span class="at">read_only =</span> <span class="cn">FALSE</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Para obter o conjunto completo de dados, vamos acessar os endereços <a href="https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/">HIST</a> e <a href="https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/">DADOS</a> para baixar todos os arquivos disponíveis. Para otimizar essa etapa, utilizaremos as funções de paralelização do pacote <code>furrr</code>, configurando quatro clusters para realizar as requisições simultaneamente e, assim, agilizar o processo de download.</p>
 <div class="cell">
@@ -263,38 +264,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  utils<span class="sc">::</span><span class="fu">download.file</span>(url,destfile,<span class="at">mode =</span> <span class="st">"wb"</span>)</span>
 <span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>},<span class="at">.progress =</span> T)</span>
 <span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>zipfiles <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">"./informe_diario/"</span>,<span class="at">full.names =</span> T)</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(zipfiles,<span class="cf">function</span>(path){</span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unzip</span>(path,<span class="at">exdir =</span> <span class="st">"./informe_diario/"</span>)</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>             </span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Fazendo donwload dos arquivos de 2021 a janeiro de 2025 </span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(meses_download, <span class="cf">function</span>(mes){</span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">600</span>)</span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_"</span>,</span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>                mes,</span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>                <span class="st">".zip"</span>)</span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>  destfile <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"./informe_diario/"</span>,mes,<span class="st">".zip"</span>)</span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(url,destfile)</span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Fazendo donwload dos arquivos de 2021 a janeiro de 2025 </span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(meses_download, <span class="cf">function</span>(mes){</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">600</span>)</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_"</span>,</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>                mes,</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>                <span class="st">".zip"</span>)</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>  destfile <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"./informe_diario/"</span>,mes,<span class="st">".zip"</span>)</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(url,destfile)</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>},</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="at">.progress =</span> T)</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Dezipando arquivos </span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>zipfiles <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">"./informe_diario/"</span>,<span class="at">full.names =</span> T,<span class="at">pattern =</span> <span class="st">".zip"</span>)</span>
 <span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Dezipando arquivos </span></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>zipfiles <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">"./informe_diario/"</span>,<span class="at">full.names =</span> T)</span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(zipfiles,<span class="cf">function</span>(path){</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unzip</span>(path,<span class="at">exdir =</span> <span class="st">"./informe_diario/"</span>)</span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>furrr<span class="sc">::</span><span class="fu">future_walk</span>(zipfiles,<span class="cf">function</span>(path){</span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unzip</span>(path,<span class="at">exdir =</span> <span class="st">"./informe_diario/"</span>)</span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="co"># Deletando arquivos baixados</span></span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">file.remove</span>(<span class="fu">list.files</span>(<span class="st">"./posts/desempenho_fundos_rf/informe_diario/"</span>,</span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">full.names =</span> T)))</span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Excluindo os workers da paralelização</span></span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>sequential)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Deletando arquivos baixados</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">file.remove</span>(<span class="fu">list.files</span>(<span class="st">"./posts/desempenho_fundos_rf/informe_diario/"</span>,</span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">full.names =</span> T)))</span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Excluindo os workers da paralelização</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>sequential)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Depois de baixar todos os arquivos, precisamos ler cada um dos CSVs e unificá-los em um único objeto. Essa etapa pode ser bastante exigente em termos de recursos e, por isso, pode não rodar tão facilmente em alguns computadores. No meu caso, como a minha máquina tem 32 GB de memória, consegui processar tudo sem maiores problemas.</p>
 <div class="cell">
@@ -311,7 +308,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>informes_diarios <span class="sc">%&gt;%</span> </span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>() <span class="ot">-&gt;</span> informes_diarios</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Deltando o objeto com todos os CSVs lidos.</p>
+<p>Deletando o objeto com todos os CSVs lidos.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DBI<span class="sc">::</span><span class="fu">dbWriteTable</span>(con,<span class="st">"informes_diarios"</span>,informes_diarios)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(informes_diarios)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -321,8 +318,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="etl-dos-dados">ETL dos Dados</h3>
 <p>Primeiro passo para começarmos o ETL de nossos dados consiste em conetarmos com nossa base de dados. Vamos utilizar a função do <code>dplyr</code> <code>tbl</code>. Isso nos permite lidar com a tabela que está no nosso banco do DuckDB como se fosse um DF dentro de nosso projeto. Os arquivos que baixamos possuem todos os tipos de fundos. Aqui vamos nos concentrar nos fundos de investimentos tradicionais, os conhecido por fazerem parte da instrução CVM 175. Para fazer isso vamos filtrar nossa base somente com estes fundos, onde vamos filtrar somente os fundos com a designação <strong>FI</strong> na base.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>informes_diarios_fi <span class="ot">&lt;-</span> <span class="fu">tbl</span>(con,<span class="st">"informes_diarios"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(TP_FUNDO <span class="sc">==</span> <span class="st">"FI"</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>informes_diarios <span class="ot">&lt;-</span> <span class="fu">tbl</span>(con,<span class="st">"informes_diarios"</span>) </span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Vamos começar integrando à base de dados fornecida pela ANBIMA. Primeiro, leremos o arquivo e o salvaremos em nossa base do DuckDB. Em seguida, faremos a união das duas fontes de dados, o que nos permitirá filtrar apenas as classes de fundos que desejamos para este primeiro momento, focando nos fundos de renda fixa.</p>
 <div class="cell">
@@ -333,56 +329,179 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>Texto revisado e sugestões de melhoria:</strong></p>
 <p>Aqui, como os dados filtrados resultaram em uma quantidade menor, o tamanho da base nos permite trabalhar tudo dentro do R sem problemas de desempenho. O <code>DuckDB</code> é fundamental para filtrar e unir as bases, pois o tempo de execução é bastante reduzido devido à sua maior eficiência ao lidar com grandes volumes de dados. Apenas a base de FI, por exemplo, possui cerca de 20 milhões de linhas, o que deixaria a análise diretamente no R muito lenta. Ao reduzir o tamanho da base, passamos a poder trabalhar tudo dentro do próprio R, sem precisar utilizar o <code>DuckDB</code>. É isso que fazemos a seguir.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>informes_diarios_fi <span class="sc">%&gt;%</span> </span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">CNPJ_FUNDO =</span> <span class="fu">sql</span>(<span class="st">"regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl</span>(con,<span class="st">"fundos_175_anbima"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(<span class="st">`</span><span class="at">Código ANBIMA</span><span class="st">`</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>             Estrutura,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">CNPJ do Fundo</span><span class="st">`</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Nome Comercial</span><span class="st">`</span>,</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>             Status,</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Composição do Fundo</span><span class="st">`</span>,</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Aberto Estatutariamente</span><span class="st">`</span>,</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>              <span class="st">`</span><span class="at">Tributação Alvo</span><span class="st">`</span>,</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Primeiro Aporte</span><span class="st">`</span>,</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Tipo de Investidor</span><span class="st">`</span>,</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Característica do Investidor</span><span class="st">`</span>,</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Cota de Abertura</span><span class="st">`</span>,</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Aplicação Inicial Mínima</span><span class="st">`</span>,</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Prazo Pagamento Resgate em dias</span><span class="st">`</span>),</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"CNPJ_FUNDO"</span> <span class="ot">=</span> <span class="st">"CNPJ do Fundo"</span>)</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"Renda Fixa"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()<span class="ot">-&gt;</span> fundos_rf</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>informes_diarios <span class="sc">%&gt;%</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">CNPJ_FUNDO =</span> <span class="fu">case_when</span>(<span class="fu">is.na</span>(CNPJ_FUNDO) <span class="sc">~</span> CNPJ_FUNDO_CLASSE,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                                <span class="at">.default =</span> CNPJ_FUNDO),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">TP_FUNDO =</span> <span class="fu">case_when</span>(<span class="fu">is.na</span>(TP_FUNDO) <span class="sc">~</span> TP_FUNDO_CLASSE,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">.default =</span> TP_FUNDO)) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">CNPJ_FUNDO =</span> <span class="fu">sql</span>(<span class="st">"regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tbl</span>(con,<span class="st">"fundos_175_anbima"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(<span class="st">`</span><span class="at">CNPJ do Fundo</span><span class="st">`</span> <span class="sc">!=</span> <span class="st">"58137699000116"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(<span class="st">`</span><span class="at">Código ANBIMA</span><span class="st">`</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>             Estrutura,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">CNPJ do Fundo</span><span class="st">`</span>,</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Nome Comercial</span><span class="st">`</span>,</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>             Status,</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Composição do Fundo</span><span class="st">`</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Aberto Estatutariamente</span><span class="st">`</span>,</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>              <span class="st">`</span><span class="at">Tributação Alvo</span><span class="st">`</span>,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Primeiro Aporte</span><span class="st">`</span>,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Tipo de Investidor</span><span class="st">`</span>,</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Característica do Investidor</span><span class="st">`</span>,</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Cota de Abertura</span><span class="st">`</span>,</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Aplicação Inicial Mínima</span><span class="st">`</span>,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Prazo Pagamento Resgate em dias</span><span class="st">`</span>),</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"CNPJ_FUNDO"</span> <span class="ot">=</span> <span class="st">"CNPJ do Fundo"</span>)</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span> <span class="sc">==</span> <span class="st">"Renda Fixa"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>() <span class="ot">-&gt;</span> fundos_rf</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Depois de realizar esses processamentos, vamos conferir a quantidade de fundos com os quais trabalharemos.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span> </span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(CNPJ_FUNDO,<span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,<span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(<span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,<span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>n) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">Quantidade =</span> n) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  reactable<span class="sc">::</span><span class="fu">reactable</span>(</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">pagination =</span> <span class="cn">FALSE</span>,  <span class="co"># Remove a paginação da tabela</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">list</span>(</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Garante mais espaço para os nomes longos</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span> <span class="ot">=</span> reactable<span class="sc">::</span><span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">400</span>), </span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">Quantidade =</span> reactable<span class="sc">::</span><span class="fu">colDef</span>(</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">align =</span> <span class="st">"right"</span>,</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Formata números com separador de milhar</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">format =</span> reactable<span class="sc">::</span><span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Garante que todas as colunas tenham um tamanho mínimo</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">defaultColDef =</span> reactable<span class="sc">::</span><span class="fu">colDef</span>(<span class="at">minWidth =</span> <span class="dv">100</span>)  </span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Transformação dos dados</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Preenche o TP_FUNDO para linhas subsequentes que estejam em branco</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">fill</span>(TP_FUNDO, <span class="at">.direction =</span> <span class="st">"up"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Mantém cada combinação única de tipo de fundo, CNPJ, categoria e tipo ANBIMA</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(TP_FUNDO, CNPJ_FUNDO, <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>, <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Conta quantas ocorrências de cada combinação</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(TP_FUNDO, <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>, <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Renomeia a coluna TP_FUNDO para ficar mais legível</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Tipo de Fundos</span><span class="st">`</span> <span class="ot">=</span> TP_FUNDO) <span class="sc">%&gt;%</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Converte do formato "longo" para "largo", criando uma coluna para cada Tipo de Fundo</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> <span class="st">`</span><span class="at">Tipo de Fundos</span><span class="st">`</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> n,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_fill =</span> <span class="dv">0</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>,</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    FI,</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">CLASSES - FIF</span><span class="st">`</span>,</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    FACFIF,</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    FIF,</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    FIFDIV,</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    FITVM,</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    FIEX</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>FI) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  reactable<span class="sc">::</span><span class="fu">reactable</span>(</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">pagination =</span> <span class="cn">FALSE</span>,                <span class="co"># Sem paginação</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">defaultColDef =</span> <span class="fu">colDef</span>(<span class="at">minWidth =</span> <span class="dv">120</span>),</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">resizable =</span> T,  <span class="co"># Largura mínima das colunas</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">list</span>(</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Ajustes específicos de coluna</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">200</span>),</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>      <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">300</span>),</span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>      <span class="at">FI      =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">CLASSES - FIF</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>      <span class="at">FIF     =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>      <span class="at">FITVM   =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>      <span class="at">FACFIF  =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>      <span class="at">FIEX    =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>      <span class="at">FIDIV   =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="reactable html-widget html-fill-item" id="htmlwidget-55b288f6e06f26e1d32c" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-55b288f6e06f26e1d32c">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Categoria ANBIMA":["Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa"],"Tipo ANBIMA":["Renda Fixa Duração Livre Crédito Livre","Renda Fixa Duração Livre Grau de Investimento","Renda Fixa Duração Baixa Grau de Investimento","Renda Fixa Duração Livre Soberano","Renda Fixa Duração Baixa Soberano","Renda Fixa Indexados","Renda Fixa Simples","Renda Fixa Duração Média Grau de Investimento","Renda Fixa Investimento no Exterior","Renda Fixa Duração Alta Grau de Investimento","Renda Fixa Duração Baixa Crédito Livre","Renda Fixa Duração Média Crédito Livre","Renda Fixa Duração Alta Crédito Livre","Renda Fixa Duração Média Soberano","Renda Fixa Duração Alta Soberano","Renda Fixa Dívida Externa"],"Quantidade":[1011,832,501,284,243,169,123,104,71,61,35,33,18,17,16,5]},"columns":[{"id":"Categoria ANBIMA","name":"Categoria ANBIMA","type":"character","minWidth":100},{"id":"Tipo ANBIMA","name":"Tipo ANBIMA","type":"character","minWidth":100,"width":400},{"id":"Quantidade","name":"Quantidade","type":"numeric","minWidth":100,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"}],"pagination":false,"dataKey":"7128c4a99ebb2cd57f9343337694fba9"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-56bf2928f89a8cc8ef83" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-56bf2928f89a8cc8ef83">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Categoria ANBIMA":["Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa"],"Tipo ANBIMA":["Renda Fixa Duração Livre Crédito Livre","Renda Fixa Duração Livre Grau de Investimento","Renda Fixa Duração Baixa Grau de Investimento","Renda Fixa Duração Livre Soberano","Renda Fixa Duração Baixa Soberano","Renda Fixa Indexados","Renda Fixa Simples","Renda Fixa Investimento no Exterior","Renda Fixa Duração Média Grau de Investimento","Renda Fixa Duração Alta Grau de Investimento","Renda Fixa Duração Baixa Crédito Livre","Renda Fixa Duração Média Crédito Livre","Renda Fixa Duração Alta Crédito Livre","Renda Fixa Duração Média Soberano","Renda Fixa Duração Alta Soberano","Renda Fixa Dívida Externa"],"FI":[1748,886,510,327,256,189,142,121,114,61,43,38,29,18,17,5],"CLASSES - FIF":[1291,275,159,117,72,65,56,79,67,4,16,16,16,5,6,0],"FACFIF":[118,342,286,110,138,85,22,2,73,31,12,5,2,10,4,5],"FIF":[135,378,304,128,148,92,22,2,75,37,15,7,3,11,5,5],"FIFDIV":[0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0],"FITVM":[84,281,249,94,116,67,20,2,70,25,10,4,1,10,4,4],"FIEX":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3]},"columns":[{"id":"Categoria ANBIMA","name":"Categoria ANBIMA","type":"character","minWidth":120,"width":200},{"id":"Tipo ANBIMA","name":"Tipo ANBIMA","type":"character","minWidth":120,"width":300},{"id":"FI","name":"FI","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"CLASSES - FIF","name":"CLASSES - FIF","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"FACFIF","name":"FACFIF","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"FIF","name":"FIF","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"FIFDIV","name":"FIFDIV","type":"numeric","minWidth":120},{"id":"FITVM","name":"FITVM","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"FIEX","name":"FIEX","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"ada1196d7e555bfcaf79e92138fd2fdc"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
+</div>
+<p>Ao analisar os dados que relacionam as novas classificações da ANBIMA para fundos de Renda Fixa às quantidades de fundos em cada categoria, percebe-se novamente um predomínio significativo dos fundos classificados como <strong>“Renda Fixa Duração Livre Crédito Livre”</strong>, que totalizam <strong>2.011</strong>. Em seguida, destacam-se os <strong>909</strong> fundos enquadrados em <strong>“Renda Fixa Duração Livre Grau de Investimento”</strong> e os <strong>512</strong> em <strong>“Renda Fixa Duração Baixa Grau de Investimento”</strong>. Na parte mais intermediária, aparecem tanto as categorias <strong>“Renda Fixa Duração Livre Soberano”</strong> (341 fundos) e <strong>“Renda Fixa Duração Baixa Soberano”</strong> (259 fundos), quanto as de perfil “híbrido” ou específico, a exemplo de <strong>“Renda Fixa Indexados”</strong> (194), <strong>“Renda Fixa Simples”</strong> (147) e <strong>“Renda Fixa Investimento no Exterior”</strong> (131). Por outro lado, as classificações <strong>“Renda Fixa Duração Alta Crédito Livre”</strong> (33), <strong>“Renda Fixa Duração Média Soberano”</strong> (18), <strong>“Renda Fixa Duração Alta Soberano”</strong> (17) e <strong>“Renda Fixa Dívida Externa”</strong> (5) mantêm baixa representatividade.</p>
+<p>A distribuição entre os diferentes tipos de fundos revela que a maior parte se concentra em <strong>FI</strong> (Fundos de Investimento ICVM 555) e <strong>CLASSES - FIF</strong> (Fundos de Aplicação em Cotas de Fundos de Investimento Financeiro). Essas duas estruturas apresentam números mais altos em quase todas as categorias de Renda Fixa, especialmente nas de maior liberdade de alocação e risco, como <strong>Duração Livre Crédito Livre</strong> e <strong>Duração Livre Grau de Investimento</strong>. Também chamam atenção as participações de <strong>FACFIF</strong> (Fundos de Aplicação em Cotas de Fundos de Investimento) e <strong>FIF</strong> (Fundos de Investimento Financeiro), que figuram de forma significativa nas mesmas classificações, enquanto <strong>FITVM</strong> (Fundos de Investimento em Títulos e Valores Mobiliários) aparece em menor escala, porém constante, demonstrando que gestores optam por diversificar o tipo de estrutura em algumas estratégias relevantes.</p>
+<p>Em contraste, <strong>FIDIV</strong> (Dívida Estadual/Municipal) e <strong>FIEX</strong> (Investimento no Exterior) apresentam quantitativos reduzidos na maior parte das classificações, sugerindo que esses formatos são adotados em situações específicas ou nichos de mercado. De modo geral, os números continuam a evidenciar uma preferência por categorias que ofereçam maior flexibilidade na alocação de ativos e exposição ao crédito, ao passo que estratégias mais direcionadas, como <strong>Renda Fixa Dívida Externa</strong> ou de <strong>Duração Alta Soberano</strong>, reúnem poucos fundos. Essa concentração reforça a percepção de que os investidores tendem a buscar produtos cuja gestão possa explorar oportunidades de mercado de forma mais ampla, mantendo, porém, certa predominância em estruturas tradicionais como <strong>FI</strong> e <strong>CLASSES - FIF</strong>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 84%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Sigla</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>FACFIF</td>
+<td>Fundos de Aplicação em Cotas de Fundos de Investimento</td>
+</tr>
+<tr class="even">
+<td>FAPI</td>
+<td>Fundos de Aposentadoria Programada Individual</td>
+</tr>
+<tr class="odd">
+<td>FI</td>
+<td>Fundos de Investimento ICVM 555</td>
+</tr>
+<tr class="even">
+<td>FI-FGTS</td>
+<td>Fundos de Investimento FGTS</td>
+</tr>
+<tr class="odd">
+<td>FIC-FITVM</td>
+<td>Fundos de Investimento em Cotas de FITVM</td>
+</tr>
+<tr class="even">
+<td>FIEX</td>
+<td>Fundos de Investimento no Exterior</td>
+</tr>
+<tr class="odd">
+<td>FIF</td>
+<td>Fundos de Investimento Financeiro</td>
+</tr>
+<tr class="even">
+<td>FIDIV</td>
+<td>Fundos de Investimento Financeiro – Dívida Estadual/Municipal</td>
+</tr>
+<tr class="odd">
+<td>FIIM</td>
+<td>Fundos de Investimento em Índice de Mercado</td>
+</tr>
+<tr class="even">
+<td>FIP</td>
+<td>Fundos de Investimento em Participações</td>
+</tr>
+<tr class="odd">
+<td>FITVM</td>
+<td>Fundos de Investimento em Títulos e Valores Mobiliários</td>
+</tr>
+<tr class="even">
+<td>FMAI</td>
+<td>Fundos Mútuos em Ações Incentivadas</td>
+</tr>
+<tr class="odd">
+<td>FMIEE</td>
+<td>Fundos Mútuos de Investimentos em Empresas Emergentes</td>
+</tr>
+<tr class="even">
+<td>FMP-FGTS</td>
+<td>Fundos Mútuos de Privatização – FGTS</td>
+</tr>
+<tr class="odd">
+<td>FMP-FGTS CL</td>
+<td>Fundos Mútuos de Privatização – FGTS Carteira Livre</td>
+</tr>
+<tr class="even">
+<td>FUNCINE</td>
+<td>Fundos Financeiros da Indústria Cinematográfica Nacional</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="extrato-de-infomações" class="level2">
+<h2 class="anchored" data-anchor-id="extrato-de-infomações">Extrato de Infomações</h2>
+<p>Pra fins de explocação de dados, vamos utilizar outra base de CVM conhecida como <a href="https://dados.cvm.gov.br/dataset/fi-doc-extrato">Extrato de Informações</a> onde temos diversas informações relevantes dos fundos, que dizem respeito a informações qualitativas dos fundos de investimentos.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>extrato_fi <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_delim</span>(<span class="st">"https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/DADOS/extrato_fi.csv"</span>, </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">delim =</span> <span class="st">";"</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">escape_double =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">locale =</span> readr<span class="sc">::</span><span class="fu">locale</span>(<span class="at">encoding =</span> <span class="st">"WINDOWS-1252"</span>), </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">trim_ws =</span> <span class="cn">TRUE</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
