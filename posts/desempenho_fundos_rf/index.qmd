@@ -29,7 +29,7 @@ Para lidar com o grande volume de dados, vamos paralelizar nossa execução usan
 
 Primeira coisa que vamos fazer é carrregar os pacotes necessários e conectar ao nosso banco. Lembro que se você for fazer isos em sua máquina o caminho que está sendo utilizando no parâmetro `dbdir` tem que ser relativo a sua própria pasta. 
 
-```{r carregamento de pacotes,}
+```{r carregamento de pacotes}
 library(dplyr)
 library(dbplyr)
 library(tidyr)
@@ -175,7 +175,7 @@ informes_diarios %>%
     by = c("CNPJ_FUNDO" = "CNPJ do Fundo")
   ) %>% 
   filter(`Categoria ANBIMA` == "Renda Fixa") %>% 
-  collect() -> fundos_rf
+  collect()  -> fundos_rf
 ```
 
 Depois de realizar esses processamentos, vamos conferir a quantidade de fundos com os quais trabalharemos.
@@ -184,8 +184,11 @@ Depois de realizar esses processamentos, vamos conferir a quantidade de fundos c
 ```{r tabela de fundos por classe e tipo}
 # Transformação dos dados
 fundos_rf %>%
+  arrange(DT_COMPTC,CNPJ_FUNDO) %>% 
   # Preenche o TP_FUNDO para linhas subsequentes que estejam em branco
-  tidyr::fill(TP_FUNDO, .direction = "up") %>%
+  group_by(CNPJ_FUNDO) %>% 
+  tidyr::fill(TP_FUNDO, .direction = "up") %>% 
+  ungroup() %>% 
   # Mantém cada combinação única de tipo de fundo, CNPJ, categoria e tipo ANBIMA
   distinct(TP_FUNDO, CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%
   # Conta quantas ocorrências de cada combinação
@@ -258,19 +261,86 @@ Em contraste, **FIDIV** (Dívida Estadual/Municipal) e **FIEX** (Investimento no
 
 ## Extrato de Infomações
 
-Pra fins de explocação de dados, vamos utilizar outra base de CVM conhecida como <a href="https://dados.cvm.gov.br/dataset/fi-doc-extrato" target="_blank">Extrato de Informações</a> onde temos diversas informações relevantes dos fundos, que dizem respeito a informações qualitativas dos fundos de investimentos. 
+Neste estudo, eu utilizo como referência o arquivo disponibilizado pela ANBIMA, que traz informações qualitativas relevantes dos fundos de investimento. A base escolhida é o arquivo **<a href="https://dados.cvm.gov.br/dataset/fi-doc-extrato" target="_blank">Extrato de Informações</a>**, contendo diversas informações qualitativas sobre os fundos de investimento. Trata-se de uma base extensa com 117 colunas, da qual utilizei apenas as informações consideradas mais relevantes para este estudo.
+
+Recomendo ao leitor interessado acessar diretamente o arquivo completo caso deseje explorar detalhadamente todas as informações disponíveis.
 
 
-```{r extrato de informações, eval=F}
+Vamos baixar os dados da CVM diretamente em nosso script, porém não utilizaremos todas as 117 colunas disponíveis. Com base na documentação das variáveis disponibilizada pela Comissão de Valores Mobiliários (CVM) no link **<a href="https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/META/meta_extrato_fi.txt" target="_blank">Documentação das Variáveis do Extrato de Informações</a>**, faremos uma seleção das variáveis consideradas mais relevantes para a análise desenvolvida neste estudo:
 
-extrato_fi <- readr::read_delim("https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/DADOS/extrato_fi.csv", 
-                         delim = ";", 
-                         escape_double = FALSE, 
-                         locale = readr::locale(encoding = "WINDOWS-1252"), 
-                         trim_ws = TRUE)
+
+- **PUBLICO_ALVO:** público a que se destina o fundo de investimento.
+- **DISTRIB:** forma principal de distribuição do fundo.
+- **POLIT_INVEST:** política de investimento adotada.
+- **FUNDO_COTAS:** indicação se o fundo investe predominantemente em cotas de outros fundos.
+- **FUNDO_ESPELHO:** indicação se o fundo replica a carteira de outro fundo (fundo espelho).
+- **APLIC_MIN:** valor mínimo exigido para investimento inicial no fundo.
+- **ATUALIZ_DIARIA_COTA:** frequência da atualização e divulgação da cota do fundo.
+- **TAXA_SAIDA_PAGTO_RESGATE:** prazo efetivo para pagamento do resgate a partir da data de pedido.
+- **TAXA_ADM:** percentual cobrado como taxa de administração.
+- **EXISTE_TAXA_PERFM:** indicação da existência de taxa de performance.
+- **TAXA_PERFM:** valor percentual cobrado como taxa de performance.
+- **PARAM_TAXA_PERFM:** parâmetro utilizado para cobrança da taxa de performance.
+- **CALC_TAXA_PERFM:** método utilizado para calcular a taxa de performance.
+- **EXISTE_TAXA_INGRESSO:** indicação da existência de taxa de ingresso.
+- **EXISTE_TAXA_SAIDA:** indicação da existência de taxa de saída.
+- **INVEST_EXTERIOR:** indicação se o fundo realiza investimentos no exterior.
+- **ATIVO_CRED_PRIV:** indicação se o fundo investe em ativos de crédito privado.
+
+Creio que com essas variáveis vamos conseguir ter um bom raio x dos fundos de renda fixa.
+
+```{r extrato de informações, eval=T}
+
+extrato_fi <- readr::read_delim("./extrato_fi.csv", 
+                                delim = ";", 
+                                escape_double = FALSE, 
+                                locale = readr::locale(encoding = "WINDOWS-1252"), 
+                                trim_ws = TRUE,
+                                quote = "") 
+print(extrato_fi)
 ```
 
+Após baixar os dados, vamos unir com nossa base de fundos para que possamos ver qualitativamente os fundos de renda fixa.
 
+```{r juntando as bases}
+fundos_rf %>% 
+  left_join(
+    extrato_fi %>% 
+      mutate(CNPJ_FUNDO_CLASSE = stringr::str_remove_all(CNPJ_FUNDO_CLASSE,"\\.|/|-")) %>% 
+      select(CNPJ_FUNDO_CLASSE,PUBLICO_ALVO, DISTRIB, POLIT_INVEST, 
+         FUNDO_COTAS,FUNDO_ESPELHO, APLIC_MIN, ATUALIZ_DIARIA_COTA,
+         TAXA_SAIDA_PAGTO_RESGATE, TAXA_ADM, EXISTE_TAXA_PERFM,
+         TAXA_PERFM, PARAM_TAXA_PERFM, CALC_TAXA_PERFM,
+         EXISTE_TAXA_INGRESSO, EXISTE_TAXA_SAIDA,
+         INVEST_EXTERIOR, ATIVO_CRED_PRIV),
+    by = c("CNPJ_FUNDO" = "CNPJ_FUNDO_CLASSE") 
+  ) -> fundos_rf
+```
+
+No geral a explicação dada anteriomente já permite uma interpretação direta do tipo informacional que ela busca trnasmitir, proém, creio que as políticas de investimentos vales um detalhamento maior pois sua interpretação não ´pe tão direta. O documento publicado pela Comissão de Valores Mobiliários (CVM), disponível no link <a href="https://www.gov.br/cvm/pt-br/centrais-de-conteudo/publicacoes/estudos/arr-regime-informacional-fundos-555.pdf" target="_blank">Resumo CVM instrução CVM 175</a>, apresenta informações essenciais sobre o regime informacional aplicável aos fundos de investimento regulamentados pela Instrução CVM nº 555. Entre os tópicos abordados no estudo estão as principais políticas de investimento adotadas pelos fundos, que são resumidas a seguir:
+
+**Tipos de Políticas de Investimento**
+
+1. **Ativa e Referenciada:**  
+Fundos que adotam gestão ativa, com o objetivo de obter retornos superiores a um índice de referência específico (benchmark). Embora busquem superá-lo, a estratégia permanece atrelada ao índice escolhido.
+
+2. **Ativa e Não Referenciada:**  
+Fundos com gestão ativa, sem utilizar um índice específico como parâmetro para os resultados. A seleção dos investimentos é livre, não sendo direcionada à replicação ou superação de benchmarks definidos.
+
+3. **Passiva:**  
+Fundos que utilizam gestão passiva, com o objetivo de acompanhar a variação de um índice de referência. Não possuem a intenção explícita de superar esse índice, replicando geralmente a sua composição.
+
+4. **Enhanced:**  
+Fundos que integram estratégias ativas e passivas, buscando retornos acima do índice de referência, porém mantendo características semelhantes ao índice replicado, especialmente no que diz respeito ao perfil de risco e composição da carteira.
+
+Com essas informações em mãos, podemos agora analisar de forma quatitativa o perfil desses fundos de investimentos. O primeiro ponto que quero abordar consiste na distribuição entre público alvo e politicas de investimentos. Isso nos permitirá enxergar melhor se há uma tendência de política de investimentos a depender do público alvo deste fundo. O código a seguir vai slecionar somente as colunas de interesse. Como nossa base é grande, principalemtne devido as informações diárias que temos dos fundos de investimentos, temos que selecionar as colunas de nosso interesse e dessa forma obter somente os valores únicos para cada fundos de investimentos.
+
+```{r}
+fundos_rf %>% 
+  distinct(CNPJ_FUNDO,PUBLICO_ALVO,POLIT_INVEST) %>% 
+  count(PUBLICO_ALVO,POLIT_INVEST) %>% 
+  arrange(-n)
+```
 
 
 
