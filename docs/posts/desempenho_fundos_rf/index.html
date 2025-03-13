@@ -232,12 +232,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(furrr)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(reactable)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Conectando a base de dados</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dbdir =</span> <span class="st">"fundos_db.duckdb"</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                 <span class="at">read_only =</span> <span class="cn">FALSE</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(htmltools)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Conectando a base de dados</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dbdir =</span> <span class="st">"fundos_db.duckdb"</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                 <span class="at">read_only =</span> <span class="cn">FALSE</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Para obter o conjunto completo de dados, vamos acessar os endereços <a href="https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/">HIST</a> e <a href="https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/">DADOS</a> para baixar todos os arquivos disponíveis. Para otimizar essa etapa, utilizaremos as funções de paralelização do pacote <code>furrr</code>, configurando quatro clusters para realizar as requisições simultaneamente e, assim, agilizar o processo de download.</p>
 <div class="cell">
@@ -361,140 +362,41 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Depois de realizar esses processamentos, vamos conferir a quantidade de fundos com os quais trabalharemos.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Transformação dos dados</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(DT_COMPTC,CNPJ_FUNDO) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Preenche o TP_FUNDO para linhas subsequentes que estejam em branco</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(CNPJ_FUNDO) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">fill</span>(TP_FUNDO, <span class="at">.direction =</span> <span class="st">"up"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Mantém cada combinação única de tipo de fundo, CNPJ, categoria e tipo ANBIMA</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(TP_FUNDO, CNPJ_FUNDO, <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>, <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Conta quantas ocorrências de cada combinação</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(TP_FUNDO, <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>, <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Renomeia a coluna TP_FUNDO para ficar mais legível</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Tipo de Fundos</span><span class="st">`</span> <span class="ot">=</span> TP_FUNDO) <span class="sc">%&gt;%</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Converte do formato "longo" para "largo", criando uma coluna para cada Tipo de Fundo</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> <span class="st">`</span><span class="at">Tipo de Fundos</span><span class="st">`</span>,</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> n,</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_fill =</span> <span class="dv">0</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>,</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>,</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    FI,</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">CLASSES - FIF</span><span class="st">`</span>,</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    FACFIF,</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    FIF,</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>    FIFDIV,</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    FITVM,</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    FIEX</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>FI) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>  reactable<span class="sc">::</span><span class="fu">reactable</span>(</span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">pagination =</span> <span class="cn">FALSE</span>,                <span class="co"># Sem paginação</span></span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">defaultColDef =</span> <span class="fu">colDef</span>(<span class="at">minWidth =</span> <span class="dv">120</span>),</span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">resizable =</span> T,  <span class="co"># Largura mínima das colunas</span></span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">list</span>(</span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Ajustes específicos de coluna</span></span>
-<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">200</span>),</span>
-<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>      <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">300</span>),</span>
-<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>      <span class="at">FI      =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
-<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">CLASSES - FIF</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
-<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>      <span class="at">FIF     =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
-<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>      <span class="at">FITVM   =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
-<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>      <span class="at">FACFIF  =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
-<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>      <span class="at">FIEX    =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>)),</span>
-<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>      <span class="at">FIDIV   =</span> <span class="fu">colDef</span>(<span class="at">align =</span> <span class="st">"right"</span>, <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(reactable)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span>  <span class="co"># Remove qualquer agrupamento existente nos dados</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(CNPJ_FUNDO, <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>, <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span>  <span class="co"># Mantém apenas combinações únicas dessas colunas</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(<span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span>, <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>) <span class="sc">%&gt;%</span>  <span class="co"># Conta a quantidade de fundos por categoria e tipo</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>n) <span class="sc">%&gt;%</span>  <span class="co"># Ordena os dados de forma decrescente com base na contagem</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">Quantidade =</span> n) <span class="sc">%&gt;%</span>  <span class="co"># Renomeia a coluna de contagem para "Quantidade"</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  reactable<span class="sc">::</span><span class="fu">reactable</span>(</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">pagination =</span> <span class="cn">FALSE</span>,  <span class="co"># Desativa a paginação da tabela</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">defaultColDef =</span> <span class="fu">colDef</span>(<span class="at">minWidth =</span> <span class="dv">120</span>),  <span class="co"># Define uma largura mínima de 120 para todas as colunas</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">resizable =</span> <span class="cn">TRUE</span>,  <span class="co"># Permite que as colunas sejam redimensionáveis</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">list</span>(</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Categoria ANBIMA</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">200</span>),  <span class="co"># Define a largura da coluna "Categoria ANBIMA"</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Tipo ANBIMA</span><span class="st">`</span>      <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">300</span>),  <span class="co"># Define a largura da coluna "Tipo ANBIMA"</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">Quantidade         =</span> <span class="fu">colDef</span>(</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">align =</span> <span class="st">"right"</span>,  <span class="co"># Alinha os valores numéricos à direita</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>),  <span class="co"># Formata os números com separadores de milhar</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        <span class="at">footer =</span> <span class="cf">function</span>(values) {  <span class="co"># Define o conteúdo do rodapé da coluna</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>          htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">b</span>(<span class="st">"Total: "</span>) <span class="sc">%&gt;%</span>  <span class="co"># Deixa a palavra "Total" em negrito</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>            htmltools<span class="sc">::</span><span class="fu">tagAppendChildren</span>(htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">span</span>(<span class="fu">sum</span>(values)))  <span class="co"># Exibe a soma total ao lado</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="reactable html-widget html-fill-item" id="htmlwidget-edc881873642239402e1" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-edc881873642239402e1">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Categoria ANBIMA":["Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa"],"Tipo ANBIMA":["Renda Fixa Duração Livre Crédito Livre","Renda Fixa Duração Livre Grau de Investimento","Renda Fixa Duração Baixa Grau de Investimento","Renda Fixa Duração Livre Soberano","Renda Fixa Duração Baixa Soberano","Renda Fixa Indexados","Renda Fixa Simples","Renda Fixa Investimento no Exterior","Renda Fixa Duração Média Grau de Investimento","Renda Fixa Duração Alta Grau de Investimento","Renda Fixa Duração Baixa Crédito Livre","Renda Fixa Duração Média Crédito Livre","Renda Fixa Duração Alta Crédito Livre","Renda Fixa Duração Média Soberano","Renda Fixa Duração Alta Soberano","Renda Fixa Dívida Externa"],"FI":[1748,886,510,327,256,189,142,121,114,61,43,38,29,18,17,5],"CLASSES - FIF":[1291,275,159,117,72,65,56,79,67,4,16,16,16,5,6,0],"FACFIF":[8,37,87,4,30,6,7,0,22,1,1,0,0,1,0,0],"FIF":[25,97,65,41,28,7,2,1,11,11,2,1,0,2,1,0],"FIFDIV":[0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0],"FITVM":[0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"FIEX":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3]},"columns":[{"id":"Categoria ANBIMA","name":"Categoria ANBIMA","type":"character","minWidth":120,"width":200},{"id":"Tipo ANBIMA","name":"Tipo ANBIMA","type":"character","minWidth":120,"width":300},{"id":"FI","name":"FI","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"CLASSES - FIF","name":"CLASSES - FIF","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"FACFIF","name":"FACFIF","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"FIF","name":"FIF","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"FIFDIV","name":"FIFDIV","type":"numeric","minWidth":120},{"id":"FITVM","name":"FITVM","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"},{"id":"FIEX","name":"FIEX","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"d729c5e8849afeec4907d33428dc749c"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-b4680005305d20bf68a5" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-b4680005305d20bf68a5">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Categoria ANBIMA":["Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa"],"Tipo ANBIMA":["Renda Fixa Duração Livre Crédito Livre","Renda Fixa Duração Livre Grau de Investimento","Renda Fixa Duração Baixa Grau de Investimento","Renda Fixa Duração Livre Soberano","Renda Fixa Duração Baixa Soberano","Renda Fixa Indexados","Renda Fixa Simples","Renda Fixa Investimento no Exterior","Renda Fixa Duração Média Grau de Investimento","Renda Fixa Duração Alta Grau de Investimento","Renda Fixa Duração Baixa Crédito Livre","Renda Fixa Duração Média Crédito Livre","Renda Fixa Duração Alta Crédito Livre","Renda Fixa Duração Média Soberano","Renda Fixa Duração Alta Soberano","Renda Fixa Dívida Externa"],"Quantidade":[2011,909,512,341,259,194,147,131,117,62,43,41,33,18,17,5]},"columns":[{"id":"Categoria ANBIMA","name":"Categoria ANBIMA","type":"character","minWidth":120,"width":200},{"id":"Tipo ANBIMA","name":"Tipo ANBIMA","type":"character","minWidth":120,"width":300},{"id":"Quantidade","name":"Quantidade","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4840"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"a64a65597d47a850c37f16e05c816396"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
-<p>Ao analisar os dados que relacionam as novas classificações da ANBIMA para fundos de Renda Fixa às quantidades de fundos em cada categoria, percebe-se novamente um predomínio significativo dos fundos classificados como <strong>“Renda Fixa Duração Livre Crédito Livre”</strong>, que totalizam <strong>2.011</strong>. Em seguida, destacam-se os <strong>909</strong> fundos enquadrados em <strong>“Renda Fixa Duração Livre Grau de Investimento”</strong> e os <strong>512</strong> em <strong>“Renda Fixa Duração Baixa Grau de Investimento”</strong>. Na parte mais intermediária, aparecem tanto as categorias <strong>“Renda Fixa Duração Livre Soberano”</strong> (341 fundos) e <strong>“Renda Fixa Duração Baixa Soberano”</strong> (259 fundos), quanto as de perfil “híbrido” ou específico, a exemplo de <strong>“Renda Fixa Indexados”</strong> (194), <strong>“Renda Fixa Simples”</strong> (147) e <strong>“Renda Fixa Investimento no Exterior”</strong> (131). Por outro lado, as classificações <strong>“Renda Fixa Duração Alta Crédito Livre”</strong> (33), <strong>“Renda Fixa Duração Média Soberano”</strong> (18), <strong>“Renda Fixa Duração Alta Soberano”</strong> (17) e <strong>“Renda Fixa Dívida Externa”</strong> (5) mantêm baixa representatividade.</p>
-<p>A distribuição entre os diferentes tipos de fundos revela que a maior parte se concentra em <strong>FI</strong> (Fundos de Investimento ICVM 555) e <strong>CLASSES - FIF</strong> (Fundos de Aplicação em Cotas de Fundos de Investimento Financeiro). Essas duas estruturas apresentam números mais altos em quase todas as categorias de Renda Fixa, especialmente nas de maior liberdade de alocação e risco, como <strong>Duração Livre Crédito Livre</strong> e <strong>Duração Livre Grau de Investimento</strong>. Também chamam atenção as participações de <strong>FACFIF</strong> (Fundos de Aplicação em Cotas de Fundos de Investimento) e <strong>FIF</strong> (Fundos de Investimento Financeiro), que figuram de forma significativa nas mesmas classificações, enquanto <strong>FITVM</strong> (Fundos de Investimento em Títulos e Valores Mobiliários) aparece em menor escala, porém constante, demonstrando que gestores optam por diversificar o tipo de estrutura em algumas estratégias relevantes.</p>
-<p>Em contraste, <strong>FIDIV</strong> (Dívida Estadual/Municipal) e <strong>FIEX</strong> (Investimento no Exterior) apresentam quantitativos reduzidos na maior parte das classificações, sugerindo que esses formatos são adotados em situações específicas ou nichos de mercado. De modo geral, os números continuam a evidenciar uma preferência por categorias que ofereçam maior flexibilidade na alocação de ativos e exposição ao crédito, ao passo que estratégias mais direcionadas, como <strong>Renda Fixa Dívida Externa</strong> ou de <strong>Duração Alta Soberano</strong>, reúnem poucos fundos. Essa concentração reforça a percepção de que os investidores tendem a buscar produtos cuja gestão possa explorar oportunidades de mercado de forma mais ampla, mantendo, porém, certa predominância em estruturas tradicionais como <strong>FI</strong> e <strong>CLASSES - FIF</strong>.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 15%">
-<col style="width: 84%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Sigla</th>
-<th>Descrição</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>FACFIF</td>
-<td>Fundos de Aplicação em Cotas de Fundos de Investimento</td>
-</tr>
-<tr class="even">
-<td>FAPI</td>
-<td>Fundos de Aposentadoria Programada Individual</td>
-</tr>
-<tr class="odd">
-<td>FI</td>
-<td>Fundos de Investimento ICVM 555</td>
-</tr>
-<tr class="even">
-<td>FI-FGTS</td>
-<td>Fundos de Investimento FGTS</td>
-</tr>
-<tr class="odd">
-<td>FIC-FITVM</td>
-<td>Fundos de Investimento em Cotas de FITVM</td>
-</tr>
-<tr class="even">
-<td>FIEX</td>
-<td>Fundos de Investimento no Exterior</td>
-</tr>
-<tr class="odd">
-<td>FIF</td>
-<td>Fundos de Investimento Financeiro</td>
-</tr>
-<tr class="even">
-<td>FIDIV</td>
-<td>Fundos de Investimento Financeiro – Dívida Estadual/Municipal</td>
-</tr>
-<tr class="odd">
-<td>FIIM</td>
-<td>Fundos de Investimento em Índice de Mercado</td>
-</tr>
-<tr class="even">
-<td>FIP</td>
-<td>Fundos de Investimento em Participações</td>
-</tr>
-<tr class="odd">
-<td>FITVM</td>
-<td>Fundos de Investimento em Títulos e Valores Mobiliários</td>
-</tr>
-<tr class="even">
-<td>FMAI</td>
-<td>Fundos Mútuos em Ações Incentivadas</td>
-</tr>
-<tr class="odd">
-<td>FMIEE</td>
-<td>Fundos Mútuos de Investimentos em Empresas Emergentes</td>
-</tr>
-<tr class="even">
-<td>FMP-FGTS</td>
-<td>Fundos Mútuos de Privatização – FGTS</td>
-</tr>
-<tr class="odd">
-<td>FMP-FGTS CL</td>
-<td>Fundos Mútuos de Privatização – FGTS Carteira Livre</td>
-</tr>
-<tr class="even">
-<td>FUNCINE</td>
-<td>Fundos Financeiros da Indústria Cinematográfica Nacional</td>
-</tr>
-</tbody>
-</table>
+<p>Ao analisar os dados que relacionam as novas classificações da ANBIMA para fundos de Renda Fixa às quantidades de fundos em cada categoria, percebe-se novamente um predomínio significativo dos fundos classificados como <strong>“Renda Fixa Duração Livre Crédito Livre”</strong>, que totalizam 2.011 fundos. Em seguida, destacam-se os 909 fundos enquadrados em <strong>“Renda Fixa Duração Livre Grau de Investimento”</strong> e os 512 em <strong>“Renda Fixa Duração Baixa Grau de Investimento”</strong>.</p>
+<p>Categorias como <strong>“Renda Fixa Duração Livre Soberano”</strong> (341 fundos) e <strong>“Renda Fixa Duração Baixa Soberano”</strong> (259 fundos) possuem presença intermediária. Outras categorias, como <strong>“Renda Fixa Indexados”</strong> (194 fundos), <strong>“Renda Fixa Simples”</strong> (147 fundos) e <strong>“Renda Fixa Investimento no Exterior”</strong> (131 fundos), também apresentam relevância expressiva, assim como <strong>“Renda Fixa Duração Média Grau de Investimento”</strong> (117 fundos).</p>
+<p>Por outro lado, categorias como <strong>“Renda Fixa Duração Alta Grau de Investimento”</strong> (62 fundos), <strong>“Renda Fixa Duração Baixa Crédito Livre”</strong> (43 fundos), <strong>“Renda Fixa Duração Média Crédito Livre”</strong> (41 fundos), <strong>“Renda Fixa Duração Alta Crédito Livre”</strong> (33 fundos), <strong>“Renda Fixa Duração Média Soberano”</strong> (18 fundos), <strong>“Renda Fixa Duração Alta Soberano”</strong> (17 fundos) e <strong>“Renda Fixa Dívida Externa”</strong> (5 fundos) continuam sendo menos representativas.</p>
+<p>Essa distribuição evidencia uma preferência pelas categorias que oferecem maior flexibilidade na gestão dos recursos e exposição ao crédito privado ou grau de investimento. Em contraste, estratégias específicas ou nichos, como fundos de dívida externa ou soberanos com maior duração, reúnem poucos produtos, demonstrando que gestores e investidores optam predominantemente por categorias mais flexíveis e diversificadas em termos de risco e alocação.</p>
 </section>
 <section id="extrato-de-infomações" class="level2">
 <h2 class="anchored" data-anchor-id="extrato-de-infomações">Extrato de Infomações</h2>
@@ -527,45 +429,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                                <span class="at">escape_double =</span> <span class="cn">FALSE</span>, </span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                                <span class="at">locale =</span> readr<span class="sc">::</span><span class="fu">locale</span>(<span class="at">encoding =</span> <span class="st">"WINDOWS-1252"</span>), </span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                                <span class="at">trim_ws =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                                <span class="at">quote =</span> <span class="st">""</span>) </span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(extrato_fi)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 35,323 × 117
-   TP_FUNDO_CLASSE CNPJ_FUNDO_CLASSE  DENOM_SOCIAL  DT_COMPTC  CONDOM NEGOC_MERC
-   &lt;chr&gt;           &lt;chr&gt;              &lt;chr&gt;         &lt;date&gt;     &lt;chr&gt;  &lt;chr&gt;     
- 1 FI              00.017.024/0001-53 FUNDO DE INV… 2016-06-21 ABERTO N         
- 2 FI              00.068.305/0001-35 FUNDO DE INV… 2021-11-23 ABERTO N         
- 3 FI              00.071.477/0001-68 BB RENDA FIX… 2021-09-24 ABERTO N         
- 4 FI              00.073.041/0001-08 BB BESC REND… 2018-04-26 ABERTO N         
- 5 FI              00.083.181/0001-67 OPP I FUNDO … 2023-09-05 ABERTO N         
- 6 FI              00.089.915/0001-15 AMARIL FRANK… 2021-01-27 ABERTO N         
- 7 FI              00.102.322/0001-41 BOREAL AÇÕES… 2022-01-14 FECHA… S         
- 8 FI              00.129.444/0001-21 DAMACRI FUND… 2017-01-09 ABERTO N         
- 9 FI              00.180.995/0001-10 SAFRA EXECUT… 2021-02-25 ABERTO N         
-10 FI              00.185.259/0001-54 OPPORTUNITY … 2022-01-28 ABERTO N         
-# ℹ 35,313 more rows
-# ℹ 111 more variables: MERCADO &lt;chr&gt;, TP_PRAZO &lt;chr&gt;, PRAZO &lt;chr&gt;,
-#   PUBLICO_ALVO &lt;chr&gt;, REG_ANBIMA &lt;chr&gt;, CLASSE_ANBIMA &lt;chr&gt;, DISTRIB &lt;chr&gt;,
-#   POLIT_INVEST &lt;chr&gt;, APLIC_MAX_FUNDO_LIGADO &lt;dbl&gt;,
-#   RESULT_CART_INCORP_PL &lt;chr&gt;, FUNDO_COTAS &lt;chr&gt;, FUNDO_ESPELHO &lt;chr&gt;,
-#   APLIC_MIN &lt;dbl&gt;, ATUALIZ_DIARIA_COTA &lt;chr&gt;, PRAZO_ATUALIZ_COTA &lt;dbl&gt;,
-#   COTA_EMISSAO &lt;chr&gt;, COTA_PL &lt;chr&gt;, QT_DIA_CONVERSAO_COTA &lt;dbl&gt;, …</code></pre>
-</div>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                                <span class="at">quote =</span> <span class="st">""</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">CNPJ_FUNDO_CLASSE =</span> stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(CNPJ_FUNDO_CLASSE,<span class="st">"</span><span class="sc">\\</span><span class="st">.|/|-"</span>)) </span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Após baixar os dados, vamos unir com nossa base de fundos para que possamos ver qualitativamente os fundos de renda fixa.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span> </span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    extrato_fi <span class="sc">%&gt;%</span> </span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">CNPJ_FUNDO_CLASSE =</span> stringr<span class="sc">::</span><span class="fu">str_remove_all</span>(CNPJ_FUNDO_CLASSE,<span class="st">"</span><span class="sc">\\</span><span class="st">.|/|-"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(CNPJ_FUNDO_CLASSE,PUBLICO_ALVO, DISTRIB, POLIT_INVEST, </span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>         FUNDO_COTAS,FUNDO_ESPELHO, APLIC_MIN, ATUALIZ_DIARIA_COTA,</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>         TAXA_SAIDA_PAGTO_RESGATE, TAXA_ADM, EXISTE_TAXA_PERFM,</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>         TAXA_PERFM, PARAM_TAXA_PERFM, CALC_TAXA_PERFM,</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>         EXISTE_TAXA_INGRESSO, EXISTE_TAXA_SAIDA,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>         INVEST_EXTERIOR, ATIVO_CRED_PRIV),</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"CNPJ_FUNDO"</span> <span class="ot">=</span> <span class="st">"CNPJ_FUNDO_CLASSE"</span>) </span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="ot">-&gt;</span> fundos_rf</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    extrato_fi <span class="sc">%&gt;%</span> </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(CNPJ_FUNDO_CLASSE,PUBLICO_ALVO, DISTRIB, POLIT_INVEST, </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>         FUNDO_COTAS,FUNDO_ESPELHO, APLIC_MIN, ATUALIZ_DIARIA_COTA,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>         TAXA_SAIDA_PAGTO_RESGATE, TAXA_ADM, EXISTE_TAXA_PERFM,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>         TAXA_PERFM, PARAM_TAXA_PERFM, CALC_TAXA_PERFM,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>         EXISTE_TAXA_INGRESSO, EXISTE_TAXA_SAIDA,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>         INVEST_EXTERIOR, ATIVO_CRED_PRIV),</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"CNPJ_FUNDO"</span> <span class="ot">=</span> <span class="st">"CNPJ_FUNDO_CLASSE"</span>) </span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="ot">-&gt;</span> fundos_rf</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>No geral a explicação dada anteriomente já permite uma interpretação direta do tipo informacional que ela busca trnasmitir, proém, creio que as políticas de investimentos vales um detalhamento maior pois sua interpretação não ´pe tão direta. O documento publicado pela Comissão de Valores Mobiliários (CVM), disponível no link <a href="https://www.gov.br/cvm/pt-br/centrais-de-conteudo/publicacoes/estudos/arr-regime-informacional-fundos-555.pdf" target="_blank">Resumo CVM instrução CVM 175</a>, apresenta informações essenciais sobre o regime informacional aplicável aos fundos de investimento regulamentados pela Instrução CVM nº 555. Entre os tópicos abordados no estudo estão as principais políticas de investimento adotadas pelos fundos, que são resumidas a seguir:</p>
 <p><strong>Tipos de Políticas de Investimento</strong></p>
@@ -581,32 +460,152 @@ Fundos que integram estratégias ativas e passivas, buscando retornos acima do �
 </ol>
 <p>Com essas informações em mãos, podemos agora analisar de forma quatitativa o perfil desses fundos de investimentos. O primeiro ponto que quero abordar consiste na distribuição entre público alvo e politicas de investimentos. Isso nos permitirá enxergar melhor se há uma tendência de política de investimentos a depender do público alvo deste fundo. O código a seguir vai slecionar somente as colunas de interesse. Como nossa base é grande, principalemtne devido as informações diárias que temos dos fundos de investimentos, temos que selecionar as colunas de nosso interesse e dessa forma obter somente os valores únicos para cada fundos de investimentos.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span> </span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(CNPJ_FUNDO,PUBLICO_ALVO,POLIT_INVEST) <span class="sc">%&gt;%</span> </span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(PUBLICO_ALVO,POLIT_INVEST) <span class="sc">%&gt;%</span> </span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>n)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 16 × 3
-   PUBLICO_ALVO               POLIT_INVEST                 n
-   &lt;chr&gt;                      &lt;chr&gt;                    &lt;int&gt;
- 1 PÚBLICO EM GERAL           ATIVA E NÃO-REFERENCIADA  1311
- 2 &lt;NA&gt;                       &lt;NA&gt;                       745
- 3 INVESTIDORES PROFISSIONAIS ATIVA E NÃO-REFERENCIADA   608
- 4 PÚBLICO EM GERAL           ATIVA E REFERENCIADA       550
- 5 PÚBLICO EM GERAL           PASSIVA                    504
- 6 INVESTIDORES PROFISSIONAIS ATIVA E REFERENCIADA       480
- 7 INVESTIDORES QUALIFICADOS  ATIVA E NÃO-REFERENCIADA   182
- 8 INVESTIDORES PROFISSIONAIS PASSIVA                    124
- 9 INVESTIDORES QUALIFICADOS  ATIVA E REFERENCIADA       109
-10 PREVIDENCIÁRIO             ATIVA E NÃO-REFERENCIADA    79
-11 INVESTIDORES QUALIFICADOS  PASSIVA                     66
-12 PREVIDENCIÁRIO             ATIVA E REFERENCIADA        32
-13 PÚBLICO EM GERAL           ENHANCED                    19
-14 INVESTIDORES PROFISSIONAIS ENHANCED                    13
-15 PREVIDENCIÁRIO             PASSIVA                     13
-16 INVESTIDORES QUALIFICADOS  ENHANCED                     5</code></pre>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span> </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(CNPJ_FUNDO,<span class="st">`</span><span class="at">Tipo de Investidor</span><span class="st">`</span>,<span class="st">`</span><span class="at">Característica do Investidor</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(<span class="st">`</span><span class="at">Tipo de Investidor</span><span class="st">`</span>,<span class="st">`</span><span class="at">Característica do Investidor</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>n) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">Quantidade =</span> n) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  reactable<span class="sc">::</span><span class="fu">reactable</span>(</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">pagination =</span> <span class="cn">FALSE</span>,  <span class="co"># Desativa a paginação da tabela</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">resizable =</span> <span class="cn">TRUE</span>,  <span class="co"># Permite redimensionamento das colunas</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">list</span>(</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">Quantidade =</span> <span class="fu">colDef</span>(</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">align =</span> <span class="st">"right"</span>,  <span class="co"># Alinha os valores numéricos à direita</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>),  <span class="co"># Formata os números com separadores de milhar</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">footer =</span> <span class="cf">function</span>(values) {  <span class="co"># Adiciona um rodapé à coluna Quantidade</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>          tags<span class="sc">$</span><span class="fu">b</span>(<span class="st">"Total: "</span>) <span class="sc">%&gt;%</span>  <span class="co"># Coloca a palavra "Total" em negrito</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>            <span class="fu">tagAppendChildren</span>(tags<span class="sc">$</span><span class="fu">span</span>(<span class="fu">sum</span>(values)))  <span class="co"># Adiciona a soma total ao lado</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="reactable html-widget html-fill-item" id="htmlwidget-a089bdafc20a0da7bf15" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-a089bdafc20a0da7bf15">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Tipo de Investidor":["Não Há Restrição","Exclusivo","Reservado","Não Há Restrição","Não Há Restrição","Não há Restrição","Reservado","Não há Restrição","Reservado","Exclusivo","Não há Restrição","Exclusivo","Não há Restrição",null],"Característica do Investidor":["Geral","Profissional","Profissional","Qualificado","Profissional","Geral","Qualificado","Profissional","Geral","Qualificado","Qualificado","Geral",null,null],"Quantidade":[2002,1110,570,410,288,135,110,73,47,42,38,14,1,1]},"columns":[{"id":"Tipo de Investidor","name":"Tipo de Investidor","type":"character"},{"id":"Característica do Investidor","name":"Característica do Investidor","type":"character"},{"id":"Quantidade","name":"Quantidade","type":"numeric","format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4841"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"e629dbdb1d0b6fa7710cf51c9037274f"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
+<p>A análise da tabela que apresenta o <strong>Tipo e a Característica do Investidor</strong> em relação às quantidades de fundos revela uma forte concentração dos fundos abertos ao público geral, especialmente na combinação <strong>“Não Há Restrição - Geral”</strong>, que conta com um total de <strong>2.137 fundos</strong> (2.002 + 135). Outra parcela significativa é formada pelos fundos destinados ao investidor profissional, com destaque para as categorias <strong>“Exclusivo - Profissional”</strong> com <strong>1.110 fundos</strong> e <strong>“Reservado - Profissional”</strong>, que possui <strong>570 fundos</strong>.</p>
+<p>Destaca-se também o número expressivo de fundos destinados a investidores qualificados na categoria <strong>“Não Há Restrição - Qualificado”</strong>, que soma <strong>410 fundos</strong>, além dos fundos reservados e exclusivos para investidores profissionais (<strong>Reservado - Profissional</strong> com <strong>570 fundos</strong> e <strong>Exclusivo - Profissional</strong> com <strong>1.110 fundos</strong>). Esses fundos reservados e exclusivos indicam uma segmentação clara para investidores que possuem maior conhecimento sobre o mercado financeiro e potencialmente maior capital disponível.</p>
+<p>Por outro lado, fundos voltados especificamente para investidores qualificados nas modalidades reservada (<strong>Reservado - Qualificado</strong>) e exclusiva (<strong>Exclusivo - Qualificado</strong>) possuem representação relativamente baixa, com <strong>110</strong> e <strong>42 fundos</strong>, respectivamente. Também aparece com pouca representatividade a combinação <strong>“Reservado - Geral”</strong>, com apenas <strong>14 fundos</strong>.</p>
+<p>De maneira geral, os dados evidenciam que os fundos sem restrição de acesso são predominantes, principalmente aqueles voltados ao público geral e profissional, mostrando um mercado bastante aberto, mas também segmentado em nichos específicos, como os fundos exclusivos e reservados a investidores profissionais. Isso sugere que os gestores buscam atender diferentes perfis de investidores com estratégias direcionadas ao nível de sofisticação e exigências específicas.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>extrato_fi <span class="sc">%&gt;%</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(DT_COMPTC, CNPJ_FUNDO_CLASSE, POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(CNPJ_FUNDO_CLASSE <span class="sc">%in%</span> <span class="fu">distinct</span>(fundos_rf, CNPJ_FUNDO)<span class="sc">$</span>CNPJ_FUNDO) <span class="sc">%&gt;%</span> </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">DT_COMPTC =</span> <span class="fu">as.Date</span>(DT_COMPTC)) <span class="sc">%&gt;%</span>  <span class="co"># Converte a data para o formato adequado</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(DT_COMPTC) <span class="sc">%&gt;%</span>  <span class="co"># Ordena as datas de competência</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(CNPJ_FUNDO_CLASSE) <span class="sc">%&gt;%</span> </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise_all</span>(last) <span class="sc">%&gt;%</span>  <span class="co"># Mantém apenas a última entrada por fundo</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">FUNDO_ESPELHO =</span> <span class="fu">case_when</span>(</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">is.na</span>(FUNDO_ESPELHO) <span class="sc">~</span> <span class="st">"Não"</span>,</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>      FUNDO_ESPELHO <span class="sc">==</span> <span class="st">"N"</span> <span class="sc">~</span> <span class="st">"Não"</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">.default =</span> <span class="st">"Sim"</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">FUNDO_COTAS =</span> <span class="fu">case_when</span>(</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>      FUNDO_COTAS <span class="sc">==</span> <span class="st">"N"</span> <span class="sc">~</span> <span class="st">"Não"</span>,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">.default =</span> <span class="st">"Sim"</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) <span class="sc">%&gt;%</span> </span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Política de Investimento</span><span class="st">`</span> <span class="ot">=</span> POLIT_INVEST,</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Fundo Espelho</span><span class="st">`</span> <span class="ot">=</span> FUNDO_ESPELHO,</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Fundo de Cotas</span><span class="st">`</span> <span class="ot">=</span> FUNDO_COTAS,</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">Quantidade =</span> n</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reactable</span>(</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">pagination =</span> <span class="cn">FALSE</span>,  <span class="co"># Desativa a paginação</span></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">defaultColDef =</span> <span class="fu">colDef</span>(<span class="at">minWidth =</span> <span class="dv">150</span>),  <span class="co"># Define uma largura mínima para as colunas</span></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">resizable =</span> <span class="cn">TRUE</span>,  <span class="co"># Permite redimensionamento das colunas</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">list</span>(</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Política de Investimento</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">250</span>),  <span class="co"># Define largura da coluna</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Fundo Espelho</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">150</span>),  <span class="co"># Define largura da coluna</span></span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Fundo de Cotas</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">150</span>),  <span class="co"># Define largura da coluna</span></span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>      <span class="at">Quantidade =</span> <span class="fu">colDef</span>(</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>        <span class="at">align =</span> <span class="st">"right"</span>,  <span class="co"># Alinha os valores numéricos à direita</span></span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>        <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>),  <span class="co"># Formata os números com separadores de milhar</span></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>        <span class="at">footer =</span> <span class="cf">function</span>(values) {  <span class="co"># Adiciona um rodapé à coluna Quantidade</span></span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>          tags<span class="sc">$</span><span class="fu">b</span>(<span class="st">"Total: "</span>) <span class="sc">%&gt;%</span>  <span class="co"># Deixa a palavra "Total" em negrito</span></span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>            <span class="fu">tagAppendChildren</span>(tags<span class="sc">$</span><span class="fu">span</span>(<span class="fu">sum</span>(values)))  <span class="co"># Exibe a soma total ao lado</span></span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="reactable html-widget html-fill-item" id="htmlwidget-7a2bdb00cd88c83e1de6" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-7a2bdb00cd88c83e1de6">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Política de Investimento":["ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ENHANCED","ENHANCED","ENHANCED","PASSIVA","PASSIVA","PASSIVA"],"Fundo Espelho":["Não","Não","Sim","Não","Não","Sim","Não","Não","Sim","Não","Não","Sim"],"Fundo de Cotas":["Não","Sim","Sim","Não","Sim","Sim","Não","Sim","Sim","Não","Sim","Sim"],"Quantidade":[1522,577,81,881,246,44,25,11,1,333,358,16]},"columns":[{"id":"Política de Investimento","name":"Política de Investimento","type":"character","minWidth":150,"width":250},{"id":"Fundo Espelho","name":"Fundo Espelho","type":"character","minWidth":150,"width":150},{"id":"Fundo de Cotas","name":"Fundo de Cotas","type":"character","minWidth":150,"width":150},{"id":"Quantidade","name":"Quantidade","type":"numeric","minWidth":150,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4095"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"d64c1ae264610f02bad18bcf9619f92f"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>A análise da tabela que relaciona a Política de Investimento dos fundos, juntamente com as características Fundo Espelho e Fundo de Cotas, mostra claramente uma concentração predominante nos fundos com gestão “Ativa e Não-Referenciada”, especialmente aqueles que não são fundos espelho nem fundos de cotas, com um total expressivo de 1.522 fundos. A seguir, destacam-se fundos com a mesma política de gestão, mas que são fundos de cotas (577 fundos).</p>
+<p>Outro grupo com alta representatividade são os fundos com política de investimento “Ativa e Referenciada”, principalmente aqueles que não são fundos espelho nem de cotas (881 fundos), seguidos por aqueles que são fundos de cotas (246 fundos). Ainda nessa política de gestão, há uma menor presença dos fundos que são ao mesmo tempo fundos espelho e fundos de cotas, com apenas 44 fundos.</p>
+<p>Entre os fundos com política “Passiva”, percebe-se uma divisão mais equilibrada entre aqueles que são fundos de cotas (358 fundos) e os que não são (333 fundos). Já na categoria “Enhanced”, há uma participação bastante reduzida, sendo apenas 25 fundos não espelho e não fundos de cotas, 11 fundos que são apenas fundos de cotas, e apenas 1 fundo que combina ambas características.</p>
+<p>No geral, fica clara a preferência dos gestores e investidores pela política de gestão ativa, sobretudo não-referenciada, enquanto estratégias mais específicas e menos convencionais, como a gestão “Enhanced” ou fundos espelho com cotas, mantêm representatividade bastante limitada. Esses dados indicam que o mercado brasileiro de fundos ainda prioriza estratégias tradicionais e ativas de investimento.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>extrato_fi <span class="sc">%&gt;%</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(CNPJ_FUNDO_CLASSE <span class="sc">%in%</span> <span class="fu">distinct</span>(fundos_rf, CNPJ_FUNDO)<span class="sc">$</span>CNPJ_FUNDO) <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(DT_COMPTC, </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>           CNPJ_FUNDO_CLASSE, </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>           POLIT_INVEST, </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>           EXISTE_TAXA_INGRESSO, </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>           EXISTE_TAXA_PERFM, </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>           EXISTE_TAXA_SAIDA) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(POLIT_INVEST, </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        EXISTE_TAXA_INGRESSO, </span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        EXISTE_TAXA_PERFM, </span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        EXISTE_TAXA_SAIDA) <span class="sc">%&gt;%</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">EXISTE_TAXA_INGRESSO =</span> <span class="fu">case_match</span>(</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>      EXISTE_TAXA_INGRESSO, </span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>      <span class="st">"S"</span> <span class="sc">~</span> <span class="st">"Sim"</span>, </span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>      <span class="st">"N"</span> <span class="sc">~</span> <span class="st">"Não"</span>, </span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">.default =</span> EXISTE_TAXA_INGRESSO),</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">EXISTE_TAXA_PERFM =</span> <span class="fu">case_match</span>(</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>      EXISTE_TAXA_PERFM, </span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>      <span class="st">"S"</span> <span class="sc">~</span> <span class="st">"Sim"</span>, </span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>      <span class="st">"N"</span> <span class="sc">~</span> <span class="st">"Não"</span>, </span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">.default =</span> EXISTE_TAXA_PERFM),</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">EXISTE_TAXA_SAIDA =</span> <span class="fu">case_match</span>(</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>      EXISTE_TAXA_SAIDA, </span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>      <span class="st">"S"</span> <span class="sc">~</span> <span class="st">"Sim"</span>, </span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>      <span class="st">"N"</span> <span class="sc">~</span> <span class="st">"Não"</span>, </span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">.default =</span> EXISTE_TAXA_SAIDA)</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Política de Investimento</span><span class="st">`</span> <span class="ot">=</span> POLIT_INVEST,</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Taxa de Ingresso</span><span class="st">`</span> <span class="ot">=</span> EXISTE_TAXA_INGRESSO,</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Taxa de Performance</span><span class="st">`</span> <span class="ot">=</span> EXISTE_TAXA_PERFM,</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Taxa de Saída</span><span class="st">`</span> <span class="ot">=</span> EXISTE_TAXA_SAIDA,</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">Quantidade =</span> n</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reactable</span>(</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">pagination =</span> <span class="cn">FALSE</span>,  <span class="co"># Desativa a paginação</span></span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">resizable =</span> <span class="cn">TRUE</span>,  <span class="co"># Permite redimensionamento das colunas</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">list</span>(</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Política de Investimento</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">300</span>),  <span class="co"># Define largura da coluna</span></span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Taxa de Ingresso</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">120</span>),  <span class="co"># Define largura da coluna</span></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Taxa de Performance</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">120</span>),  <span class="co"># Define largura da coluna</span></span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">Taxa de Saída</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">colDef</span>(<span class="at">width =</span> <span class="dv">120</span>),  <span class="co"># Define largura da coluna</span></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>      <span class="at">Quantidade =</span> <span class="fu">colDef</span>(</span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>        <span class="at">align =</span> <span class="st">"right"</span>,  <span class="co"># Alinha os valores numéricos à direita</span></span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>        <span class="at">format =</span> <span class="fu">colFormat</span>(<span class="at">separators =</span> <span class="cn">TRUE</span>),  <span class="co"># Formata os números com separadores de milhar</span></span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>        <span class="at">footer =</span> <span class="cf">function</span>(values) {  <span class="co"># Adiciona um rodapé à coluna Quantidade</span></span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>          tags<span class="sc">$</span><span class="fu">b</span>(<span class="st">"Total: "</span>) <span class="sc">%&gt;%</span>  <span class="co"># Deixa a palavra "Total" em negrito</span></span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>            <span class="fu">tagAppendChildren</span>(tags<span class="sc">$</span><span class="fu">span</span>(<span class="fu">sum</span>(values)))  <span class="co"># Exibe a soma total ao lado</span></span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="reactable html-widget html-fill-item" id="htmlwidget-de83ded3f9e48d67dc9b" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-de83ded3f9e48d67dc9b">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Política de Investimento":["ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ENHANCED","ENHANCED","PASSIVA","PASSIVA","PASSIVA","PASSIVA"],"Taxa de Ingresso":["Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não"],"Taxa de Performance":["Não","Não","Sim","Sim","Não","Não","Sim","Sim","Não","Sim","Não","Não","Sim","Sim"],"Taxa de Saída":["Não","Sim","Não","Sim","Não","Sim","Não","Sim","Não","Não","Não","Sim","Não","Sim"],"Quantidade":[1757,12,407,4,803,2,362,4,35,2,669,4,32,2]},"columns":[{"id":"Política de Investimento","name":"Política de Investimento","type":"character","width":300},{"id":"Taxa de Ingresso","name":"Taxa de Ingresso","type":"character","width":120},{"id":"Taxa de Performance","name":"Taxa de Performance","type":"character","width":120},{"id":"Taxa de Saída","name":"Taxa de Saída","type":"character","width":120},{"id":"Quantidade","name":"Quantidade","type":"numeric","format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4095"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"440824a8b82361af56ea8ff549b6c716"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>A análise dos dados referentes às políticas de investimento e taxas associadas aos fundos revela uma expressiva predominância dos fundos com política de investimento <strong>“Ativa e Não-Referenciada”</strong> sem incidência de taxas, que totalizam <strong>1.757 fundos</strong>. Destacam-se também, nessa mesma categoria, os fundos que cobram taxa de performance (<strong>407 fundos</strong>). Contudo, a cobrança de taxa de saída permanece pouco utilizada nesses fundos, com apenas 12 casos sem taxa de performance e 4 fundos com ambas as taxas.</p>
+<p>A segunda categoria mais representativa é composta pelos fundos com política <strong>“Ativa e Referenciada”</strong>, com destaque para fundos que não cobram taxas adicionais (<strong>803 fundos</strong>). Já a aplicação de taxas extras é menos frequente nessa política, indicando que gestores desses fundos preferem estruturas de custo mais simples ou tradicionais.</p>
+<p>Por outro lado, os fundos de política <strong>“Passiva”</strong> aparecem em número intermediário, destacando-se aqueles que não têm taxas (<strong>669 fundos</strong>). A aplicação de taxa de performance também é pouco comum nessa categoria, contando com apenas <strong>35 fundos</strong>, enquanto a cobrança simultânea de taxa de performance e de saída ocorre em apenas 2 fundos.</p>
+<p>Esses resultados indicam claramente que os fundos ativos são predominantes no mercado, especialmente os não-referenciados, sugerindo uma maior preferência dos investidores por estratégias flexíveis. Além disso, fundos com menor cobrança de taxas (taxa de ingresso, performance ou saída) apresentam uma quantidade significativamente superior, apontando uma preferência por estruturas mais simples em termos de custos associados ao investimento.</p>
 
 
 </section>

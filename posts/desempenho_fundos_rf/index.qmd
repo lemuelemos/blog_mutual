@@ -35,6 +35,7 @@ library(dbplyr)
 library(tidyr)
 library(furrr)
 library(reactable)
+library(htmltools)
 
 # Conectando a base de dados
 
@@ -182,82 +183,44 @@ Depois de realizar esses processamentos, vamos conferir a quantidade de fundos c
 
 
 ```{r tabela de fundos por classe e tipo}
-# Transformação dos dados
+library(dplyr)
+library(reactable)
+
 fundos_rf %>%
-  arrange(DT_COMPTC,CNPJ_FUNDO) %>% 
-  # Preenche o TP_FUNDO para linhas subsequentes que estejam em branco
-  group_by(CNPJ_FUNDO) %>% 
-  tidyr::fill(TP_FUNDO, .direction = "up") %>% 
-  ungroup() %>% 
-  # Mantém cada combinação única de tipo de fundo, CNPJ, categoria e tipo ANBIMA
-  distinct(TP_FUNDO, CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%
-  # Conta quantas ocorrências de cada combinação
-  count(TP_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%
-  # Renomeia a coluna TP_FUNDO para ficar mais legível
-  rename(`Tipo de Fundos` = TP_FUNDO) %>%
-  # Converte do formato "longo" para "largo", criando uma coluna para cada Tipo de Fundo
-  pivot_wider(
-    names_from = `Tipo de Fundos`,
-    values_from = n,
-    values_fill = 0
-  ) %>% 
-  select(
-    `Categoria ANBIMA`,
-    `Tipo ANBIMA`,
-    FI,
-    `CLASSES - FIF`,
-    FACFIF,
-    FIF,
-    FIFDIV,
-    FITVM,
-    FIEX
-  ) %>% 
-  arrange(-FI) %>% 
+  ungroup() %>%  # Remove qualquer agrupamento existente nos dados
+  distinct(CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%  # Mantém apenas combinações únicas dessas colunas
+  count(`Categoria ANBIMA`, `Tipo ANBIMA`) %>%  # Conta a quantidade de fundos por categoria e tipo
+  arrange(-n) %>%  # Ordena os dados de forma decrescente com base na contagem
+  rename(Quantidade = n) %>%  # Renomeia a coluna de contagem para "Quantidade"
   reactable::reactable(
-    pagination = FALSE,                # Sem paginação
-    defaultColDef = colDef(minWidth = 120),
-    resizable = T,  # Largura mínima das colunas
+    pagination = FALSE,  # Desativa a paginação da tabela
+    defaultColDef = colDef(minWidth = 120),  # Define uma largura mínima de 120 para todas as colunas
+    resizable = TRUE,  # Permite que as colunas sejam redimensionáveis
     columns = list(
-      # Ajustes específicos de coluna
-      `Categoria ANBIMA` = colDef(width = 200),
-      `Tipo ANBIMA`      = colDef(width = 300),
-      FI      = colDef(align = "right", format = colFormat(separators = TRUE)),
-      `CLASSES - FIF` = colDef(align = "right", format = colFormat(separators = TRUE)),
-      FIF     = colDef(align = "right", format = colFormat(separators = TRUE)),
-      FITVM   = colDef(align = "right", format = colFormat(separators = TRUE)),
-      FACFIF  = colDef(align = "right", format = colFormat(separators = TRUE)),
-      FIEX    = colDef(align = "right", format = colFormat(separators = TRUE)),
-      FIDIV   = colDef(align = "right", format = colFormat(separators = TRUE))
+      `Categoria ANBIMA` = colDef(width = 200),  # Define a largura da coluna "Categoria ANBIMA"
+      `Tipo ANBIMA`      = colDef(width = 300),  # Define a largura da coluna "Tipo ANBIMA"
+      Quantidade         = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Define o conteúdo do rodapé da coluna
+          htmltools::tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
+            htmltools::tagAppendChildren(htmltools::tags$span(sum(values)))  # Exibe a soma total ao lado
+        }
+      )
     )
   )
+
+
 ```
 
-Ao analisar os dados que relacionam as novas classificações da ANBIMA para fundos de Renda Fixa às quantidades de fundos em cada categoria, percebe-se novamente um predomínio significativo dos fundos classificados como **“Renda Fixa Duração Livre Crédito Livre”**, que totalizam **2.011**. Em seguida, destacam-se os **909** fundos enquadrados em **“Renda Fixa Duração Livre Grau de Investimento”** e os **512** em **“Renda Fixa Duração Baixa Grau de Investimento”**. Na parte mais intermediária, aparecem tanto as categorias **“Renda Fixa Duração Livre Soberano”** (341 fundos) e **“Renda Fixa Duração Baixa Soberano”** (259 fundos), quanto as de perfil “híbrido” ou específico, a exemplo de **“Renda Fixa Indexados”** (194), **“Renda Fixa Simples”** (147) e **“Renda Fixa Investimento no Exterior”** (131). Por outro lado, as classificações **“Renda Fixa Duração Alta Crédito Livre”** (33), **“Renda Fixa Duração Média Soberano”** (18), **“Renda Fixa Duração Alta Soberano”** (17) e **“Renda Fixa Dívida Externa”** (5) mantêm baixa representatividade.
+Ao analisar os dados que relacionam as novas classificações da ANBIMA para fundos de Renda Fixa às quantidades de fundos em cada categoria, percebe-se novamente um predomínio significativo dos fundos classificados como **“Renda Fixa Duração Livre Crédito Livre”**, que totalizam 2.011 fundos. Em seguida, destacam-se os 909 fundos enquadrados em **“Renda Fixa Duração Livre Grau de Investimento”** e os 512 em **“Renda Fixa Duração Baixa Grau de Investimento”**.
 
-A distribuição entre os diferentes tipos de fundos revela que a maior parte se concentra em **FI** (Fundos de Investimento ICVM 555) e **CLASSES - FIF** (Fundos de Aplicação em Cotas de Fundos de Investimento Financeiro). Essas duas estruturas apresentam números mais altos em quase todas as categorias de Renda Fixa, especialmente nas de maior liberdade de alocação e risco, como **Duração Livre Crédito Livre** e **Duração Livre Grau de Investimento**. Também chamam atenção as participações de **FACFIF** (Fundos de Aplicação em Cotas de Fundos de Investimento) e **FIF** (Fundos de Investimento Financeiro), que figuram de forma significativa nas mesmas classificações, enquanto **FITVM** (Fundos de Investimento em Títulos e Valores Mobiliários) aparece em menor escala, porém constante, demonstrando que gestores optam por diversificar o tipo de estrutura em algumas estratégias relevantes.
+Categorias como **“Renda Fixa Duração Livre Soberano”** (341 fundos) e **“Renda Fixa Duração Baixa Soberano”** (259 fundos) possuem presença intermediária. Outras categorias, como **“Renda Fixa Indexados”** (194 fundos), **“Renda Fixa Simples”** (147 fundos) e **“Renda Fixa Investimento no Exterior”** (131 fundos), também apresentam relevância expressiva, assim como **“Renda Fixa Duração Média Grau de Investimento”** (117 fundos).
 
-Em contraste, **FIDIV** (Dívida Estadual/Municipal) e **FIEX** (Investimento no Exterior) apresentam quantitativos reduzidos na maior parte das classificações, sugerindo que esses formatos são adotados em situações específicas ou nichos de mercado. De modo geral, os números continuam a evidenciar uma preferência por categorias que ofereçam maior flexibilidade na alocação de ativos e exposição ao crédito, ao passo que estratégias mais direcionadas, como **Renda Fixa Dívida Externa** ou de **Duração Alta Soberano**, reúnem poucos fundos. Essa concentração reforça a percepção de que os investidores tendem a buscar produtos cuja gestão possa explorar oportunidades de mercado de forma mais ampla, mantendo, porém, certa predominância em estruturas tradicionais como **FI** e **CLASSES - FIF**.
+Por outro lado, categorias como **“Renda Fixa Duração Alta Grau de Investimento”** (62 fundos), **“Renda Fixa Duração Baixa Crédito Livre”** (43 fundos), **“Renda Fixa Duração Média Crédito Livre”** (41 fundos), **“Renda Fixa Duração Alta Crédito Livre”** (33 fundos), **“Renda Fixa Duração Média Soberano”** (18 fundos), **“Renda Fixa Duração Alta Soberano”** (17 fundos) e **“Renda Fixa Dívida Externa”** (5 fundos) continuam sendo menos representativas.
 
+Essa distribuição evidencia uma preferência pelas categorias que oferecem maior flexibilidade na gestão dos recursos e exposição ao crédito privado ou grau de investimento. Em contraste, estratégias específicas ou nichos, como fundos de dívida externa ou soberanos com maior duração, reúnem poucos produtos, demonstrando que gestores e investidores optam predominantemente por categorias mais flexíveis e diversificadas em termos de risco e alocação.
 
-
-| Sigla       | Descrição                                                           |
-|-------------|---------------------------------------------------------------------|
-| FACFIF      | Fundos de Aplicação em Cotas de Fundos de Investimento             |
-| FAPI        | Fundos de Aposentadoria Programada Individual                      |
-| FI          | Fundos de Investimento ICVM 555                                    |
-| FI-FGTS     | Fundos de Investimento FGTS                                        |
-| FIC-FITVM   | Fundos de Investimento em Cotas de FITVM                           |
-| FIEX        | Fundos de Investimento no Exterior                                 |
-| FIF         | Fundos de Investimento Financeiro                                  |
-| FIDIV       | Fundos de Investimento Financeiro – Dívida Estadual/Municipal      |
-| FIIM        | Fundos de Investimento em Índice de Mercado                        |
-| FIP         | Fundos de Investimento em Participações                            |
-| FITVM       | Fundos de Investimento em Títulos e Valores Mobiliários            |
-| FMAI        | Fundos Mútuos em Ações Incentivadas                                |
-| FMIEE       | Fundos Mútuos de Investimentos em Empresas Emergentes              |
-| FMP-FGTS    | Fundos Mútuos de Privatização – FGTS                               |
-| FMP-FGTS CL | Fundos Mútuos de Privatização – FGTS Carteira Livre                |
-| FUNCINE     | Fundos Financeiros da Indústria Cinematográfica Nacional           |
 
 ## Extrato de Infomações
 
@@ -296,8 +259,9 @@ extrato_fi <- readr::read_delim("./extrato_fi.csv",
                                 escape_double = FALSE, 
                                 locale = readr::locale(encoding = "WINDOWS-1252"), 
                                 trim_ws = TRUE,
-                                quote = "") 
-print(extrato_fi)
+                                quote = "") %>% 
+  mutate(CNPJ_FUNDO_CLASSE = stringr::str_remove_all(CNPJ_FUNDO_CLASSE,"\\.|/|-")) 
+
 ```
 
 Após baixar os dados, vamos unir com nossa base de fundos para que possamos ver qualitativamente os fundos de renda fixa.
@@ -306,7 +270,6 @@ Após baixar os dados, vamos unir com nossa base de fundos para que possamos ver
 fundos_rf %>% 
   left_join(
     extrato_fi %>% 
-      mutate(CNPJ_FUNDO_CLASSE = stringr::str_remove_all(CNPJ_FUNDO_CLASSE,"\\.|/|-")) %>% 
       select(CNPJ_FUNDO_CLASSE,PUBLICO_ALVO, DISTRIB, POLIT_INVEST, 
          FUNDO_COTAS,FUNDO_ESPELHO, APLIC_MIN, ATUALIZ_DIARIA_COTA,
          TAXA_SAIDA_PAGTO_RESGATE, TAXA_ADM, EXISTE_TAXA_PERFM,
@@ -337,10 +300,155 @@ Com essas informações em mãos, podemos agora analisar de forma quatitativa o 
 
 ```{r}
 fundos_rf %>% 
-  distinct(CNPJ_FUNDO,PUBLICO_ALVO,POLIT_INVEST) %>% 
-  count(PUBLICO_ALVO,POLIT_INVEST) %>% 
-  arrange(-n)
+  distinct(CNPJ_FUNDO,`Tipo de Investidor`,`Característica do Investidor`) %>% 
+  count(`Tipo de Investidor`,`Característica do Investidor`) %>% 
+  arrange(-n) %>% 
+  rename(Quantidade = n) %>% 
+  reactable::reactable(
+    pagination = FALSE,  # Desativa a paginação da tabela
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Coloca a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Adiciona a soma total ao lado
+        }
+      )
+    )
+  )
+  
+```
+
+A análise da tabela que apresenta o **Tipo e a Característica do Investidor** em relação às quantidades de fundos revela uma forte concentração dos fundos abertos ao público geral, especialmente na combinação **"Não Há Restrição - Geral"**, que conta com um total de **2.137 fundos** (2.002 + 135). Outra parcela significativa é formada pelos fundos destinados ao investidor profissional, com destaque para as categorias **"Exclusivo - Profissional"** com **1.110 fundos** e **"Reservado - Profissional"**, que possui **570 fundos**.
+
+Destaca-se também o número expressivo de fundos destinados a investidores qualificados na categoria **"Não Há Restrição - Qualificado"**, que soma **410 fundos**, além dos fundos reservados e exclusivos para investidores profissionais (**Reservado - Profissional** com **570 fundos** e **Exclusivo - Profissional** com **1.110 fundos**). Esses fundos reservados e exclusivos indicam uma segmentação clara para investidores que possuem maior conhecimento sobre o mercado financeiro e potencialmente maior capital disponível.
+
+Por outro lado, fundos voltados especificamente para investidores qualificados nas modalidades reservada (**Reservado - Qualificado**) e exclusiva (**Exclusivo - Qualificado**) possuem representação relativamente baixa, com **110** e **42 fundos**, respectivamente. Também aparece com pouca representatividade a combinação **"Reservado - Geral"**, com apenas **14 fundos**.
+
+De maneira geral, os dados evidenciam que os fundos sem restrição de acesso são predominantes, principalmente aqueles voltados ao público geral e profissional, mostrando um mercado bastante aberto, mas também segmentado em nichos específicos, como os fundos exclusivos e reservados a investidores profissionais. Isso sugere que os gestores buscam atender diferentes perfis de investidores com estratégias direcionadas ao nível de sofisticação e exigências específicas.
+
+
+```{r}
+extrato_fi %>% 
+  distinct(DT_COMPTC, CNPJ_FUNDO_CLASSE, POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>%
+  filter(CNPJ_FUNDO_CLASSE %in% distinct(fundos_rf, CNPJ_FUNDO)$CNPJ_FUNDO) %>% 
+  mutate(DT_COMPTC = as.Date(DT_COMPTC)) %>%  # Converte a data para o formato adequado
+  arrange(DT_COMPTC) %>%  # Ordena as datas de competência
+  group_by(CNPJ_FUNDO_CLASSE) %>% 
+  summarise_all(last) %>%  # Mantém apenas a última entrada por fundo
+  ungroup() %>% 
+  mutate(
+    FUNDO_ESPELHO = case_when(
+      is.na(FUNDO_ESPELHO) ~ "Não",
+      FUNDO_ESPELHO == "N" ~ "Não",
+      .default = "Sim"
+    ),
+    FUNDO_COTAS = case_when(
+      FUNDO_COTAS == "N" ~ "Não",
+      .default = "Sim"
+    )
+  ) %>% 
+  count(POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>% 
+  rename(
+    `Política de Investimento` = POLIT_INVEST,
+    `Fundo Espelho` = FUNDO_ESPELHO,
+    `Fundo de Cotas` = FUNDO_COTAS,
+    Quantidade = n
+  ) %>%
+  reactable(
+    pagination = FALSE,  # Desativa a paginação
+    defaultColDef = colDef(minWidth = 150),  # Define uma largura mínima para as colunas
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      `Política de Investimento` = colDef(width = 250),  # Define largura da coluna
+      `Fundo Espelho` = colDef(width = 150),  # Define largura da coluna
+      `Fundo de Cotas` = colDef(width = 150),  # Define largura da coluna
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Exibe a soma total ao lado
+        }
+      )
+    )
+  )
+```
+
+A análise da tabela que relaciona a Política de Investimento dos fundos, juntamente com as características Fundo Espelho e Fundo de Cotas, mostra claramente uma concentração predominante nos fundos com gestão "Ativa e Não-Referenciada", especialmente aqueles que não são fundos espelho nem fundos de cotas, com um total expressivo de 1.522 fundos. A seguir, destacam-se fundos com a mesma política de gestão, mas que são fundos de cotas (577 fundos).
+
+Outro grupo com alta representatividade são os fundos com política de investimento “Ativa e Referenciada”, principalmente aqueles que não são fundos espelho nem de cotas (881 fundos), seguidos por aqueles que são fundos de cotas (246 fundos). Ainda nessa política de gestão, há uma menor presença dos fundos que são ao mesmo tempo fundos espelho e fundos de cotas, com apenas 44 fundos.
+
+Entre os fundos com política “Passiva”, percebe-se uma divisão mais equilibrada entre aqueles que são fundos de cotas (358 fundos) e os que não são (333 fundos). Já na categoria “Enhanced”, há uma participação bastante reduzida, sendo apenas 25 fundos não espelho e não fundos de cotas, 11 fundos que são apenas fundos de cotas, e apenas 1 fundo que combina ambas características.
+
+No geral, fica clara a preferência dos gestores e investidores pela política de gestão ativa, sobretudo não-referenciada, enquanto estratégias mais específicas e menos convencionais, como a gestão “Enhanced” ou fundos espelho com cotas, mantêm representatividade bastante limitada. Esses dados indicam que o mercado brasileiro de fundos ainda prioriza estratégias tradicionais e ativas de investimento.
+
+
+```{r}
+extrato_fi %>% 
+  filter(CNPJ_FUNDO_CLASSE %in% distinct(fundos_rf, CNPJ_FUNDO)$CNPJ_FUNDO) %>%
+  distinct(DT_COMPTC, 
+           CNPJ_FUNDO_CLASSE, 
+           POLIT_INVEST, 
+           EXISTE_TAXA_INGRESSO, 
+           EXISTE_TAXA_PERFM, 
+           EXISTE_TAXA_SAIDA) %>% 
+  count(POLIT_INVEST, 
+        EXISTE_TAXA_INGRESSO, 
+        EXISTE_TAXA_PERFM, 
+        EXISTE_TAXA_SAIDA) %>%
+  mutate(
+    EXISTE_TAXA_INGRESSO = case_match(
+      EXISTE_TAXA_INGRESSO, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_INGRESSO),
+    EXISTE_TAXA_PERFM = case_match(
+      EXISTE_TAXA_PERFM, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_PERFM),
+    EXISTE_TAXA_SAIDA = case_match(
+      EXISTE_TAXA_SAIDA, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_SAIDA)
+  ) %>% 
+  rename(
+    `Política de Investimento` = POLIT_INVEST,
+    `Taxa de Ingresso` = EXISTE_TAXA_INGRESSO,
+    `Taxa de Performance` = EXISTE_TAXA_PERFM,
+    `Taxa de Saída` = EXISTE_TAXA_SAIDA,
+    Quantidade = n
+  ) %>%
+  reactable(
+    pagination = FALSE,  # Desativa a paginação
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      `Política de Investimento` = colDef(width = 300),  # Define largura da coluna
+      `Taxa de Ingresso` = colDef(width = 120),  # Define largura da coluna
+      `Taxa de Performance` = colDef(width = 120),  # Define largura da coluna
+      `Taxa de Saída` = colDef(width = 120),  # Define largura da coluna
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Exibe a soma total ao lado
+        }
+      )
+    )
+  )
 ```
 
 
+A análise dos dados referentes às políticas de investimento e taxas associadas aos fundos revela uma expressiva predominância dos fundos com política de investimento **"Ativa e Não-Referenciada"** sem incidência de taxas, que totalizam **1.757 fundos**. Destacam-se também, nessa mesma categoria, os fundos que cobram taxa de performance (**407 fundos**). Contudo, a cobrança de taxa de saída permanece pouco utilizada nesses fundos, com apenas 12 casos sem taxa de performance e 4 fundos com ambas as taxas.
+
+A segunda categoria mais representativa é composta pelos fundos com política **"Ativa e Referenciada"**, com destaque para fundos que não cobram taxas adicionais (**803 fundos**). Já a aplicação de taxas extras é menos frequente nessa política, indicando que gestores desses fundos preferem estruturas de custo mais simples ou tradicionais.
+
+Por outro lado, os fundos de política **"Passiva"** aparecem em número intermediário, destacando-se aqueles que não têm taxas (**669 fundos**). A aplicação de taxa de performance também é pouco comum nessa categoria, contando com apenas **35 fundos**, enquanto a cobrança simultânea de taxa de performance e de saída ocorre em apenas 2 fundos.
+
+Esses resultados indicam claramente que os fundos ativos são predominantes no mercado, especialmente os não-referenciados, sugerindo uma maior preferência dos investidores por estratégias flexíveis. Além disso, fundos com menor cobrança de taxas (taxa de ingresso, performance ou saída) apresentam uma quantidade significativamente superior, apontando uma preferência por estruturas mais simples em termos de custos associados ao investimento.
 
