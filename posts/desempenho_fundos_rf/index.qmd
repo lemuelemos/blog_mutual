@@ -36,6 +36,9 @@ library(tidyr)
 library(furrr)
 library(reactable)
 library(htmltools)
+library(ggplot2)
+library(scales)
+library(ggimprensa)
 
 # Conectando a base de dados
 
@@ -451,4 +454,59 @@ A segunda categoria mais representativa é composta pelos fundos com política *
 Por outro lado, os fundos de política **"Passiva"** aparecem em número intermediário, destacando-se aqueles que não têm taxas (**669 fundos**). A aplicação de taxa de performance também é pouco comum nessa categoria, contando com apenas **35 fundos**, enquanto a cobrança simultânea de taxa de performance e de saída ocorre em apenas 2 fundos.
 
 Esses resultados indicam claramente que os fundos ativos são predominantes no mercado, especialmente os não-referenciados, sugerindo uma maior preferência dos investidores por estratégias flexíveis. Além disso, fundos com menor cobrança de taxas (taxa de ingresso, performance ou saída) apresentam uma quantidade significativamente superior, apontando uma preferência por estruturas mais simples em termos de custos associados ao investimento.
+
+
+```{r}
+fundos_rf %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(Competência = zoo::as.yearqtr(DT_COMPTC)) %>%
+  filter(Competência >= "2010 Q1") %>%
+  
+  # Divide por 1e9 para converter os valores em bilhões
+  summarise(
+    Captação = sum(CAPTC_DIA) / 1e9,
+    Resgates = -sum(RESG_DIA) / 1e9,
+    .by = c("Competência", "Categoria ANBIMA")
+  ) %>%
+  
+  mutate(CAPTC_LIQ = Captação + Resgates) %>%
+  pivot_wider(
+    names_from = "Categoria ANBIMA",
+    values_from = "CAPTC_LIQ"
+  ) %>%
+  rename(`Captação líquida` = `Renda Fixa`) %>%
+  arrange(Competência) %>%
+  mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`)) %>%
+  
+  ggplot(aes(x = Competência)) +
+  tema_g1() +
+  
+  geom_col(aes(y = Captação, fill = "Captação"), position = "dodge") +
+  geom_col(aes(y = Resgates, fill = "Resgates"), position = "dodge") +
+  geom_line(aes(y = `Captação líquida`, group = 1, color = "Captação líquida"), size = 1.2) +
+  geom_line(aes(y = `Captação líquida acumulada`, group = 1, color = "Captação líquida acumulada"), size = 1.2) +
+  
+  labs(
+    x = "Competência",
+    y = "Valores (R$ bilhões)",
+    title = "Histórico de Captação",
+    subtitle = "Captação e Resgates com sua evolução trimestral desde o início de 2010",
+    caption = "Fonte: Dados da CVM - Elaboração Própria",
+    fill = "Legenda",
+    color = "Legenda"
+  ) +
+  
+  # Use scale = 1 e divida os dados por 1e9 para que 1 = 1 bilhão
+  scale_y_continuous(
+    labels = label_number(
+      scale = 1,      # não redimensiona mais os dados
+      suffix = " B",  # exibe 'B' para bilhões
+      accuracy = 1    # ajusta se quiser mais ou menos casas decimais
+    )
+  ) +
+  
+  scale_fill_manual(values = c("Captação" = "steelblue", "Resgates" = "tomato")) +
+  scale_color_manual(values = c("Captação líquida" = "darkgreen", "Captação líquida acumulada" = "purple")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
