@@ -2,13 +2,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="pt" xml:lang="pt"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.6.34">
+<meta name="generator" content="quarto-1.4.554">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Lemuel Lemos">
 
-<title>Desempenho dos Fundos de Renda Fixa – Mutual Blog</title>
+<title>Mutual Blog - Desempenho dos Fundos de Renda Fixa</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -34,7 +34,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -70,10 +70,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-f23ab18612d661d7bd56dbc0c0fd3817.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-274c3d255ff4b40ad85bc0e900837b3c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -102,21 +102,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 <script src="../../site_libs/core-js-2.5.3/shim.min.js"></script>
-
 <script src="../../site_libs/react-18.2.0/react.min.js"></script>
-
 <script src="../../site_libs/react-18.2.0/react-dom.min.js"></script>
-
 <script src="../../site_libs/reactwidget-2.0.0/react-tools.umd.cjs"></script>
-
 <link href="../../site_libs/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet">
-
 <script src="../../site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
-
 <link href="../../site_libs/reactable-0.4.4/reactable.css" rel="stylesheet">
-
 <script src="../../site_libs/reactable-binding-0.4.4/reactable.js"></script>
-
+<script src="../../site_libs/echarts4r-4.8.0/echarts-en.min.js"></script>
+<script src="../../site_libs/echarts4r-4.8.0/ecStat.min.js"></script>
+<script src="../../site_libs/echarts4r-4.8.0/dataTool.min.js"></script>
+<script src="../../site_libs/echarts4r-binding-0.4.5/echarts4r.js"></script>
+<script src="../../site_libs/shine-1.0.0/shine.js"></script>
 
 
 <link rel="stylesheet" href="../../styles.css">
@@ -134,7 +131,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </a>
   </div>
             <div id="quarto-search" class="" title="Procurar"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Alternar de navegação" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Alternar de navegação" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -163,7 +160,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
-            <div class="quarto-navbar-tools">
+          <div class="quarto-navbar-tools">
 </div>
       </div> <!-- /container-fluid -->
     </nav>
@@ -236,12 +233,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggimprensa)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Conectando a base de dados</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dbdir =</span> <span class="st">"fundos_db.duckdb"</span>,</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>                 <span class="at">read_only =</span> <span class="cn">FALSE</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(zoo)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(echarts4r)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Conectando a base de dados</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dbdir =</span> <span class="st">"fundos_db.duckdb"</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>                 <span class="at">read_only =</span> <span class="cn">FALSE</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Para obter o conjunto completo de dados, vamos acessar os endereços <a href="https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/">HIST</a> e <a href="https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/">DADOS</a> para baixar todos os arquivos disponíveis. Para otimizar essa etapa, utilizaremos as funções de paralelização do pacote <code>furrr</code>, configurando quatro clusters para realizar as requisições simultaneamente e, assim, agilizar o processo de download.</p>
 <div class="cell">
@@ -392,8 +390,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="reactable html-widget html-fill-item" id="htmlwidget-e7626f38e88feaa66688" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-e7626f38e88feaa66688">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Categoria ANBIMA":["Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa"],"Tipo ANBIMA":["Renda Fixa Duração Livre Crédito Livre","Renda Fixa Duração Livre Grau de Investimento","Renda Fixa Duração Baixa Grau de Investimento","Renda Fixa Duração Livre Soberano","Renda Fixa Duração Baixa Soberano","Renda Fixa Indexados","Renda Fixa Simples","Renda Fixa Investimento no Exterior","Renda Fixa Duração Média Grau de Investimento","Renda Fixa Duração Alta Grau de Investimento","Renda Fixa Duração Baixa Crédito Livre","Renda Fixa Duração Média Crédito Livre","Renda Fixa Duração Alta Crédito Livre","Renda Fixa Duração Média Soberano","Renda Fixa Duração Alta Soberano","Renda Fixa Dívida Externa"],"Quantidade":[2011,909,512,341,259,194,147,131,117,62,43,41,33,18,17,5]},"columns":[{"id":"Categoria ANBIMA","name":"Categoria ANBIMA","type":"character","minWidth":120,"width":200},{"id":"Tipo ANBIMA","name":"Tipo ANBIMA","type":"character","minWidth":120,"width":300},{"id":"Quantidade","name":"Quantidade","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4840"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"a64a65597d47a850c37f16e05c816396"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-1df56256e12c638ae381" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-1df56256e12c638ae381">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Categoria ANBIMA":["Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa","Renda Fixa"],"Tipo ANBIMA":["Renda Fixa Duração Livre Crédito Livre","Renda Fixa Duração Livre Grau de Investimento","Renda Fixa Duração Baixa Grau de Investimento","Renda Fixa Duração Livre Soberano","Renda Fixa Duração Baixa Soberano","Renda Fixa Indexados","Renda Fixa Simples","Renda Fixa Investimento no Exterior","Renda Fixa Duração Média Grau de Investimento","Renda Fixa Duração Alta Grau de Investimento","Renda Fixa Duração Baixa Crédito Livre","Renda Fixa Duração Média Crédito Livre","Renda Fixa Duração Alta Crédito Livre","Renda Fixa Duração Média Soberano","Renda Fixa Duração Alta Soberano","Renda Fixa Dívida Externa"],"Quantidade":[2011,909,512,341,259,194,147,131,117,62,43,41,33,18,17,5]},"columns":[{"id":"Categoria ANBIMA","name":"Categoria ANBIMA","type":"character","minWidth":120,"width":200},{"id":"Tipo ANBIMA","name":"Tipo ANBIMA","type":"character","minWidth":120,"width":300},{"id":"Quantidade","name":"Quantidade","type":"numeric","minWidth":120,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4840"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"a64a65597d47a850c37f16e05c816396"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>Ao analisar os dados que relacionam as novas classificações da ANBIMA para fundos de Renda Fixa às quantidades de fundos em cada categoria, percebe-se novamente um predomínio significativo dos fundos classificados como <strong>“Renda Fixa Duração Livre Crédito Livre”</strong>, que totalizam 2.011 fundos. Em seguida, destacam-se os 909 fundos enquadrados em <strong>“Renda Fixa Duração Livre Grau de Investimento”</strong> e os 512 em <strong>“Renda Fixa Duração Baixa Grau de Investimento”</strong>.</p>
@@ -483,8 +481,8 @@ Fundos que integram estratégias ativas e passivas, buscando retornos acima do �
 <span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="reactable html-widget html-fill-item" id="htmlwidget-a01e5a6748a2b40dafbf" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-a01e5a6748a2b40dafbf">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Tipo de Investidor":["Não Há Restrição","Exclusivo","Reservado","Não Há Restrição","Não Há Restrição","Não há Restrição","Reservado","Não há Restrição","Reservado","Exclusivo","Não há Restrição","Exclusivo","Não há Restrição",null],"Característica do Investidor":["Geral","Profissional","Profissional","Qualificado","Profissional","Geral","Qualificado","Profissional","Geral","Qualificado","Qualificado","Geral",null,null],"Quantidade":[2002,1110,570,410,288,135,110,73,47,42,38,14,1,1]},"columns":[{"id":"Tipo de Investidor","name":"Tipo de Investidor","type":"character"},{"id":"Característica do Investidor","name":"Característica do Investidor","type":"character"},{"id":"Quantidade","name":"Quantidade","type":"numeric","format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4841"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"e629dbdb1d0b6fa7710cf51c9037274f"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-fb2bee21f4ec2fea49e8" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-fb2bee21f4ec2fea49e8">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Tipo de Investidor":["Não Há Restrição","Exclusivo","Reservado","Não Há Restrição","Não Há Restrição","Não há Restrição","Reservado","Não há Restrição","Reservado","Exclusivo","Não há Restrição","Exclusivo","Não há Restrição",null],"Característica do Investidor":["Geral","Profissional","Profissional","Qualificado","Profissional","Geral","Qualificado","Profissional","Geral","Qualificado","Qualificado","Geral",null,null],"Quantidade":[2002,1110,570,410,288,135,110,73,47,42,38,14,1,1]},"columns":[{"id":"Tipo de Investidor","name":"Tipo de Investidor","type":"character"},{"id":"Característica do Investidor","name":"Característica do Investidor","type":"character"},{"id":"Quantidade","name":"Quantidade","type":"numeric","format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4841"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"e629dbdb1d0b6fa7710cf51c9037274f"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>A análise da tabela que apresenta o <strong>Tipo e a Característica do Investidor</strong> em relação às quantidades de fundos revela uma forte concentração dos fundos abertos ao público geral, especialmente na combinação <strong>“Não Há Restrição - Geral”</strong>, que conta com um total de <strong>2.137 fundos</strong> (2.002 + 135). Outra parcela significativa é formada pelos fundos destinados ao investidor profissional, com destaque para as categorias <strong>“Exclusivo - Profissional”</strong> com <strong>1.110 fundos</strong> e <strong>“Reservado - Profissional”</strong>, que possui <strong>570 fundos</strong>.</p>
@@ -537,8 +535,8 @@ Fundos que integram estratégias ativas e passivas, buscando retornos acima do �
 <span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="reactable html-widget html-fill-item" id="htmlwidget-caa0d2a6ee4e0362722d" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-caa0d2a6ee4e0362722d">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Política de Investimento":["ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ENHANCED","ENHANCED","ENHANCED","PASSIVA","PASSIVA","PASSIVA"],"Fundo Espelho":["Não","Não","Sim","Não","Não","Sim","Não","Não","Sim","Não","Não","Sim"],"Fundo de Cotas":["Não","Sim","Sim","Não","Sim","Sim","Não","Sim","Sim","Não","Sim","Sim"],"Quantidade":[1522,577,81,881,246,44,25,11,1,333,358,16]},"columns":[{"id":"Política de Investimento","name":"Política de Investimento","type":"character","minWidth":150,"width":250},{"id":"Fundo Espelho","name":"Fundo Espelho","type":"character","minWidth":150,"width":150},{"id":"Fundo de Cotas","name":"Fundo de Cotas","type":"character","minWidth":150,"width":150},{"id":"Quantidade","name":"Quantidade","type":"numeric","minWidth":150,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4095"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"d64c1ae264610f02bad18bcf9619f92f"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-138f43536d1ad31e5ea9" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-138f43536d1ad31e5ea9">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Política de Investimento":["ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ENHANCED","ENHANCED","ENHANCED","PASSIVA","PASSIVA","PASSIVA"],"Fundo Espelho":["Não","Não","Sim","Não","Não","Sim","Não","Não","Sim","Não","Não","Sim"],"Fundo de Cotas":["Não","Sim","Sim","Não","Sim","Sim","Não","Sim","Sim","Não","Sim","Sim"],"Quantidade":[1522,577,81,881,246,44,25,11,1,333,358,16]},"columns":[{"id":"Política de Investimento","name":"Política de Investimento","type":"character","minWidth":150,"width":250},{"id":"Fundo Espelho","name":"Fundo Espelho","type":"character","minWidth":150,"width":150},{"id":"Fundo de Cotas","name":"Fundo de Cotas","type":"character","minWidth":150,"width":150},{"id":"Quantidade","name":"Quantidade","type":"numeric","minWidth":150,"format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4095"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"d64c1ae264610f02bad18bcf9619f92f"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>A análise da tabela que relaciona a Política de Investimento dos fundos, juntamente com as características Fundo Espelho e Fundo de Cotas, mostra claramente uma concentração predominante nos fundos com gestão “Ativa e Não-Referenciada”, especialmente aqueles que não são fundos espelho nem fundos de cotas, com um total expressivo de 1.522 fundos. A seguir, destacam-se fundos com a mesma política de gestão, mas que são fundos de cotas (577 fundos).</p>
@@ -601,8 +599,8 @@ Fundos que integram estratégias ativas e passivas, buscando retornos acima do �
 <span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="reactable html-widget html-fill-item" id="htmlwidget-b06f25ae7b8fbed5a13e" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-b06f25ae7b8fbed5a13e">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Política de Investimento":["ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ENHANCED","ENHANCED","PASSIVA","PASSIVA","PASSIVA","PASSIVA"],"Taxa de Ingresso":["Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não"],"Taxa de Performance":["Não","Não","Sim","Sim","Não","Não","Sim","Sim","Não","Sim","Não","Não","Sim","Sim"],"Taxa de Saída":["Não","Sim","Não","Sim","Não","Sim","Não","Sim","Não","Não","Não","Sim","Não","Sim"],"Quantidade":[1757,12,407,4,803,2,362,4,35,2,669,4,32,2]},"columns":[{"id":"Política de Investimento","name":"Política de Investimento","type":"character","width":300},{"id":"Taxa de Ingresso","name":"Taxa de Ingresso","type":"character","width":120},{"id":"Taxa de Performance","name":"Taxa de Performance","type":"character","width":120},{"id":"Taxa de Saída","name":"Taxa de Saída","type":"character","width":120},{"id":"Quantidade","name":"Quantidade","type":"numeric","format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4095"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"440824a8b82361af56ea8ff549b6c716"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-9df4b4bd92d18e2be880" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-9df4b4bd92d18e2be880">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Política de Investimento":["ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E NÃO-REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ATIVA E REFERENCIADA","ENHANCED","ENHANCED","PASSIVA","PASSIVA","PASSIVA","PASSIVA"],"Taxa de Ingresso":["Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não","Não"],"Taxa de Performance":["Não","Não","Sim","Sim","Não","Não","Sim","Sim","Não","Sim","Não","Não","Sim","Sim"],"Taxa de Saída":["Não","Sim","Não","Sim","Não","Sim","Não","Sim","Não","Não","Não","Sim","Não","Sim"],"Quantidade":[1757,12,407,4,803,2,362,4,35,2,669,4,32,2]},"columns":[{"id":"Política de Investimento","name":"Política de Investimento","type":"character","width":300},{"id":"Taxa de Ingresso","name":"Taxa de Ingresso","type":"character","width":120},{"id":"Taxa de Performance","name":"Taxa de Performance","type":"character","width":120},{"id":"Taxa de Saída","name":"Taxa de Saída","type":"character","width":120},{"id":"Quantidade","name":"Quantidade","type":"numeric","format":{"cell":{"separators":true},"aggregated":{"separators":true}},"footer":{"name":"b","attribs":{},"children":["Total: ",{"name":"span","attribs":{},"children":["4095"]}]},"align":"right"}],"resizable":true,"pagination":false,"dataKey":"440824a8b82361af56ea8ff549b6c716"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>A análise dos dados referentes às políticas de investimento e taxas associadas aos fundos revela uma expressiva predominância dos fundos com política de investimento <strong>“Ativa e Não-Referenciada”</strong> sem incidência de taxas, que totalizam <strong>1.757 fundos</strong>. Destacam-se também, nessa mesma categoria, os fundos que cobram taxa de performance (<strong>407 fundos</strong>). Contudo, a cobrança de taxa de saída permanece pouco utilizada nesses fundos, com apenas 12 casos sem taxa de performance e 4 fundos com ambas as taxas.</p>
@@ -612,61 +610,41 @@ Fundos que integram estratégias ativas e passivas, buscando retornos acima do �
 <div class="cell">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>fundos_rf <span class="sc">%&gt;%</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(POLIT_INVEST)) <span class="sc">%&gt;%</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(Competência <span class="ot">=</span> zoo<span class="sc">::</span><span class="fu">as.yearqtr</span>(DT_COMPTC)) <span class="sc">%&gt;%</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Competência <span class="sc">&gt;=</span> <span class="st">"2010 Q1"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Divide por 1e9 para converter os valores em bilhões</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    Captação <span class="ot">=</span> <span class="fu">sum</span>(CAPTC_DIA) <span class="sc">/</span> <span class="fl">1e9</span>,</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Resgates =</span> <span class="sc">-</span><span class="fu">sum</span>(RESG_DIA) <span class="sc">/</span> <span class="fl">1e9</span>,</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> <span class="fu">c</span>(<span class="st">"Competência"</span>, <span class="st">"Categoria ANBIMA"</span>)</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">CAPTC_LIQ =</span> Captação <span class="sc">+</span> Resgates) <span class="sc">%&gt;%</span></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> <span class="st">"Categoria ANBIMA"</span>,</span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> <span class="st">"CAPTC_LIQ"</span></span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Captação líquida</span><span class="st">`</span> <span class="ot">=</span> <span class="st">`</span><span class="at">Renda Fixa</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(Competência) <span class="sc">%&gt;%</span></span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Captação líquida acumulada</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">cumsum</span>(<span class="st">`</span><span class="at">Captação líquida</span><span class="st">`</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Competência)) <span class="sc">+</span></span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tema_g1</span>() <span class="sc">+</span></span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="fu">aes</span>(<span class="at">y =</span> Captação, <span class="at">fill =</span> <span class="st">"Captação"</span>), <span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="fu">aes</span>(<span class="at">y =</span> Resgates, <span class="at">fill =</span> <span class="st">"Resgates"</span>), <span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
-<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> <span class="st">`</span><span class="at">Captação líquida</span><span class="st">`</span>, <span class="at">group =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"Captação líquida"</span>), <span class="at">size =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
-<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> <span class="st">`</span><span class="at">Captação líquida acumulada</span><span class="st">`</span>, <span class="at">group =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"Captação líquida acumulada"</span>), <span class="at">size =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
-<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Competência"</span>,</span>
-<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Valores (R$ bilhões)"</span>,</span>
-<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Histórico de Captação"</span>,</span>
-<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Captação e Resgates com sua evolução trimestral desde o início de 2010"</span>,</span>
-<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Fonte: Dados da CVM - Elaboração Própria"</span>,</span>
-<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Legenda"</span>,</span>
-<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Legenda"</span></span>
-<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Use scale = 1 e divida os dados por 1e9 para que 1 = 1 bilhão</span></span>
-<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
-<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> <span class="fu">label_number</span>(</span>
-<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>      <span class="at">scale =</span> <span class="dv">1</span>,      <span class="co"># não redimensiona mais os dados</span></span>
-<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>      <span class="at">suffix =</span> <span class="st">" B"</span>,  <span class="co"># exibe 'B' para bilhões</span></span>
-<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>      <span class="at">accuracy =</span> <span class="dv">1</span>    <span class="co"># ajusta se quiser mais ou menos casas decimais</span></span>
-<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Captação"</span> <span class="ot">=</span> <span class="st">"steelblue"</span>, <span class="st">"Resgates"</span> <span class="ot">=</span> <span class="st">"tomato"</span>)) <span class="sc">+</span></span>
-<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Captação líquida"</span> <span class="ot">=</span> <span class="st">"darkgreen"</span>, <span class="st">"Captação líquida acumulada"</span> <span class="ot">=</span> <span class="st">"purple"</span>)) <span class="sc">+</span></span>
-<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>))</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(Competência <span class="ot">=</span> <span class="fu">as.Date</span>(<span class="fu">as.yearqtr</span>(DT_COMPTC))) <span class="sc">%&gt;%</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Competência <span class="sc">&gt;=</span> <span class="fu">as.Date</span>(<span class="st">"2010-01-01"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    Captação <span class="ot">=</span> <span class="fu">sum</span>(CAPTC_DIA) <span class="sc">/</span> <span class="fl">1e9</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">Resgates =</span> <span class="sc">-</span><span class="fu">sum</span>(RESG_DIA) <span class="sc">/</span> <span class="fl">1e9</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> <span class="fu">c</span>(<span class="st">"Competência"</span>, <span class="st">"Categoria ANBIMA"</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">CAPTC_LIQ =</span> Captação <span class="sc">+</span> Resgates) <span class="sc">%&gt;%</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> <span class="st">"Categoria ANBIMA"</span>,</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> <span class="st">"CAPTC_LIQ"</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Captação líquida</span><span class="st">`</span> <span class="ot">=</span> <span class="st">`</span><span class="at">Renda Fixa</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(Competência) <span class="sc">%&gt;%</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Captação líquida acumulada</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">cumsum</span>(<span class="st">`</span><span class="at">Captação líquida</span><span class="st">`</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_charts</span>(Competência) <span class="sc">%&gt;%</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_bar</span>(Captação, <span class="at">name =</span> <span class="st">"Captação"</span>, <span class="at">color =</span> <span class="st">"steelblue"</span>, <span class="at">stack =</span> <span class="st">"total"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_bar</span>(Resgates, <span class="at">name =</span> <span class="st">"Resgates"</span>, <span class="at">color =</span> <span class="st">"tomato"</span>, <span class="at">stack =</span> <span class="st">"total"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_line</span>(<span class="st">`</span><span class="at">Captação líquida</span><span class="st">`</span>, <span class="at">name =</span> <span class="st">"Captação líquida"</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_line</span>(<span class="st">`</span><span class="at">Captação líquida acumulada</span><span class="st">`</span>, <span class="at">name =</span> <span class="st">"Captação líquida acumulada"</span>, <span class="at">color =</span> <span class="st">"purple"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_title</span>(</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">text =</span> <span class="st">"Histórico de Captação"</span>,</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtext =</span> <span class="st">"Captação e Resgates com sua evolução trimestral desde o início de 2010"</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_legend</span>(<span class="at">right =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_tooltip</span>(<span class="at">trigger =</span> <span class="st">"axis"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_y_axis</span>(</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">axisLabel =</span> <span class="fu">list</span>(<span class="at">formatter =</span> <span class="fu">JS</span>(<span class="st">"function(value){ return value + ' B'; }"</span>))</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_x_axis</span>(<span class="at">axisLabel =</span> <span class="fu">list</span>(<span class="at">rotate =</span> <span class="dv">45</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_grid</span>(<span class="at">left =</span> <span class="st">"10%"</span>, <span class="at">right =</span> <span class="st">"10%"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">e_theme</span>(<span class="st">"shine"</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<div class="echarts4r html-widget html-fill-item" id="htmlwidget-29d6f215d050694267bc" style="width:100%;height:500px;"></div>
+<script type="application/json" data-for="htmlwidget-29d6f215d050694267bc">{"x":{"theme":"shine","tl":false,"draw":true,"renderer":"canvas","events":[],"buttons":[],"opts":{"yAxis":[{"show":true,"axisLabel":{"formatter":"function(value){ return value + ' B'; }"}}],"xAxis":[{"data":["2010-01-01","2010-04-01","2010-07-01","2010-10-01","2011-01-01","2011-04-01","2011-07-01","2011-10-01","2012-01-01","2012-04-01","2012-07-01","2012-10-01","2013-01-01","2013-04-01","2013-07-01","2013-10-01","2014-01-01","2014-04-01","2014-07-01","2014-10-01","2015-01-01","2015-04-01","2015-07-01","2015-10-01","2016-01-01","2016-04-01","2016-07-01","2016-10-01","2017-01-01","2017-04-01","2017-07-01","2017-10-01","2018-01-01","2018-04-01","2018-07-01","2018-10-01","2019-01-01","2019-04-01","2019-07-01","2019-10-01","2020-01-01","2020-04-01","2020-07-01","2020-10-01","2021-01-01","2021-04-01","2021-07-01","2021-10-01","2022-01-01","2022-04-01","2022-07-01","2022-10-01","2023-01-01","2023-04-01","2023-07-01","2023-10-01","2024-01-01","2024-04-01","2024-07-01","2024-10-01","2025-01-01"],"type":"time","boundaryGap":true,"axisLabel":{"rotate":45}}],"legend":{"data":["Captação","Resgates","Captação líquida","Captação líquida acumulada"],"show":true,"type":"plain","right":true},"series":[{"data":[{"value":["2010-01-01"," 412.4973"]},{"value":["2010-04-01"," 423.7346"]},{"value":["2010-07-01"," 426.5228"]},{"value":["2010-10-01"," 486.4662"]},{"value":["2011-01-01"," 480.5207"]},{"value":["2011-04-01"," 494.3387"]},{"value":["2011-07-01"," 518.5188"]},{"value":["2011-10-01"," 574.9335"]},{"value":["2012-01-01"," 615.4038"]},{"value":["2012-04-01"," 649.2923"]},{"value":["2012-07-01"," 639.3694"]},{"value":["2012-10-01"," 750.5661"]},{"value":["2013-01-01"," 845.2443"]},{"value":["2013-04-01"," 887.6388"]},{"value":["2013-07-01"," 841.8010"]},{"value":["2013-10-01"," 964.3029"]},{"value":["2014-01-01"," 980.4949"]},{"value":["2014-04-01"," 977.4531"]},{"value":["2014-07-01","1259.4167"]},{"value":["2014-10-01","1371.3172"]},{"value":["2015-01-01","1304.7522"]},{"value":["2015-04-01","1347.5781"]},{"value":["2015-07-01","1211.8635"]},{"value":["2015-10-01","1313.8055"]},{"value":["2016-01-01","1307.8201"]},{"value":["2016-04-01","1303.5057"]},{"value":["2016-07-01","1326.1211"]},{"value":["2016-10-01","1541.7420"]},{"value":["2017-01-01","1576.7191"]},{"value":["2017-04-01","1592.8012"]},{"value":["2017-07-01","1776.5976"]},{"value":["2017-10-01","1815.9835"]},{"value":["2018-01-01","1794.3867"]},{"value":["2018-04-01","1972.8412"]},{"value":["2018-07-01","1979.3278"]},{"value":["2018-10-01","2176.0972"]},{"value":["2019-01-01","2054.6746"]},{"value":["2019-04-01","2253.9736"]},{"value":["2019-07-01","2440.3049"]},{"value":["2019-10-01","2892.4920"]},{"value":["2020-01-01","2593.8293"]},{"value":["2020-04-01","2331.5314"]},{"value":["2020-07-01","2808.3650"]},{"value":["2020-10-01","2763.9020"]},{"value":["2021-01-01","2756.2374"]},{"value":["2021-04-01","3019.1887"]},{"value":["2021-07-01","3414.1909"]},{"value":["2021-10-01","3498.6162"]},{"value":["2022-01-01","3392.9175"]},{"value":["2022-04-01","3450.9915"]},{"value":["2022-07-01","3321.9150"]},{"value":["2022-10-01","3189.5159"]},{"value":["2023-01-01","3337.2877"]},{"value":["2023-04-01","3102.4578"]},{"value":["2023-07-01","3188.7622"]},{"value":["2023-10-01","3286.5633"]},{"value":["2024-01-01","3310.9156"]},{"value":["2024-04-01","3568.9674"]},{"value":["2024-07-01","3883.7675"]},{"value":["2024-10-01","3805.3384"]},{"value":["2025-01-01","1263.2222"]}],"name":"Captação","type":"bar","yAxisIndex":0,"xAxisIndex":0,"coordinateSystem":"cartesian2d","color":"steelblue","stack":"total"},{"data":[{"value":["2010-01-01"," -385.0362"]},{"value":["2010-04-01"," -411.7997"]},{"value":["2010-07-01"," -422.9547"]},{"value":["2010-10-01"," -488.2741"]},{"value":["2011-01-01"," -443.2872"]},{"value":["2011-04-01"," -482.9982"]},{"value":["2011-07-01"," -501.9454"]},{"value":["2011-10-01"," -583.7391"]},{"value":["2012-01-01"," -542.8645"]},{"value":["2012-04-01"," -647.3611"]},{"value":["2012-07-01"," -635.2908"]},{"value":["2012-10-01"," -759.6450"]},{"value":["2013-01-01"," -786.4476"]},{"value":["2013-04-01"," -896.1641"]},{"value":["2013-07-01"," -844.2970"]},{"value":["2013-10-01"," -991.2313"]},{"value":["2014-01-01"," -946.7733"]},{"value":["2014-04-01"," -954.0589"]},{"value":["2014-07-01","-1199.2857"]},{"value":["2014-10-01","-1377.8211"]},{"value":["2015-01-01","-1260.9136"]},{"value":["2015-04-01","-1309.8917"]},{"value":["2015-07-01","-1224.0062"]},{"value":["2015-10-01","-1345.9492"]},{"value":["2016-01-01","-1238.0276"]},{"value":["2016-04-01","-1299.6987"]},{"value":["2016-07-01","-1296.1000"]},{"value":["2016-10-01","-1500.8934"]},{"value":["2017-01-01","-1449.5356"]},{"value":["2017-04-01","-1576.9070"]},{"value":["2017-07-01","-1710.4752"]},{"value":["2017-10-01","-1852.6341"]},{"value":["2018-01-01","-1747.9969"]},{"value":["2018-04-01","-1948.3172"]},{"value":["2018-07-01","-1940.3758"]},{"value":["2018-10-01","-2189.4467"]},{"value":["2019-01-01","-2033.5861"]},{"value":["2019-04-01","-2242.0729"]},{"value":["2019-07-01","-2402.3406"]},{"value":["2019-10-01","-3006.3127"]},{"value":["2020-01-01","-2701.6270"]},{"value":["2020-04-01","-2401.6979"]},{"value":["2020-07-01","-2627.5789"]},{"value":["2020-10-01","-2863.3845"]},{"value":["2021-01-01","-2650.3910"]},{"value":["2021-04-01","-2933.6673"]},{"value":["2021-07-01","-3215.6511"]},{"value":["2021-10-01","-3515.6877"]},{"value":["2022-01-01","-3279.7725"]},{"value":["2022-04-01","-3293.5506"]},{"value":["2022-07-01","-3351.9560"]},{"value":["2022-10-01","-3382.8007"]},{"value":["2023-01-01","-3352.7748"]},{"value":["2023-04-01","-3204.2119"]},{"value":["2023-07-01","-3128.0846"]},{"value":["2023-10-01","-3335.4395"]},{"value":["2024-01-01","-3092.9725"]},{"value":["2024-04-01","-3497.9924"]},{"value":["2024-07-01","-3716.5558"]},{"value":["2024-10-01","-3991.0360"]},{"value":["2025-01-01","-1199.2914"]}],"name":"Resgates","type":"bar","yAxisIndex":0,"xAxisIndex":0,"coordinateSystem":"cartesian2d","color":"tomato","stack":"total"},{"data":[{"value":["2010-01-01","  27.461128"]},{"value":["2010-04-01","  11.934816"]},{"value":["2010-07-01","   3.568133"]},{"value":["2010-10-01","  -1.807888"]},{"value":["2011-01-01","  37.233544"]},{"value":["2011-04-01","  11.340540"]},{"value":["2011-07-01","  16.573336"]},{"value":["2011-10-01","  -8.805586"]},{"value":["2012-01-01","  72.539346"]},{"value":["2012-04-01","   1.931174"]},{"value":["2012-07-01","   4.078651"]},{"value":["2012-10-01","  -9.078866"]},{"value":["2013-01-01","  58.796643"]},{"value":["2013-04-01","  -8.525235"]},{"value":["2013-07-01","  -2.495921"]},{"value":["2013-10-01"," -26.928391"]},{"value":["2014-01-01","  33.721654"]},{"value":["2014-04-01","  23.394243"]},{"value":["2014-07-01","  60.131043"]},{"value":["2014-10-01","  -6.503944"]},{"value":["2015-01-01","  43.838574"]},{"value":["2015-04-01","  37.686342"]},{"value":["2015-07-01"," -12.142664"]},{"value":["2015-10-01"," -32.143696"]},{"value":["2016-01-01","  69.792493"]},{"value":["2016-04-01","   3.807011"]},{"value":["2016-07-01","  30.021118"]},{"value":["2016-10-01","  40.848578"]},{"value":["2017-01-01"," 127.183482"]},{"value":["2017-04-01","  15.894168"]},{"value":["2017-07-01","  66.122386"]},{"value":["2017-10-01"," -36.650620"]},{"value":["2018-01-01","  46.389826"]},{"value":["2018-04-01","  24.524038"]},{"value":["2018-07-01","  38.951966"]},{"value":["2018-10-01"," -13.349468"]},{"value":["2019-01-01","  21.088502"]},{"value":["2019-04-01","  11.900776"]},{"value":["2019-07-01","  37.964294"]},{"value":["2019-10-01","-113.820700"]},{"value":["2020-01-01","-107.797738"]},{"value":["2020-04-01"," -70.166479"]},{"value":["2020-07-01"," 180.786156"]},{"value":["2020-10-01"," -99.482520"]},{"value":["2021-01-01"," 105.846351"]},{"value":["2021-04-01","  85.521414"]},{"value":["2021-07-01"," 198.539776"]},{"value":["2021-10-01"," -17.071539"]},{"value":["2022-01-01"," 113.145006"]},{"value":["2022-04-01"," 157.440881"]},{"value":["2022-07-01"," -30.040972"]},{"value":["2022-10-01","-193.284759"]},{"value":["2023-01-01"," -15.487056"]},{"value":["2023-04-01","-101.754087"]},{"value":["2023-07-01","  60.677621"]},{"value":["2023-10-01"," -48.876202"]},{"value":["2024-01-01"," 217.943130"]},{"value":["2024-04-01","  70.974933"]},{"value":["2024-07-01"," 167.211623"]},{"value":["2024-10-01","-185.697577"]},{"value":["2025-01-01","  63.930780"]}],"yAxisIndex":0,"xAxisIndex":0,"name":"Captação líquida","type":"line","coordinateSystem":"cartesian2d","color":"darkgreen"},{"data":[{"value":["2010-01-01","  27.46113"]},{"value":["2010-04-01","  39.39594"]},{"value":["2010-07-01","  42.96408"]},{"value":["2010-10-01","  41.15619"]},{"value":["2011-01-01","  78.38973"]},{"value":["2011-04-01","  89.73027"]},{"value":["2011-07-01"," 106.30361"]},{"value":["2011-10-01","  97.49802"]},{"value":["2012-01-01"," 170.03737"]},{"value":["2012-04-01"," 171.96854"]},{"value":["2012-07-01"," 176.04719"]},{"value":["2012-10-01"," 166.96833"]},{"value":["2013-01-01"," 225.76497"]},{"value":["2013-04-01"," 217.23974"]},{"value":["2013-07-01"," 214.74382"]},{"value":["2013-10-01"," 187.81542"]},{"value":["2014-01-01"," 221.53708"]},{"value":["2014-04-01"," 244.93132"]},{"value":["2014-07-01"," 305.06237"]},{"value":["2014-10-01"," 298.55842"]},{"value":["2015-01-01"," 342.39700"]},{"value":["2015-04-01"," 380.08334"]},{"value":["2015-07-01"," 367.94067"]},{"value":["2015-10-01"," 335.79698"]},{"value":["2016-01-01"," 405.58947"]},{"value":["2016-04-01"," 409.39648"]},{"value":["2016-07-01"," 439.41760"]},{"value":["2016-10-01"," 480.26618"]},{"value":["2017-01-01"," 607.44966"]},{"value":["2017-04-01"," 623.34383"]},{"value":["2017-07-01"," 689.46622"]},{"value":["2017-10-01"," 652.81560"]},{"value":["2018-01-01"," 699.20542"]},{"value":["2018-04-01"," 723.72946"]},{"value":["2018-07-01"," 762.68143"]},{"value":["2018-10-01"," 749.33196"]},{"value":["2019-01-01"," 770.42046"]},{"value":["2019-04-01"," 782.32124"]},{"value":["2019-07-01"," 820.28553"]},{"value":["2019-10-01"," 706.46483"]},{"value":["2020-01-01"," 598.66709"]},{"value":["2020-04-01"," 528.50061"]},{"value":["2020-07-01"," 709.28677"]},{"value":["2020-10-01"," 609.80425"]},{"value":["2021-01-01"," 715.65060"]},{"value":["2021-04-01"," 801.17201"]},{"value":["2021-07-01"," 999.71179"]},{"value":["2021-10-01"," 982.64025"]},{"value":["2022-01-01","1095.78526"]},{"value":["2022-04-01","1253.22614"]},{"value":["2022-07-01","1223.18517"]},{"value":["2022-10-01","1029.90041"]},{"value":["2023-01-01","1014.41335"]},{"value":["2023-04-01"," 912.65926"]},{"value":["2023-07-01"," 973.33689"]},{"value":["2023-10-01"," 924.46068"]},{"value":["2024-01-01","1142.40381"]},{"value":["2024-04-01","1213.37875"]},{"value":["2024-07-01","1380.59037"]},{"value":["2024-10-01","1194.89279"]},{"value":["2025-01-01","1258.82357"]}],"yAxisIndex":0,"xAxisIndex":0,"name":"Captação líquida acumulada","type":"line","coordinateSystem":"cartesian2d","color":"purple"}],"title":[{"text":"Histórico de Captação","subtext":"Captação e Resgates com sua evolução trimestral desde o início de 2010"}],"tooltip":{"trigger":"axis"},"grid":[{"left":"10%","right":"10%"}]},"dispose":true},"evals":["opts.yAxis.0.axisLabel.formatter"],"jsHooks":[]}</script>
 </div>
 </div>
 
@@ -709,7 +687,18 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const onCopySuccess = function(e) {
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -741,27 +730,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
-  }
-  const getTextToCopy = function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-  }
-  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-    text: getTextToCopy
   });
-  clipboard.on('success', onCopySuccess);
-  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-      text: getTextToCopy,
-      container: window.document.getElementById('quarto-embedded-source-code-modal')
-    });
-    clipboardModal.on('success', onCopySuccess);
-  }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
       var filterRegex = new RegExp('/' + window.location.host + '/');
@@ -769,7 +738,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }
     // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
     for (var i=0; i<links.length; i++) {
       const link = links[i];
       if (!isInternal(link.href)) {
@@ -866,6 +835,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       if (window.Quarto?.typesetMath) {
         window.Quarto.typesetMath(note);
       }
+      // TODO in 1.5, we should make sure this works without a callout special case
       if (note.classList.contains("callout")) {
         return note.outerHTML;
       } else {

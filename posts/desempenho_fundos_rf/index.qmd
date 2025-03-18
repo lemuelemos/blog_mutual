@@ -39,7 +39,8 @@ library(htmltools)
 library(ggplot2)
 library(scales)
 library(ggimprensa)
-
+library(zoo)
+library(echarts4r)
 # Conectando a base de dados
 
 con <- DBI::dbConnect(duckdb::duckdb(), 
@@ -301,7 +302,7 @@ Fundos que integram estratégias ativas e passivas, buscando retornos acima do �
 
 Com essas informações em mãos, podemos agora analisar de forma quatitativa o perfil desses fundos de investimentos. O primeiro ponto que quero abordar consiste na distribuição entre público alvo e politicas de investimentos. Isso nos permitirá enxergar melhor se há uma tendência de política de investimentos a depender do público alvo deste fundo. O código a seguir vai slecionar somente as colunas de interesse. Como nossa base é grande, principalemtne devido as informações diárias que temos dos fundos de investimentos, temos que selecionar as colunas de nosso interesse e dessa forma obter somente os valores únicos para cada fundos de investimentos.
 
-```{r}
+```{r tipos de investidor}
 fundos_rf %>% 
   distinct(CNPJ_FUNDO,`Tipo de Investidor`,`Característica do Investidor`) %>% 
   count(`Tipo de Investidor`,`Característica do Investidor`) %>% 
@@ -333,7 +334,7 @@ Por outro lado, fundos voltados especificamente para investidores qualificados n
 De maneira geral, os dados evidenciam que os fundos sem restrição de acesso são predominantes, principalmente aqueles voltados ao público geral e profissional, mostrando um mercado bastante aberto, mas também segmentado em nichos específicos, como os fundos exclusivos e reservados a investidores profissionais. Isso sugere que os gestores buscam atender diferentes perfis de investidores com estratégias direcionadas ao nível de sofisticação e exigências específicas.
 
 
-```{r}
+```{r classes de fundos}
 extrato_fi %>% 
   distinct(DT_COMPTC, CNPJ_FUNDO_CLASSE, POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>%
   filter(CNPJ_FUNDO_CLASSE %in% distinct(fundos_rf, CNPJ_FUNDO)$CNPJ_FUNDO) %>% 
@@ -389,7 +390,7 @@ Entre os fundos com política “Passiva”, percebe-se uma divisão mais equili
 No geral, fica clara a preferência dos gestores e investidores pela política de gestão ativa, sobretudo não-referenciada, enquanto estratégias mais específicas e menos convencionais, como a gestão “Enhanced” ou fundos espelho com cotas, mantêm representatividade bastante limitada. Esses dados indicam que o mercado brasileiro de fundos ainda prioriza estratégias tradicionais e ativas de investimento.
 
 
-```{r}
+```{r detalhe qualitativos }
 extrato_fi %>% 
   filter(CNPJ_FUNDO_CLASSE %in% distinct(fundos_rf, CNPJ_FUNDO)$CNPJ_FUNDO) %>%
   distinct(DT_COMPTC, 
@@ -456,19 +457,16 @@ Por outro lado, os fundos de política **"Passiva"** aparecem em número interme
 Esses resultados indicam claramente que os fundos ativos são predominantes no mercado, especialmente os não-referenciados, sugerindo uma maior preferência dos investidores por estratégias flexíveis. Além disso, fundos com menor cobrança de taxas (taxa de ingresso, performance ou saída) apresentam uma quantidade significativamente superior, apontando uma preferência por estruturas mais simples em termos de custos associados ao investimento.
 
 
-```{r}
+```{r grafico de captação}
 fundos_rf %>%
   filter(!is.na(POLIT_INVEST)) %>%
-  mutate(Competência = zoo::as.yearqtr(DT_COMPTC)) %>%
-  filter(Competência >= "2010 Q1") %>%
-  
-  # Divide por 1e9 para converter os valores em bilhões
+  mutate(Competência = as.Date(as.yearqtr(DT_COMPTC))) %>%
+  filter(Competência >= as.Date("2010-01-01")) %>%
   summarise(
     Captação = sum(CAPTC_DIA) / 1e9,
     Resgates = -sum(RESG_DIA) / 1e9,
     .by = c("Competência", "Categoria ANBIMA")
   ) %>%
-  
   mutate(CAPTC_LIQ = Captação + Resgates) %>%
   pivot_wider(
     names_from = "Categoria ANBIMA",
@@ -477,36 +475,34 @@ fundos_rf %>%
   rename(`Captação líquida` = `Renda Fixa`) %>%
   arrange(Competência) %>%
   mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`)) %>%
-  
-  ggplot(aes(x = Competência)) +
-  tema_g1() +
-  
-  geom_col(aes(y = Captação, fill = "Captação"), position = "dodge") +
-  geom_col(aes(y = Resgates, fill = "Resgates"), position = "dodge") +
-  geom_line(aes(y = `Captação líquida`, group = 1, color = "Captação líquida"), size = 1.2) +
-  geom_line(aes(y = `Captação líquida acumulada`, group = 1, color = "Captação líquida acumulada"), size = 1.2) +
-  
-  labs(
-    x = "Competência",
-    y = "Valores (R$ bilhões)",
-    title = "Histórico de Captação",
-    subtitle = "Captação e Resgates com sua evolução trimestral desde o início de 2010",
-    caption = "Fonte: Dados da CVM - Elaboração Própria",
-    fill = "Legenda",
-    color = "Legenda"
-  ) +
-  
-  # Use scale = 1 e divida os dados por 1e9 para que 1 = 1 bilhão
-  scale_y_continuous(
-    labels = label_number(
-      scale = 1,      # não redimensiona mais os dados
-      suffix = " B",  # exibe 'B' para bilhões
-      accuracy = 1    # ajusta se quiser mais ou menos casas decimais
-    )
-  ) +
-  
-  scale_fill_manual(values = c("Captação" = "steelblue", "Resgates" = "tomato")) +
-  scale_color_manual(values = c("Captação líquida" = "darkgreen", "Captação líquida acumulada" = "purple")) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  e_charts(Competência) %>%
+  e_bar(Captação, name = "Captação", color = "steelblue", stack = "total") %>%
+  e_bar(Resgates, name = "Resgates", color = "tomato", stack = "total") %>%
+  e_line(`Captação líquida`, name = "Captação líquida", color = "darkgreen") %>%
+  e_line(`Captação líquida acumulada`, name = "Captação líquida acumulada", color = "purple") %>%
+  e_title(
+    text = "Histórico de Captação",
+    subtext = "Captação e Resgates com sua evolução trimestral desde o início de 2010"
+  ) %>%
+  e_legend(right = TRUE) %>%
+  e_tooltip(trigger = "axis") %>%
+  e_y_axis(
+    axisLabel = list(formatter = JS("function(value){ return value + ' B'; }"))
+  ) %>%
+  e_x_axis(axisLabel = list(rotate = 45)) %>%
+  e_grid(left = "10%", right = "10%") %>%
+  e_theme("shine")
 ```
 
+
+Desde o início de 2010, o mercado de fundos de investimento tem apresentado um crescimento expressivo, evidenciado pelo aumento contínuo dos volumes de captação e resgates. Esse comportamento reflete a crescente participação dos investidores nesse segmento, com um aumento da movimentação financeira ao longo dos anos.  
+
+Ao analisar a captação líquida, observamos que, embora haja oscilações ao longo do tempo, os fluxos de entrada e saída se mantêm relativamente equilibrados. Esse comportamento sugere que, apesar de períodos de maior atratividade dos fundos e momentos de maior aversão ao risco por parte dos investidores, o mercado tem demonstrado resiliência.  
+
+A captação líquida acumulada, por sua vez, segue uma trajetória ascendente, indicando que, no agregado, a captação tem superado os resgates. Essa tendência reflete um aumento estrutural no volume de recursos alocados em fundos de investimento, impulsionado por fatores como o amadurecimento do mercado financeiro, a diversificação dos produtos disponíveis e o maior interesse dos investidores institucionais e individuais.  
+
+A crise decorrente da pandemia da COVID-19, por volta de 2020, teve um impacto significativo no comportamento dos fluxos financeiros. Nesse período, houve uma queda na captação líquida acumulada, sinalizando uma maior retirada de recursos em um contexto de incerteza econômica global. No entanto, nos anos subsequentes, observou-se uma retomada no crescimento, indicando um processo de recuperação do setor.  
+
+Nos últimos anos, nota-se ainda um aumento na volatilidade da captação líquida, o que pode estar relacionado a fatores macroeconômicos, como oscilações nas taxas de juros, mudanças regulatórias e o próprio comportamento dos investidores em relação ao cenário econômico. Esse padrão reforça a necessidade de uma análise constante do setor, especialmente no que diz respeito às estratégias de captação e retenção de recursos por parte das gestoras de fundos.  
+
+Dessa forma, a evolução da captação e dos resgates demonstra não apenas a expansão do mercado de fundos no Brasil, mas também a sua capacidade de adaptação diante de diferentes cenários econômicos.
