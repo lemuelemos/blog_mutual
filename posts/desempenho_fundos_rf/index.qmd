@@ -17,7 +17,7 @@ Vamos cobrir todas as etapas do processo, como coleta dos dados, limpeza, manipu
 
 ### Fonte de Dados
 
-Vamos utilizar como base de dados primária os dados presentes na <a href="https://dados.cvm.gov.br/group/fundos-de-investimento" target="_blank">CVM</a>, de onde pegaremos todos os dados referentes aos dados de cotas, dados cadastrais e o que é chamado de extrato de informações. Além disso, vamos utilizar dados fornecidos pela ANBIMA. Vamos utilizar as classificações dos fundos presentes nos dados cadastrais que a instituição utiliza. A escolha de utilização da classificação ANBIMA, está no fato de que durante o processo de tratamento de dados em minha tese de doutorado, percebi algumas inconsistências na base da CVM. 
+Vamos utilizar como base de dados primária os dados presentes na <a href="https://dados.cvm.gov.br/group/fundos-de-investimento" target="_blank">CVM</a>, de onde pegaremos todos os dados referentes aos dados de cotas, dados cadastrais e o que é chamado de extrato de informações. Além disso, vamos utilizar dados fornecidos pela ANBIMA. Vamos utilizar as classificações dos fundos presentes nos dados cadastrais que a instituição utiliza. A escolha de utilização da classificação ANBIMA, está no fato de que durante o processo de tratamento de dados em minha tese de doutorado, percebi algumas inconsistências na base da CVM.
 
 ### Aquisição de dados
 
@@ -27,7 +27,7 @@ A CVM nos alerta que esses dados podem ser reapresentados em até M-11, além de
 
 Para lidar com o grande volume de dados, vamos paralelizar nossa execução usando o pacote `furrr`. Além disso, utilizaremos os pacotes `dplyr` e `tidyr` para realizar a manipulação dos dados em memória, enquanto o `pins` nos servirá como repositório para armazená-los. Para nosso banco de dados, adotaremos o **DuckDB**, o que nos permitirá trabalhar de forma eficiente com grandes tabelas em disco, e contaremos ainda com o pacote `dbplyr` para manipular os dados diretamente no banco.
 
-Primeira coisa que vamos fazer é carrregar os pacotes necessários e conectar ao nosso banco. Lembro que se você for fazer isos em sua máquina o caminho que está sendo utilizando no parâmetro `dbdir` tem que ser relativo a sua própria pasta. 
+Primeira coisa que vamos fazer é carrregar os pacotes necessários e conectar ao nosso banco. Lembro que se você for fazer isos em sua máquina o caminho que está sendo utilizando no parâmetro `dbdir` tem que ser relativo a sua própria pasta.
 
 ```{r carregamento de pacotes}
 library(dplyr)
@@ -107,7 +107,6 @@ future::plan(future::sequential)
 
 Depois de baixar todos os arquivos, precisamos ler cada um dos CSVs e unificá-los em um único objeto. Essa etapa pode ser bastante exigente em termos de recursos e, por isso, pode não rodar tão facilmente em alguns computadores. No meu caso, como a minha máquina tem 32 GB de memória, consegui processar tudo sem maiores problemas.
 
-
 ```{r leitura dos csvs,cache=T, eval = FALSE}
 arquivos_csv <- list.files("./informe_diario/",full.names = T,pattern = ".csv")
 
@@ -130,9 +129,10 @@ Deletando o objeto com todos os CSVs lidos.
 DBI::dbWriteTable(con,"informes_diarios",informes_diarios)
 rm(informes_diarios)
 ```
+
 ### ETL dos Dados
 
-Primeiro passo para começarmos o ETL de nossos dados consiste em conetarmos com nossa base de dados. Vamos utilizar a função do `dplyr` `tbl`. Isso nos permite lidar com a tabela que está no nosso banco do DuckDB como se fosse um DF dentro de nosso projeto. Os arquivos que baixamos possuem todos os tipos de fundos. Aqui vamos nos concentrar nos fundos de investimentos tradicionais, os conhecido por fazerem parte da instrução CVM 175. Para fazer isso vamos filtrar nossa base somente com estes fundos, onde vamos filtrar somente os fundos com a designação **FI** na base. 
+Primeiro passo para começarmos o ETL de nossos dados consiste em conetarmos com nossa base de dados. Vamos utilizar a função do `dplyr` `tbl`. Isso nos permite lidar com a tabela que está no nosso banco do DuckDB como se fosse um DF dentro de nosso projeto. Os arquivos que baixamos possuem todos os tipos de fundos. Aqui vamos nos concentrar nos fundos de investimentos tradicionais, os conhecido por fazerem parte da instrução CVM 175. Para fazer isso vamos filtrar nossa base somente com estes fundos, onde vamos filtrar somente os fundos com a designação **FI** na base.
 
 ```{r carregamento de base}
 informes_diarios <- tbl(con,"informes_diarios") 
@@ -150,8 +150,7 @@ rm(fundos_175_anbima)
 
 Aqui, como os dados filtrados resultaram em uma quantidade menor, o tamanho da base nos permite trabalhar tudo dentro do R sem problemas de desempenho. O `DuckDB` é fundamental para filtrar e unir as bases, pois o tempo de execução é bastante reduzido devido à sua maior eficiência ao lidar com grandes volumes de dados. Apenas a base de FI, por exemplo, possui cerca de 20 milhões de linhas, o que deixaria a análise diretamente no R muito lenta. Ao reduzir o tamanho da base, passamos a poder trabalhar tudo dentro do próprio R, sem precisar utilizar o `DuckDB`. É isso que fazemos a seguir.
 
-
-```{r filtragem dos fundos de rf}
+```{r filtragem dos fundos de rf, cache=FALSE}
 informes_diarios %>% 
   mutate(CNPJ_FUNDO = case_when(is.na(CNPJ_FUNDO) ~ CNPJ_FUNDO_CLASSE,
                                 .default = CNPJ_FUNDO),
@@ -185,34 +184,50 @@ informes_diarios %>%
 
 Depois de realizar esses processamentos, vamos conferir a quantidade de fundos com os quais trabalharemos.
 
-
 ```{r tabela de fundos por classe e tipo}
-library(dplyr)
-library(reactable)
 
 fundos_rf %>%
-  ungroup() %>%  # Remove qualquer agrupamento existente nos dados
-  distinct(CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%  # Mantém apenas combinações únicas dessas colunas
-  count(`Categoria ANBIMA`, `Tipo ANBIMA`) %>%  # Conta a quantidade de fundos por categoria e tipo
-  arrange(-n) %>%  # Ordena os dados de forma decrescente com base na contagem
-  rename(Quantidade = n) %>%  # Renomeia a coluna de contagem para "Quantidade"
+  distinct(CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
+  count(`Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
+  arrange(-n) %>%  
+  rename(Quantidade = n) %>%  
+  mutate(`Part (%)` = Quantidade / sum(Quantidade) * 100) %>%  
+  mutate(`Part Acum (%)` = cumsum(`Part (%)`)) %>%  
   reactable::reactable(
-    pagination = FALSE,  # Desativa a paginação da tabela
-    defaultColDef = colDef(minWidth = 120),  # Define uma largura mínima de 120 para todas as colunas
-    resizable = TRUE,  # Permite que as colunas sejam redimensionáveis
+    pagination = FALSE,  
+    defaultColDef = colDef(minWidth = 120),  
+    resizable = TRUE,  
     columns = list(
-      `Categoria ANBIMA` = colDef(width = 200),  # Define a largura da coluna "Categoria ANBIMA"
-      `Tipo ANBIMA`      = colDef(width = 300),  # Define a largura da coluna "Tipo ANBIMA"
-      Quantidade         = colDef(
-        align = "right",  # Alinha os valores numéricos à direita
-        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
-        footer = function(values) {  # Define o conteúdo do rodapé da coluna
-          htmltools::tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
-            htmltools::tagAppendChildren(htmltools::tags$span(sum(values)))  # Exibe a soma total ao lado
+      `Categoria ANBIMA` = colDef(width = 120),  
+      `Tipo ANBIMA` = colDef(width = 360),  
+      Quantidade = colDef(
+        width = 120,
+        align = "right",  
+        format = colFormat(separators = TRUE),  
+        footer = function(values) {  
+          htmltools::tags$b("Total: ") %>%  
+            htmltools::tagAppendChildren(htmltools::tags$span(sum(values)))  
+        }
+      ),
+      `Part (%)` = colDef(
+        width = 80,
+        align = "right",  
+        format = colFormat(suffix = "%", digits = 2),  
+        footer = function(values) {  
+          htmltools::tags$b("100%")  
+        }
+      ),
+      `Part Acum (%)` = colDef(
+        width = 120,
+        align = "right",  
+        format = colFormat(suffix = "%", digits = 2),  
+        footer = function(values) {  
+          htmltools::tags$b("100%")  
         }
       )
     )
   )
+
 
 
 ```
@@ -225,34 +240,31 @@ Por outro lado, categorias como **“Renda Fixa Duração Alta Grau de Investime
 
 Essa distribuição evidencia uma preferência pelas categorias que oferecem maior flexibilidade na gestão dos recursos e exposição ao crédito privado ou grau de investimento. Em contraste, estratégias específicas ou nichos, como fundos de dívida externa ou soberanos com maior duração, reúnem poucos produtos, demonstrando que gestores e investidores optam predominantemente por categorias mais flexíveis e diversificadas em termos de risco e alocação.
 
-
 ## Extrato de Infomações
 
-Neste estudo, eu utilizo como referência o arquivo disponibilizado pela ANBIMA, que traz informações qualitativas relevantes dos fundos de investimento. A base escolhida é o arquivo **<a href="https://dados.cvm.gov.br/dataset/fi-doc-extrato" target="_blank">Extrato de Informações</a>**, contendo diversas informações qualitativas sobre os fundos de investimento. Trata-se de uma base extensa com 117 colunas, da qual utilizei apenas as informações consideradas mais relevantes para este estudo.
+Neste estudo, eu utilizo como referência o arquivo disponibilizado pela ANBIMA, que traz informações qualitativas relevantes dos fundos de investimento. A base escolhida é o arquivo <a href="https://dados.cvm.gov.br/dataset/fi-doc-extrato" target="_blank">Extrato de Informações</a>, contendo diversas informações qualitativas sobre os fundos de investimento. Trata-se de uma base extensa com 117 colunas, da qual utilizei apenas as informações consideradas mais relevantes para este estudo.
 
 Recomendo ao leitor interessado acessar diretamente o arquivo completo caso deseje explorar detalhadamente todas as informações disponíveis.
 
+Vamos baixar os dados da CVM diretamente em nosso script, porém não utilizaremos todas as 117 colunas disponíveis. Com base na documentação das variáveis disponibilizada pela Comissão de Valores Mobiliários (CVM) no link <a href="https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/META/meta_extrato_fi.txt" target="_blank">Documentação das Variáveis do Extrato de Informações</a>, faremos uma seleção das variáveis consideradas mais relevantes para a análise desenvolvida neste estudo:
 
-Vamos baixar os dados da CVM diretamente em nosso script, porém não utilizaremos todas as 117 colunas disponíveis. Com base na documentação das variáveis disponibilizada pela Comissão de Valores Mobiliários (CVM) no link **<a href="https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/META/meta_extrato_fi.txt" target="_blank">Documentação das Variáveis do Extrato de Informações</a>**, faremos uma seleção das variáveis consideradas mais relevantes para a análise desenvolvida neste estudo:
-
-
-- **PUBLICO_ALVO:** público a que se destina o fundo de investimento.
-- **DISTRIB:** forma principal de distribuição do fundo.
-- **POLIT_INVEST:** política de investimento adotada.
-- **FUNDO_COTAS:** indicação se o fundo investe predominantemente em cotas de outros fundos.
-- **FUNDO_ESPELHO:** indicação se o fundo replica a carteira de outro fundo (fundo espelho).
-- **APLIC_MIN:** valor mínimo exigido para investimento inicial no fundo.
-- **ATUALIZ_DIARIA_COTA:** frequência da atualização e divulgação da cota do fundo.
-- **TAXA_SAIDA_PAGTO_RESGATE:** prazo efetivo para pagamento do resgate a partir da data de pedido.
-- **TAXA_ADM:** percentual cobrado como taxa de administração.
-- **EXISTE_TAXA_PERFM:** indicação da existência de taxa de performance.
-- **TAXA_PERFM:** valor percentual cobrado como taxa de performance.
-- **PARAM_TAXA_PERFM:** parâmetro utilizado para cobrança da taxa de performance.
-- **CALC_TAXA_PERFM:** método utilizado para calcular a taxa de performance.
-- **EXISTE_TAXA_INGRESSO:** indicação da existência de taxa de ingresso.
-- **EXISTE_TAXA_SAIDA:** indicação da existência de taxa de saída.
-- **INVEST_EXTERIOR:** indicação se o fundo realiza investimentos no exterior.
-- **ATIVO_CRED_PRIV:** indicação se o fundo investe em ativos de crédito privado.
+-   **PUBLICO_ALVO:** público a que se destina o fundo de investimento.
+-   **DISTRIB:** forma principal de distribuição do fundo.
+-   **POLIT_INVEST:** política de investimento adotada.
+-   **FUNDO_COTAS:** indicação se o fundo investe predominantemente em cotas de outros fundos.
+-   **FUNDO_ESPELHO:** indicação se o fundo replica a carteira de outro fundo (fundo espelho).
+-   **APLIC_MIN:** valor mínimo exigido para investimento inicial no fundo.
+-   **ATUALIZ_DIARIA_COTA:** frequência da atualização e divulgação da cota do fundo.
+-   **TAXA_SAIDA_PAGTO_RESGATE:** prazo efetivo para pagamento do resgate a partir da data de pedido.
+-   **TAXA_ADM:** percentual cobrado como taxa de administração.
+-   **EXISTE_TAXA_PERFM:** indicação da existência de taxa de performance.
+-   **TAXA_PERFM:** valor percentual cobrado como taxa de performance.
+-   **PARAM_TAXA_PERFM:** parâmetro utilizado para cobrança da taxa de performance.
+-   **CALC_TAXA_PERFM:** método utilizado para calcular a taxa de performance.
+-   **EXISTE_TAXA_INGRESSO:** indicação da existência de taxa de ingresso.
+-   **EXISTE_TAXA_SAIDA:** indicação da existência de taxa de saída.
+-   **INVEST_EXTERIOR:** indicação se o fundo realiza investimentos no exterior.
+-   **ATIVO_CRED_PRIV:** indicação se o fundo investe em ativos de crédito privado.
 
 Creio que com essas variáveis vamos conseguir ter um bom raio x dos fundos de renda fixa.
 
@@ -270,7 +282,7 @@ extrato_fi <- readr::read_delim("./extrato_fi.csv",
 
 Após baixar os dados, vamos unir com nossa base de fundos para que possamos ver qualitativamente os fundos de renda fixa.
 
-```{r juntando as bases}
+```{r juntando as bases,cache=F}
 fundos_rf %>% 
   left_join(
     extrato_fi %>% 
@@ -288,17 +300,17 @@ No geral a explicação dada anteriomente já permite uma interpretação direta
 
 **Tipos de Políticas de Investimento**
 
-1. **Ativa e Referenciada:**  
-Fundos que adotam gestão ativa, com o objetivo de obter retornos superiores a um índice de referência específico (benchmark). Embora busquem superá-lo, a estratégia permanece atrelada ao índice escolhido.
+1.  **Ativa e Referenciada:**\
+    Fundos que adotam gestão ativa, com o objetivo de obter retornos superiores a um índice de referência específico (benchmark). Embora busquem superá-lo, a estratégia permanece atrelada ao índice escolhido.
 
-2. **Ativa e Não Referenciada:**  
-Fundos com gestão ativa, sem utilizar um índice específico como parâmetro para os resultados. A seleção dos investimentos é livre, não sendo direcionada à replicação ou superação de benchmarks definidos.
+2.  **Ativa e Não Referenciada:**\
+    Fundos com gestão ativa, sem utilizar um índice específico como parâmetro para os resultados. A seleção dos investimentos é livre, não sendo direcionada à replicação ou superação de benchmarks definidos.
 
-3. **Passiva:**  
-Fundos que utilizam gestão passiva, com o objetivo de acompanhar a variação de um índice de referência. Não possuem a intenção explícita de superar esse índice, replicando geralmente a sua composição.
+3.  **Passiva:**\
+    Fundos que utilizam gestão passiva, com o objetivo de acompanhar a variação de um índice de referência. Não possuem a intenção explícita de superar esse índice, replicando geralmente a sua composição.
 
-4. **Enhanced:**  
-Fundos que integram estratégias ativas e passivas, buscando retornos acima do índice de referência, porém mantendo características semelhantes ao índice replicado, especialmente no que diz respeito ao perfil de risco e composição da carteira.
+4.  **Enhanced:**\
+    Fundos que integram estratégias ativas e passivas, buscando retornos acima do índice de referência, porém mantendo características semelhantes ao índice replicado, especialmente no que diz respeito ao perfil de risco e composição da carteira.
 
 Com essas informações em mãos, podemos agora analisar de forma quatitativa o perfil desses fundos de investimentos. O primeiro ponto que quero abordar consiste na distribuição entre público alvo e politicas de investimentos. Isso nos permitirá enxergar melhor se há uma tendência de política de investimentos a depender do público alvo deste fundo. O código a seguir vai slecionar somente as colunas de interesse. Como nossa base é grande, principalemtne devido as informações diárias que temos dos fundos de investimentos, temos que selecionar as colunas de nosso interesse e dessa forma obter somente os valores únicos para cada fundos de investimentos.
 
@@ -333,7 +345,6 @@ Por outro lado, fundos voltados especificamente para investidores qualificados n
 
 De maneira geral, os dados evidenciam que os fundos sem restrição de acesso são predominantes, principalmente aqueles voltados ao público geral e profissional, mostrando um mercado bastante aberto, mas também segmentado em nichos específicos, como os fundos exclusivos e reservados a investidores profissionais. Isso sugere que os gestores buscam atender diferentes perfis de investidores com estratégias direcionadas ao nível de sofisticação e exigências específicas.
 
-
 ```{r classes de fundos}
 extrato_fi %>% 
   distinct(DT_COMPTC, CNPJ_FUNDO_CLASSE, POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>%
@@ -363,7 +374,6 @@ extrato_fi %>%
   ) %>%
   reactable(
     pagination = FALSE,  # Desativa a paginação
-    defaultColDef = colDef(minWidth = 150),  # Define uma largura mínima para as colunas
     resizable = TRUE,  # Permite redimensionamento das colunas
     columns = list(
       `Política de Investimento` = colDef(width = 250),  # Define largura da coluna
@@ -388,7 +398,6 @@ Outro grupo com alta representatividade são os fundos com política de investim
 Entre os fundos com política “Passiva”, percebe-se uma divisão mais equilibrada entre aqueles que são fundos de cotas (358 fundos) e os que não são (333 fundos). Já na categoria “Enhanced”, há uma participação bastante reduzida, sendo apenas 25 fundos não espelho e não fundos de cotas, 11 fundos que são apenas fundos de cotas, e apenas 1 fundo que combina ambas características.
 
 No geral, fica clara a preferência dos gestores e investidores pela política de gestão ativa, sobretudo não-referenciada, enquanto estratégias mais específicas e menos convencionais, como a gestão “Enhanced” ou fundos espelho com cotas, mantêm representatividade bastante limitada. Esses dados indicam que o mercado brasileiro de fundos ainda prioriza estratégias tradicionais e ativas de investimento.
-
 
 ```{r detalhe qualitativos }
 extrato_fi %>% 
@@ -447,7 +456,6 @@ extrato_fi %>%
   )
 ```
 
-
 A análise dos dados referentes às políticas de investimento e taxas associadas aos fundos revela uma expressiva predominância dos fundos com política de investimento **"Ativa e Não-Referenciada"** sem incidência de taxas, que totalizam **1.757 fundos**. Destacam-se também, nessa mesma categoria, os fundos que cobram taxa de performance (**407 fundos**). Contudo, a cobrança de taxa de saída permanece pouco utilizada nesses fundos, com apenas 12 casos sem taxa de performance e 4 fundos com ambas as taxas.
 
 A segunda categoria mais representativa é composta pelos fundos com política **"Ativa e Referenciada"**, com destaque para fundos que não cobram taxas adicionais (**803 fundos**). Já a aplicação de taxas extras é menos frequente nessa política, indicando que gestores desses fundos preferem estruturas de custo mais simples ou tradicionais.
@@ -456,8 +464,7 @@ Por outro lado, os fundos de política **"Passiva"** aparecem em número interme
 
 Esses resultados indicam claramente que os fundos ativos são predominantes no mercado, especialmente os não-referenciados, sugerindo uma maior preferência dos investidores por estratégias flexíveis. Além disso, fundos com menor cobrança de taxas (taxa de ingresso, performance ou saída) apresentam uma quantidade significativamente superior, apontando uma preferência por estruturas mais simples em termos de custos associados ao investimento.
 
-
-```{r grafico de captação}
+```{r grafico de captação,cache=TRUE}
 fundos_rf %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(Competência = as.Date(as.yearqtr(DT_COMPTC))) %>%
@@ -494,15 +501,14 @@ fundos_rf %>%
   e_theme("shine")
 ```
 
+Desde o início de 2010, o mercado de fundos de investimento tem apresentado um crescimento expressivo, evidenciado pelo aumento contínuo dos volumes de captação e resgates. Esse comportamento reflete a crescente participação dos investidores nesse segmento, com um aumento da movimentação financeira ao longo dos anos.
 
-Desde o início de 2010, o mercado de fundos de investimento tem apresentado um crescimento expressivo, evidenciado pelo aumento contínuo dos volumes de captação e resgates. Esse comportamento reflete a crescente participação dos investidores nesse segmento, com um aumento da movimentação financeira ao longo dos anos.  
+Ao analisar a captação líquida, observamos que, embora haja oscilações ao longo do tempo, os fluxos de entrada e saída se mantêm relativamente equilibrados. Esse comportamento sugere que, apesar de períodos de maior atratividade dos fundos e momentos de maior aversão ao risco por parte dos investidores, o mercado tem demonstrado resiliência.
 
-Ao analisar a captação líquida, observamos que, embora haja oscilações ao longo do tempo, os fluxos de entrada e saída se mantêm relativamente equilibrados. Esse comportamento sugere que, apesar de períodos de maior atratividade dos fundos e momentos de maior aversão ao risco por parte dos investidores, o mercado tem demonstrado resiliência.  
+A captação líquida acumulada, por sua vez, segue uma trajetória ascendente, indicando que, no agregado, a captação tem superado os resgates. Essa tendência reflete um aumento estrutural no volume de recursos alocados em fundos de investimento, impulsionado por fatores como o amadurecimento do mercado financeiro, a diversificação dos produtos disponíveis e o maior interesse dos investidores institucionais e individuais.
 
-A captação líquida acumulada, por sua vez, segue uma trajetória ascendente, indicando que, no agregado, a captação tem superado os resgates. Essa tendência reflete um aumento estrutural no volume de recursos alocados em fundos de investimento, impulsionado por fatores como o amadurecimento do mercado financeiro, a diversificação dos produtos disponíveis e o maior interesse dos investidores institucionais e individuais.  
+A crise decorrente da pandemia da COVID-19, por volta de 2020, teve um impacto significativo no comportamento dos fluxos financeiros. Nesse período, houve uma queda na captação líquida acumulada, sinalizando uma maior retirada de recursos em um contexto de incerteza econômica global. No entanto, nos anos subsequentes, observou-se uma retomada no crescimento, indicando um processo de recuperação do setor.
 
-A crise decorrente da pandemia da COVID-19, por volta de 2020, teve um impacto significativo no comportamento dos fluxos financeiros. Nesse período, houve uma queda na captação líquida acumulada, sinalizando uma maior retirada de recursos em um contexto de incerteza econômica global. No entanto, nos anos subsequentes, observou-se uma retomada no crescimento, indicando um processo de recuperação do setor.  
-
-Nos últimos anos, nota-se ainda um aumento na volatilidade da captação líquida, o que pode estar relacionado a fatores macroeconômicos, como oscilações nas taxas de juros, mudanças regulatórias e o próprio comportamento dos investidores em relação ao cenário econômico. Esse padrão reforça a necessidade de uma análise constante do setor, especialmente no que diz respeito às estratégias de captação e retenção de recursos por parte das gestoras de fundos.  
+Nos últimos anos, nota-se ainda um aumento na volatilidade da captação líquida, o que pode estar relacionado a fatores macroeconômicos, como oscilações nas taxas de juros, mudanças regulatórias e o próprio comportamento dos investidores em relação ao cenário econômico. Esse padrão reforça a necessidade de uma análise constante do setor, especialmente no que diz respeito às estratégias de captação e retenção de recursos por parte das gestoras de fundos.
 
 Dessa forma, a evolução da captação e dos resgates demonstra não apenas a expansão do mercado de fundos no Brasil, mas também a sua capacidade de adaptação diante de diferentes cenários econômicos.
