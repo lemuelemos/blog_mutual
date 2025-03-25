@@ -483,10 +483,19 @@ fundos_rf %>%
   arrange(Competência) %>%
   mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`)) %>%
   e_charts(Competência) %>%
-  e_bar(Captação, name = "Captação", color = "steelblue", stack = "total") %>%
-  e_bar(Resgates, name = "Resgates", color = "tomato", stack = "total") %>%
-  e_line(`Captação líquida`, name = "Captação líquida", color = "darkgreen") %>%
-  e_line(`Captação líquida acumulada`, name = "Captação líquida acumulada", color = "purple") %>%
+  e_bar(Captação, name = "Captação", 
+        color = "steelblue", 
+        stack = "total") %>%
+  e_bar(Resgates, 
+        name = "Resgates", 
+        color = "tomato", 
+        stack = "total") %>%
+  e_line(`Captação líquida`, 
+         name = "Captação líquida", 
+         color = "darkgreen") %>%
+  e_line(`Captação líquida acumulada`, 
+         name = "Captação líquida acumulada", 
+         color = "purple") %>%
   e_title(
     text = "Histórico de Captação",
     subtext = "Captação e Resgates com sua evolução trimestral desde o início de 2010"
@@ -497,8 +506,7 @@ fundos_rf %>%
     axisLabel = list(formatter = JS("function(value){ return value + ' B'; }"))
   ) %>%
   e_x_axis(axisLabel = list(rotate = 45)) %>%
-  e_grid(left = "10%", right = "10%") %>%
-  e_theme("shine")
+  e_grid(left = "10%", right = "10%") 
 ```
 
 Desde o início de 2010, o mercado de fundos de investimento tem apresentado um crescimento expressivo, evidenciado pelo aumento contínuo dos volumes de captação e resgates. Esse comportamento reflete a crescente participação dos investidores nesse segmento, com um aumento da movimentação financeira ao longo dos anos.
@@ -512,3 +520,41 @@ A crise decorrente da pandemia da COVID-19, por volta de 2020, teve um impacto s
 Nos últimos anos, nota-se ainda um aumento na volatilidade da captação líquida, o que pode estar relacionado a fatores macroeconômicos, como oscilações nas taxas de juros, mudanças regulatórias e o próprio comportamento dos investidores em relação ao cenário econômico. Esse padrão reforça a necessidade de uma análise constante do setor, especialmente no que diz respeito às estratégias de captação e retenção de recursos por parte das gestoras de fundos.
 
 Dessa forma, a evolução da captação e dos resgates demonstra não apenas a expansão do mercado de fundos no Brasil, mas também a sua capacidade de adaptação diante de diferentes cenários econômicos.
+
+```{r participacao tipo anbima}
+fundos_rf %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(Competência = as.Date(as.yearqtr(DT_COMPTC))) %>%
+  filter(Competência >= as.Date("2010-01-01")) %>%
+  mutate(
+    `Tipo ANBIMA` = case_when(
+      `Tipo ANBIMA` %in% c(
+        "Renda Fixa Duração Livre Crédito Livre",
+        "Renda Fixa Duração Livre Grau de Investimento",
+        "Renda Fixa Duração Baixa Grau de Investimento",
+        "Renda Fixa Duração Livre Soberano",
+        "Renda Fixa Duração Baixa Soberano",
+        "Renda Fixa Indexados",
+        "Renda Fixa Simples"
+      ) ~ `Tipo ANBIMA`,
+      TRUE ~ "Outros"
+    )
+  ) %>%
+  summarise(
+    Captação = sum(CAPTC_DIA) / 1e9,
+    Resgates = -sum(RESG_DIA) / 1e9,
+    .by = c("Competência", "Tipo ANBIMA")
+  ) %>%
+  mutate(CAPTC_LIQ = Captação + Resgates) %>% 
+  group_by(`Tipo ANBIMA`) %>%
+  e_charts(Competência) %>%
+  e_bar(CAPTC_LIQ,stack = "total",series = "Tipo ANBIMA") %>%
+  e_tooltip(trigger = "axis") %>%
+  e_title("Captação Líquida por Tipo ANBIMA ao Longo do Tempo") %>%
+  e_x_axis(name = "Competência") %>%
+  e_y_axis(name = "Captação Líquida (em bilhões)") %>%
+  e_legend(right = 0)
+```
+
+
+
