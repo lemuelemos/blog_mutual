@@ -524,8 +524,8 @@ Dessa forma, a evolução da captação e dos resgates demonstra não apenas a e
 ```{r participacao tipo anbima}
 fundos_rf %>%
   filter(!is.na(POLIT_INVEST)) %>%
-  mutate(Competência = as.Date(as.yearqtr(DT_COMPTC))) %>%
-  filter(Competência >= as.Date("2010-01-01")) %>%
+  mutate(Competência = as.yearqtr(DT_COMPTC)) %>%
+  filter(Competência >= "2010 Q1") %>%
   mutate(
     `Tipo ANBIMA` = case_when(
       `Tipo ANBIMA` %in% c(
@@ -545,15 +545,30 @@ fundos_rf %>%
     Resgates = -sum(RESG_DIA) / 1e9,
     .by = c("Competência", "Tipo ANBIMA")
   ) %>%
-  mutate(CAPTC_LIQ = Captação + Resgates) %>% 
+  mutate(
+    CAPTC_LIQ = Captação + Resgates,
+    Competência = as.Date(Competência)
+  ) %>%
+  arrange(Competência) %>%
   group_by(`Tipo ANBIMA`) %>%
   e_charts(Competência) %>%
-  e_bar(CAPTC_LIQ,stack = "total",series = "Tipo ANBIMA") %>%
+  e_bar(CAPTC_LIQ, stack = "total", series = "Tipo ANBIMA") %>%
   e_tooltip(trigger = "axis") %>%
   e_title("Captação Líquida por Tipo ANBIMA ao Longo do Tempo") %>%
   e_x_axis(name = "Competência") %>%
   e_y_axis(name = "Captação Líquida (em bilhões)") %>%
-  e_legend(right = 0)
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(
+    bottom = 120,  # espaço extra pra caber legenda
+    left = 50,
+    right = 30,
+    top = 60
+  )
+
 ```
 
 
