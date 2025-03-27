@@ -464,11 +464,11 @@ Por outro lado, os fundos de política **"Passiva"** aparecem em número interme
 
 Esses resultados indicam claramente que os fundos ativos são predominantes no mercado, especialmente os não-referenciados, sugerindo uma maior preferência dos investidores por estratégias flexíveis. Além disso, fundos com menor cobrança de taxas (taxa de ingresso, performance ou saída) apresentam uma quantidade significativamente superior, apontando uma preferência por estruturas mais simples em termos de custos associados ao investimento.
 
-```{r grafico de captação,cache=TRUE}
+```{r grafico de captação}
 fundos_rf %>%
   filter(!is.na(POLIT_INVEST)) %>%
-  mutate(Competência = as.Date(as.yearqtr(DT_COMPTC))) %>%
-  filter(Competência >= as.Date("2010-01-01")) %>%
+  mutate(Competência = as.yearqtr(DT_COMPTC)) %>%
+  filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
   summarise(
     Captação = sum(CAPTC_DIA) / 1e9,
     Resgates = -sum(RESG_DIA) / 1e9,
@@ -481,7 +481,9 @@ fundos_rf %>%
   ) %>%
   rename(`Captação líquida` = `Renda Fixa`) %>%
   arrange(Competência) %>%
-  mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`)) %>%
+  mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`),
+         Competência = as.Date(Competência)) %>%
+  arrange(Competência) %>% 
   e_charts(Competência) %>%
   e_bar(Captação, name = "Captação", 
         color = "steelblue", 
@@ -521,11 +523,11 @@ Nos últimos anos, nota-se ainda um aumento na volatilidade da captação líqui
 
 Dessa forma, a evolução da captação e dos resgates demonstra não apenas a expansão do mercado de fundos no Brasil, mas também a sua capacidade de adaptação diante de diferentes cenários econômicos.
 
-```{r participacao tipo anbima}
+```{r captacao tipo anbima}
 fundos_rf %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(Competência = as.yearqtr(DT_COMPTC)) %>%
-  filter(Competência >= "2010 Q1") %>%
+  filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
   mutate(
     `Tipo ANBIMA` = case_when(
       `Tipo ANBIMA` %in% c(
@@ -563,13 +565,52 @@ fundos_rf %>%
     left = "center"
   ) %>%
   e_grid(
-    bottom = 120,  # espaço extra pra caber legenda
-    left = 50,
-    right = 30,
+    bottom = 120,
     top = 60
   )
 
 ```
 
 
+```{r custodia por tipo anbima}
+fundos_rf %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(Competência = as.yearqtr(DT_COMPTC)) %>%
+  filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
+  mutate(
+    `Tipo ANBIMA` = case_when(
+      `Tipo ANBIMA` %in% c(
+        "Renda Fixa Duração Livre Crédito Livre",
+        "Renda Fixa Duração Livre Grau de Investimento",
+        "Renda Fixa Duração Baixa Grau de Investimento",
+        "Renda Fixa Duração Livre Soberano",
+        "Renda Fixa Duração Baixa Soberano",
+        "Renda Fixa Indexados",
+        "Renda Fixa Simples"
+      ) ~ `Tipo ANBIMA`,
+      TRUE ~ "Outros"
+    )
+  ) %>% 
+  summarise(`Custódia` = sum(VL_PATRIM_LIQ),
+            .by = c("Competência","Tipo ANBIMA")) %>% 
+  arrange(Competência) %>% 
+  mutate(Competência = as.Date(Competência),
+         `Custódia` = `Custódia` / 1e9) %>% 
+  group_by(`Tipo ANBIMA`) %>% 
+  e_charts(Competência) %>%
+  e_bar(`Custódia`,stack = "total",series = "Tipo ANBIMA") %>% 
+  e_tooltip(trigger = "axis") %>%
+  e_title("Patrimônio Líquida por Tipo ANBIMA ao Longo do Tempo") %>%
+  e_x_axis(name = "Competência",type = "time") %>%
+  e_y_axis(name = "Custódia (em bilhões)") %>%
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(
+    bottom = 120,
+    top = 60
+  )
+```
 
