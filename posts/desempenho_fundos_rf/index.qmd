@@ -565,7 +565,9 @@ fundos_rf %>%
     left = "center"
   ) %>%
   e_grid(
-    bottom = 120,
+    bottom = 120,  # espaço extra pra caber legenda
+    left = 50,
+    right = 30,
     top = 60
   )
 
@@ -611,6 +613,61 @@ fundos_rf %>%
   e_grid(
     bottom = 120,
     top = 60
+  )
+```
+
+```{r analise de rentabilidades}
+#| label: violin-plot-anbima
+#| fig-width: 12
+#| fig-height: 10
+#| fig-align: "center"
+#| echo: false
+
+fundos_rf %>% 
+  select(DT_COMPTC, CNPJ_FUNDO, VL_QUOTA) %>% 
+  mutate(Ano = lubridate::year(DT_COMPTC)) %>% 
+  arrange(Ano, CNPJ_FUNDO, DT_COMPTC) %>% 
+  summarise(`Rent (%)` = ((last(VL_QUOTA)/first(VL_QUOTA)) - 1)*100,
+            .by = c("Ano", "CNPJ_FUNDO")) %>% 
+  left_join(
+    fundos_rf %>% 
+      distinct(CNPJ_FUNDO, `Tipo ANBIMA`) %>% 
+      mutate(
+        `Tipo ANBIMA` = case_when(
+          `Tipo ANBIMA` %in% c(
+            "Renda Fixa Duração Livre Crédito Livre",
+            "Renda Fixa Duração Livre Grau de Investimento",
+            "Renda Fixa Duração Baixa Grau de Investimento",
+            "Renda Fixa Duração Livre Soberano",
+            "Renda Fixa Duração Baixa Soberano",
+            "Renda Fixa Indexados",
+            "Renda Fixa Simples"
+          ) ~ `Tipo ANBIMA`,
+          TRUE ~ "Outros"
+        ))
+  ) -> rentabilidade_anual_fundos_rf
+
+rentabilidade_anual_fundos_rf %>% 
+  mutate(Outlier = case_when(`Rent (%)` > 30 | `Rent (%)` < -30 ~ "Out",
+                             .default = "In")) %>% 
+  filter(Outlier == "Out") %>% 
+  distinct(CNPJ_FUNDO) -> fundos_out
+
+rentabilidade_anual_fundos_rf %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
   )
 ```
 
