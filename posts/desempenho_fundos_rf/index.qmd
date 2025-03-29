@@ -573,6 +573,15 @@ fundos_rf %>%
 
 ```
 
+O gráfico apresenta a evolução da **captação líquida** dos fundos de Renda Fixa classificados pela ANBIMA, no período de aproximadamente 2010 até o início de 2024. A captação líquida representa a diferença entre os aportes e os resgates realizados pelos investidores, sendo um importante indicador da atratividade desses fundos ao longo do tempo. Os dados estão expressos em bilhões de reais e segmentados por categorias de fundos.
+
+Nos primeiros anos do gráfico (2010 até cerca de 2016), a captação líquida se manteve relativamente estável, com oscilações modestas e predominância de entradas líquidas positivas. A partir de 2017, observa-se um aumento na volatilidade, com períodos de captação elevada, seguidos por momentos de fortes resgates. Essa tendência se intensifica após 2020, com variações muito mais expressivas entre meses ou trimestres.
+
+Durante os anos de 2020 e 2021, destacam-se movimentos de captação extremamente positivos, especialmente nos fundos de **Renda Fixa Duração Baixa Soberano** e **Renda Fixa Simples**, que aparecem com barras altas e frequentes nesse período. No entanto, a partir de 2022, há uma mudança significativa, com diversos episódios de captação negativa, indicando grandes volumes de resgates — particularmente visíveis nas categorias de **Renda Fixa Duração Baixa Soberano**, **Duração Livre Grau de Investimento** e **Renda Fixa Simples**.
+
+Esses resgates mais acentuados nos últimos anos podem estar associados a mudanças nas condições econômicas, como aumento da taxa de juros, inflação, ou reprecificação de ativos, levando investidores a buscar alternativas fora dos fundos de renda fixa tradicionais.
+
+Em resumo, o gráfico revela que, embora o patrimônio líquido dos fundos de renda fixa tenha crescido ao longo do tempo (como visto no gráfico anterior), a captação líquida passou a oscilar mais fortemente nos últimos anos, com um padrão mais irregular e períodos marcantes de saídas de recursos. Essa dinâmica sugere um ambiente mais volátil e seletivo por parte dos investidores, influenciado pelas condições do mercado e pelas estratégias específicas de cada tipo de fundo.
 
 ```{r custodia por tipo anbima}
 fundos_rf %>%
@@ -616,14 +625,22 @@ fundos_rf %>%
   )
 ```
 
-```{r analise de rentabilidades}
-#| label: violin-plot-anbima
+O gráfico apresenta a evolução do patrimônio líquido dos fundos de investimento classificados pela ANBIMA ao longo do tempo, abrangendo o período de aproximadamente 2010 até o início de 2024. Os dados estão segmentados por diferentes tipos de fundos de Renda Fixa e expressos em bilhões de reais. De maneira geral, observa-se uma tendência clara de crescimento contínuo no patrimônio líquido desses fundos, com uma aceleração mais acentuada a partir de 2020. No ponto mais recente do gráfico, o valor total ultrapassa a marca dos 350 bilhões de reais.
+
+Entre as categorias analisadas, os fundos de **Renda Fixa Duração Livre Grau de Investimento** se destacam como uma das classes que mais cresceu nos últimos anos, especialmente a partir de 2021, assumindo uma participação significativa no total. Da mesma forma, os fundos de **Renda Fixa Duração Livre Soberano** também apresentaram expansão expressiva, principalmente após 2020, refletindo a busca por alternativas mais flexíveis dentro da renda fixa.
+
+Os fundos de **Renda Fixa Duração Baixa Soberano** e **Renda Fixa Duração Baixa Grau de Investimento** mantêm uma presença constante e relevante ao longo do tempo. Destaca-se que o fundo soberano sofreu variações mais marcantes em certos períodos, como uma queda perceptível em 2021 seguida de uma posterior recuperação. Já as categorias de **Renda Fixa Simples** e **Outros** mostram trajetórias distintas: enquanto os “Outros” crescem de forma estável, os fundos “Simples” surgem mais recentemente no gráfico, apresentando uma evolução rápida e relevante.
+
+Por fim, os fundos de **Renda Fixa Duração Livre Crédito Livre** e **Renda Fixa Indexados** possuem participação menor no total, mas também mostram crescimento consistente, com destaque para o primeiro, que vem ganhando espaço de forma gradual. Em resumo, o gráfico revela um mercado de fundos de renda fixa em expansão no Brasil, com destaque para fundos de duração livre, que oferecem maior flexibilidade de gestão e têm atraído cada vez mais recursos, possivelmente em resposta à volatilidade econômica e à busca por rentabilidade com controle de risco.
+
+```{r analise de rentabilidades 1}
 #| fig-width: 12
-#| fig-height: 10
+#| fig-height: 8
 #| fig-align: "center"
-#| echo: false
 
 fundos_rf %>% 
+  mutate(Competência = as.yearqtr(DT_COMPTC)) %>%
+  filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
   select(DT_COMPTC, CNPJ_FUNDO, VL_QUOTA) %>% 
   mutate(Ano = lubridate::year(DT_COMPTC)) %>% 
   arrange(Ano, CNPJ_FUNDO, DT_COMPTC) %>% 
@@ -648,15 +665,51 @@ fundos_rf %>%
   ) -> rentabilidade_anual_fundos_rf
 
 rentabilidade_anual_fundos_rf %>% 
-  mutate(Outlier = case_when(`Rent (%)` > 30 | `Rent (%)` < -30 ~ "Out",
+  mutate(Outlier = case_when(`Rent (%)` > 40 | `Rent (%)` < -40 ~ "Out",
                              .default = "In")) %>% 
   filter(Outlier == "Out") %>% 
   distinct(CNPJ_FUNDO) -> fundos_out
 
 rentabilidade_anual_fundos_rf %>% 
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+            "Renda Fixa Duração Livre Crédito Livre",
+            "Renda Fixa Duração Livre Grau de Investimento",
+            "Renda Fixa Duração Baixa Grau de Investimento",
+            "Renda Fixa Duração Livre Soberano")) %>% 
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+```{r analise de rentabilidades 2}
+#| fig-width: 12
+#| fig-height: 8
+#| fig-align: "center"
+
+rentabilidade_anual_fundos_rf %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(!`Tipo ANBIMA` %in% c(
+            "Renda Fixa Duração Livre Crédito Livre",
+            "Renda Fixa Duração Livre Grau de Investimento",
+            "Renda Fixa Duração Baixa Grau de Investimento",
+            "Renda Fixa Duração Livre Soberano")) %>% 
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", 
+              color = "gray30", 
+              alpha = 0.8, 
+              draw_quantiles = c(0.25, 0.5, 0.75)) +
   facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
   labs(
     title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
