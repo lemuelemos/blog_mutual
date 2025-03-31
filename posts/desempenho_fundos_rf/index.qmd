@@ -662,6 +662,13 @@ fundos_rf %>%
           ) ~ `Tipo ANBIMA`,
           TRUE ~ "Outros"
         ))
+  ) %>% 
+  left_join(
+    rbcb::get_series(4391) %>% 
+      mutate(Ano = lubridate::year(date)) %>% 
+      filter(Ano >= 2010) %>% 
+      summarise(CDI = last((cumprod((`4391`/100)+1)-1)*100),
+                .by = Ano)
   ) -> rentabilidade_anual_fundos_rf
 
 rentabilidade_anual_fundos_rf %>% 
@@ -669,6 +676,20 @@ rentabilidade_anual_fundos_rf %>%
                              .default = "In")) %>% 
   filter(Outlier == "Out") %>% 
   distinct(CNPJ_FUNDO) -> fundos_out
+
+linhas_cdi <- rentabilidade_anual_fundos_rf %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Renda Fixa Duração Livre Crédito Livre",
+    "Renda Fixa Duração Livre Grau de Investimento",
+    "Renda Fixa Duração Baixa Grau de Investimento",
+    "Renda Fixa Duração Livre Soberano"
+  )) %>% 
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
 
 rentabilidade_anual_fundos_rf %>% 
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
@@ -679,6 +700,12 @@ rentabilidade_anual_fundos_rf %>%
             "Renda Fixa Duração Livre Soberano")) %>% 
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
   facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
   labs(
     title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
@@ -698,6 +725,20 @@ rentabilidade_anual_fundos_rf %>%
 #| fig-height: 8
 #| fig-align: "center"
 
+linhas_cdi <- rentabilidade_anual_fundos_rf %>%
+  filter(!`Tipo ANBIMA` %in% c(
+    "Renda Fixa Duração Livre Crédito Livre",
+    "Renda Fixa Duração Livre Grau de Investimento",
+    "Renda Fixa Duração Baixa Grau de Investimento",
+    "Renda Fixa Duração Livre Soberano"
+  )) %>% 
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+
 rentabilidade_anual_fundos_rf %>% 
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
   filter(!`Tipo ANBIMA` %in% c(
@@ -710,6 +751,12 @@ rentabilidade_anual_fundos_rf %>%
               color = "gray30", 
               alpha = 0.8, 
               draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
   facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
   labs(
     title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
