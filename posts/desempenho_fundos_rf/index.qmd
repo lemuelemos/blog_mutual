@@ -7,6 +7,11 @@ image: "image.jpg"
 execute:
   warning: false
   message: false
+format:
+  html:
+    code-fold: true         # Mostra botão para esconder/exibir o código
+    code-summary: "Mostrar código"  # Texto do botão (padrão: "Code")
+
 ---
 
 Desde que concluí minha tese sobre fundos de investimento, no início de 2014, venho considerando publicar posts regulares sobre o tema. O objetivo é construir uma base de conhecimento e compartilhar insights relevantes. Embora existam páginas que comparam fundos, ainda são raras as discussões que abordam a indústria de forma mais abrangente, analisando aspectos como captação, rentabilidade, risco e diversas outras métricas. Neste espaço, a proposta é analisar os dados de forma agregada, sem focar em fundos individuais.
@@ -25,11 +30,15 @@ Os primeiros dados que iremos baixar são aqueles referentes às cotas, ao PL e 
 
 A CVM nos alerta que esses dados podem ser reapresentados em até M-11, além de dividi-los em dois repositórios: um contendo dados históricos desde 2000 até 2020, e outro com dados de 2021 até os dias atuais. Vamos baixar ambos. Faremos o download de arquivos compactados, que serão descompactados e carregados em nossa base de dados. Após a descompactação, uniremos todos os arquivos em uma única base.
 
-Para lidar com o grande volume de dados, vamos paralelizar nossa execução usando o pacote `furrr`. Além disso, utilizaremos os pacotes `dplyr` e `tidyr` para realizar a manipulação dos dados em memória, enquanto o `pins` nos servirá como repositório para armazená-los. Para nosso banco de dados, adotaremos o **DuckDB**, o que nos permitirá trabalhar de forma eficiente com grandes tabelas em disco, e contaremos ainda com o pacote `dbplyr` para manipular os dados diretamente no banco.
+
+Para lidar com o grande volume de dados, vamos paralelizar nossa execução utilizando o pacote `furrr`. Esse pacote permite baixar vários meses de uma só vez, reduzindo consideravelmente o tempo de download. Após obter os dados da CVM, vamos unir todas as bases e, em seguida, salvar os dados em um banco de dados conhecido como **DuckDB**.
+
+Depois de consolidar os dados, teremos aproximadamente 70 milhões de linhas, o que dificulta o tratamento diretamente no R. O **DuckDB** nos permite manipular esses dados com mais agilidade, pois é um banco otimizado para lidar com grandes volumes de informação.
 
 Primeira coisa que vamos fazer é carrregar os pacotes necessários e conectar ao nosso banco. Lembro que se você for fazer isos em sua máquina o caminho que está sendo utilizando no parâmetro `dbdir` tem que ser relativo a sua própria pasta.
 
 ```{r carregamento de pacotes}
+#| code-fold: false
 library(dplyr)
 library(dbplyr)
 library(tidyr)
@@ -41,8 +50,8 @@ library(scales)
 library(ggimprensa)
 library(zoo)
 library(echarts4r)
-# Conectando a base de dados
 
+# Conectando a base de dados
 con <- DBI::dbConnect(duckdb::duckdb(), 
                  dbdir = "fundos_db.duckdb",
                  read_only = FALSE)
@@ -51,7 +60,10 @@ con <- DBI::dbConnect(duckdb::duckdb(),
 
 Para obter o conjunto completo de dados, vamos acessar os endereços [HIST](https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/) e [DADOS](https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/) para baixar todos os arquivos disponíveis. Para otimizar essa etapa, utilizaremos as funções de paralelização do pacote `furrr`, configurando quatro clusters para realizar as requisições simultaneamente e, assim, agilizar o processo de download.
 
+
 ```{r download de arquivos, cache=T, eval = FALSE}
+#| code-fold: false
+
 # Criando a sequência de datas para criar as urls de download
 
 anos_download <- seq(2000,2020,1)
@@ -108,16 +120,24 @@ future::plan(future::sequential)
 Depois de baixar todos os arquivos, precisamos ler cada um dos CSVs e unificá-los em um único objeto. Essa etapa pode ser bastante exigente em termos de recursos e, por isso, pode não rodar tão facilmente em alguns computadores. No meu caso, como a minha máquina tem 32 GB de memória, consegui processar tudo sem maiores problemas.
 
 ```{r leitura dos csvs,cache=T, eval = FALSE}
-arquivos_csv <- list.files("./informe_diario/",full.names = T,pattern = ".csv")
+#| code-fold: false
+#| 
+# Lista todos os arquivos CSV da pasta "informe_diario"
+arquivos_csv <- list.files("./informe_diario/", full.names = TRUE, pattern = ".csv")
 
+# Configura o plano de execução paralela com 6 núcleos (multisession é compatível com Windows)
 future::plan(future::multisession, workers = 6)
-furrr::future_map(arquivos_csv, function(arquivo){
-  readr::read_delim(arquivo, 
-    delim = ";", escape_double = FALSE, trim_ws = TRUE)
-},.progress = T) -> informes_diarios
 
+# Lê todos os arquivos CSV em paralelo e armazena os resultados como uma lista de dataframes
+furrr::future_map(arquivos_csv, function(arquivo) {
+  readr::read_delim(arquivo, 
+                    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+}, .progress = TRUE) -> informes_diarios
+
+# Restaura o plano de execução para modo sequencial após a paralelização
 future::plan(future::sequential)
 
+# Junta todos os dataframes da lista em um único dataframe consolidado
 informes_diarios %>% 
   bind_rows() -> informes_diarios
 
@@ -126,60 +146,72 @@ informes_diarios %>%
 Deletando o objeto com todos os CSVs lidos.
 
 ```{r linkando base, eval = FALSE}
+#| code-fold: false
+
 DBI::dbWriteTable(con,"informes_diarios",informes_diarios)
 rm(informes_diarios)
 ```
 
 ### ETL dos Dados
 
-Primeiro passo para começarmos o ETL de nossos dados consiste em conetarmos com nossa base de dados. Vamos utilizar a função do `dplyr` `tbl`. Isso nos permite lidar com a tabela que está no nosso banco do DuckDB como se fosse um DF dentro de nosso projeto. Os arquivos que baixamos possuem todos os tipos de fundos. Aqui vamos nos concentrar nos fundos de investimentos tradicionais, os conhecido por fazerem parte da instrução CVM 175. Para fazer isso vamos filtrar nossa base somente com estes fundos, onde vamos filtrar somente os fundos com a designação **FI** na base.
+O primeiro passo para iniciarmos o ETL dos nossos dados consiste em nos conectarmos à base de dados. Vamos utilizar a função `tbl` do pacote `dplyr`, que nos permite manipular a tabela do banco DuckDB como se fosse um data frame dentro do nosso projeto.
+
+Os arquivos que baixamos contêm todos os tipos de fundos. Aqui, vamos nos concentrar nos fundos de investimento tradicionais, conhecidos por fazerem parte da Instrução CVM 175. Para isso, vamos filtrar a base, selecionando apenas os fundos com a designação **FI**.
 
 ```{r carregamento de base}
+#| code-fold: false
+#| 
 informes_diarios <- tbl(con,"informes_diarios") 
 ```
 
-Vamos começar integrando à base de dados fornecida pela ANBIMA. Primeiro, leremos o arquivo e o salvaremos em nossa base do DuckDB. Em seguida, faremos a união das duas fontes de dados, o que nos permitirá filtrar apenas as classes de fundos que desejamos para este primeiro momento, focando nos fundos de renda fixa.
+Vamos começar integrando a base de dados fornecida pela ANBIMA. Primeiro, leremos o arquivo e o salvaremos em nossa base do DuckDB. Em seguida, faremos a união das duas fontes de dados, o que nos permitirá filtrar apenas as classes de fundos desejadas para este primeiro momento, com foco nos fundos de renda fixa.
 
 ```{r carregando dados anbima, eval=F}
+#| code-fold: false
+#| 
 fundos_175_anbima <- readxl::read_excel("fundos-175-caracteristicas-publico-22-02-2025-12-01-14.xlsx")
 DBI::dbWriteTable(con,"fundos_175_anbima",fundos_175_anbima)
 rm(fundos_175_anbima)
 ```
 
-**Texto revisado e sugestões de melhoria:**
 
-Aqui, como os dados filtrados resultaram em uma quantidade menor, o tamanho da base nos permite trabalhar tudo dentro do R sem problemas de desempenho. O `DuckDB` é fundamental para filtrar e unir as bases, pois o tempo de execução é bastante reduzido devido à sua maior eficiência ao lidar com grandes volumes de dados. Apenas a base de FI, por exemplo, possui cerca de 20 milhões de linhas, o que deixaria a análise diretamente no R muito lenta. Ao reduzir o tamanho da base, passamos a poder trabalhar tudo dentro do próprio R, sem precisar utilizar o `DuckDB`. É isso que fazemos a seguir.
+Aqui, como os dados filtrados resultaram em uma quantidade menor, o tamanho da base nos permite trabalhar tudo dentro do R sem problemas de desempenho. O `DuckDB` é fundamental para filtrar e unir as bases, pois o tempo de execução é bastante reduzido devido à sua maior eficiência ao lidar com grandes volumes de dados. Apenas a base de FI, por exemplo, possui cerca de 20 milhões de linhas, o que tornaria a análise diretamente no R muito lenta. Ao reduzir o tamanho da base, passamos a poder trabalhar tudo dentro do próprio R, sem precisar utilizar o `DuckDB`. É isso que fazemos a seguir.
 
 ```{r filtragem dos fundos de rf, cache=FALSE}
+#| code-fold: false
+
 informes_diarios %>% 
-  mutate(CNPJ_FUNDO = case_when(is.na(CNPJ_FUNDO) ~ CNPJ_FUNDO_CLASSE,
-                                .default = CNPJ_FUNDO),
-         TP_FUNDO = case_when(is.na(TP_FUNDO) ~ TP_FUNDO_CLASSE,
-                              .default = TP_FUNDO)) %>% 
+  # Substitui valores ausentes em CNPJ_FUNDO e TP_FUNDO pelos valores da classe correspondente
+  mutate(
+    CNPJ_FUNDO = case_when(is.na(CNPJ_FUNDO) ~ CNPJ_FUNDO_CLASSE,
+                           .default = CNPJ_FUNDO),
+    TP_FUNDO = case_when(is.na(TP_FUNDO) ~ TP_FUNDO_CLASSE,
+                         .default = TP_FUNDO)
+  ) %>% 
+  # Remove qualquer caractere que não seja número do CNPJ_FUNDO usando expressão regular SQL
   mutate(CNPJ_FUNDO = sql("regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')")) %>% 
+
+  # Junta com a tabela fundos_175_anbima para enriquecer os dados com metainformações dos fundos
   left_join(
-    tbl(con,"fundos_175_anbima") %>% 
-      filter(`CNPJ do Fundo` != "58137699000116") %>% 
-      select(`Código ANBIMA`,
-             Estrutura,
-             `CNPJ do Fundo`,
-             `Nome Comercial`,
-             Status,
-             `Categoria ANBIMA`,
-             `Tipo ANBIMA`,
-             `Composição do Fundo`,
-             `Aberto Estatutariamente`,
-              `Tributação Alvo`,
-             `Primeiro Aporte`,
-             `Tipo de Investidor`,
-             `Característica do Investidor`,
-             `Cota de Abertura`,
-             `Aplicação Inicial Mínima`,
-             `Prazo Pagamento Resgate em dias`),
+    tbl(con, "fundos_175_anbima") %>% 
+      filter(`CNPJ do Fundo` != "58137699000116") %>%  # Esse fundo em especifico possuia valores duplicados
+      select(
+        `Código ANBIMA`, Estrutura, `CNPJ do Fundo`, `Nome Comercial`, Status,
+        `Categoria ANBIMA`, `Tipo ANBIMA`, `Composição do Fundo`,
+        `Aberto Estatutariamente`, `Tributação Alvo`, `Primeiro Aporte`,
+        `Tipo de Investidor`, `Característica do Investidor`,
+        `Cota de Abertura`, `Aplicação Inicial Mínima`, 
+        `Prazo Pagamento Resgate em dias`
+      ),
     by = c("CNPJ_FUNDO" = "CNPJ do Fundo")
   ) %>% 
+
+  # Filtra apenas fundos classificados como "Renda Fixa"
   filter(`Categoria ANBIMA` == "Renda Fixa") %>% 
-  collect()  -> fundos_rf
+
+  # Coleta os dados do banco (conversão para tibble local)
+  collect() -> fundos_rf
+
 ```
 
 Depois de realizar esses processamentos, vamos conferir a quantidade de fundos com os quais trabalharemos.
@@ -228,8 +260,6 @@ fundos_rf %>%
     )
   )
 
-
-
 ```
 
 Ao analisar os dados que relacionam as novas classificações da ANBIMA para fundos de Renda Fixa às quantidades de fundos em cada categoria, percebe-se novamente um predomínio significativo dos fundos classificados como **“Renda Fixa Duração Livre Crédito Livre”**, que totalizam 2.011 fundos. Em seguida, destacam-se os 909 fundos enquadrados em **“Renda Fixa Duração Livre Grau de Investimento”** e os 512 em **“Renda Fixa Duração Baixa Grau de Investimento”**.
@@ -242,11 +272,11 @@ Essa distribuição evidencia uma preferência pelas categorias que oferecem mai
 
 ## Extrato de Infomações
 
-Neste estudo, eu utilizo como referência o arquivo disponibilizado pela ANBIMA, que traz informações qualitativas relevantes dos fundos de investimento. A base escolhida é o arquivo <a href="https://dados.cvm.gov.br/dataset/fi-doc-extrato" target="_blank">Extrato de Informações</a>, contendo diversas informações qualitativas sobre os fundos de investimento. Trata-se de uma base extensa com 117 colunas, da qual utilizei apenas as informações consideradas mais relevantes para este estudo.
+Neste estudo, utilizo como referência o arquivo disponibilizado pela ANBIMA, que traz informações qualitativas relevantes sobre os fundos de investimento. A base escolhida é o arquivo <a href="https://dados.cvm.gov.br/dataset/fi-doc-extrato" target="_blank">Extrato de Informações</a>, que contém diversas informações qualitativas sobre os fundos de investimento. Trata-se de uma base extensa, com 117 colunas, da qual utilizei apenas as informações consideradas mais relevantes para este estudo.
 
 Recomendo ao leitor interessado acessar diretamente o arquivo completo caso deseje explorar detalhadamente todas as informações disponíveis.
 
-Vamos baixar os dados da CVM diretamente em nosso script, porém não utilizaremos todas as 117 colunas disponíveis. Com base na documentação das variáveis disponibilizada pela Comissão de Valores Mobiliários (CVM) no link <a href="https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/META/meta_extrato_fi.txt" target="_blank">Documentação das Variáveis do Extrato de Informações</a>, faremos uma seleção das variáveis consideradas mais relevantes para a análise desenvolvida neste estudo:
+Vamos baixar os dados da CVM diretamente em nonna máquina, porém não utilizaremos todas as 117 colunas disponíveis. Com base na documentação das variáveis disponibilizada pela Comissão de Valores Mobiliários (CVM) no link <a href="https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/META/meta_extrato_fi.txt" target="_blank">Documentação das Variáveis do Extrato de Informações</a>, faremos uma seleção das variáveis consideradas mais relevantes para a análise desenvolvida neste estudo:
 
 -   **PUBLICO_ALVO:** público a que se destina o fundo de investimento.
 -   **DISTRIB:** forma principal de distribuição do fundo.
@@ -269,6 +299,7 @@ Vamos baixar os dados da CVM diretamente em nosso script, porém não utilizarem
 Creio que com essas variáveis vamos conseguir ter um bom raio x dos fundos de renda fixa.
 
 ```{r extrato de informações, eval=T}
+#| code-fold: false
 
 extrato_fi <- readr::read_delim("./extrato_fi.csv", 
                                 delim = ";", 
@@ -283,6 +314,8 @@ extrato_fi <- readr::read_delim("./extrato_fi.csv",
 Após baixar os dados, vamos unir com nossa base de fundos para que possamos ver qualitativamente os fundos de renda fixa.
 
 ```{r juntando as bases,cache=F}
+#| code-fold: false
+
 fundos_rf %>% 
   left_join(
     extrato_fi %>% 
@@ -296,7 +329,7 @@ fundos_rf %>%
   ) -> fundos_rf
 ```
 
-No geral a explicação dada anteriomente já permite uma interpretação direta do tipo informacional que ela busca trnasmitir, proém, creio que as políticas de investimentos vales um detalhamento maior pois sua interpretação não ´pe tão direta. O documento publicado pela Comissão de Valores Mobiliários (CVM), disponível no link <a href="https://www.gov.br/cvm/pt-br/centrais-de-conteudo/publicacoes/estudos/arr-regime-informacional-fundos-555.pdf" target="_blank">Resumo CVM instrução CVM 175</a>, apresenta informações essenciais sobre o regime informacional aplicável aos fundos de investimento regulamentados pela Instrução CVM nº 555. Entre os tópicos abordados no estudo estão as principais políticas de investimento adotadas pelos fundos, que são resumidas a seguir:
+No geral, a explicação dada anteriormente já permite uma interpretação direta do tipo de informação que ela busca transmitir. Porém, creio que as políticas de investimento merecem um detalhamento maior, pois sua interpretação não é tão direta. O documento publicado pela Comissão de Valores Mobiliários (CVM), disponível no link <a href="https://www.gov.br/cvm/pt-br/centrais-de-conteudo/publicacoes/estudos/arr-regime-informacional-fundos-555.pdf" target="_blank">Resumo CVM Instrução CVM 175</a>, apresenta informações essenciais sobre o regime informacional aplicável aos fundos de investimento regulamentados pela Instrução CVM nº 555. Entre os tópicos abordados no estudo estão as principais políticas de investimento adotadas pelos fundos, que são resumidas a seguir:
 
 **Tipos de Políticas de Investimento**
 
@@ -312,7 +345,7 @@ No geral a explicação dada anteriomente já permite uma interpretação direta
 4.  **Enhanced:**\
     Fundos que integram estratégias ativas e passivas, buscando retornos acima do índice de referência, porém mantendo características semelhantes ao índice replicado, especialmente no que diz respeito ao perfil de risco e composição da carteira.
 
-Com essas informações em mãos, podemos agora analisar de forma quatitativa o perfil desses fundos de investimentos. O primeiro ponto que quero abordar consiste na distribuição entre público alvo e politicas de investimentos. Isso nos permitirá enxergar melhor se há uma tendência de política de investimentos a depender do público alvo deste fundo. O código a seguir vai slecionar somente as colunas de interesse. Como nossa base é grande, principalemtne devido as informações diárias que temos dos fundos de investimentos, temos que selecionar as colunas de nosso interesse e dessa forma obter somente os valores únicos para cada fundos de investimentos.
+Com essas informações em mãos, podemos agora analisar de forma quantitativa o perfil desses fundos de investimento. O primeiro ponto que quero abordar consiste na distribuição entre público-alvo e políticas de investimento. Isso nos permitirá entender melhor se há uma tendência de política de investimentos a depender do público-alvo do fundo. O código a seguir vai selecionar somente as colunas de interesse. Como nossa base é grande, principalmente devido às informações diárias dos fundos de investimento, precisamos selecionar as colunas relevantes e, assim, obter apenas os valores únicos para cada fundo de investimento.
 
 ```{r tipos de investidor}
 fundos_rf %>% 
@@ -337,13 +370,13 @@ fundos_rf %>%
   
 ```
 
-A análise da tabela que apresenta o **Tipo e a Característica do Investidor** em relação às quantidades de fundos revela uma forte concentração dos fundos abertos ao público geral, especialmente na combinação **"Não Há Restrição - Geral"**, que conta com um total de **2.137 fundos** (2.002 + 135). Outra parcela significativa é formada pelos fundos destinados ao investidor profissional, com destaque para as categorias **"Exclusivo - Profissional"** com **1.110 fundos** e **"Reservado - Profissional"**, que possui **570 fundos**.
+Os dados da tabela que nos apresenta o **Tipo e a Característica do Investidor** revela uma forte concentração dos fundos abertos ao público geral, especialmente na combinação **"Não Há Restrição - Geral"**, que conta com um total de **2.137 fundos** (2.002 + 135). Outra parcela significativa é formada pelos fundos destinados ao investidor profissional, com destaque para as categorias **"Exclusivo - Profissional"** com **1.110 fundos** e **"Reservado - Profissional"**, que possui **570 fundos**.
 
-Destaca-se também o número expressivo de fundos destinados a investidores qualificados na categoria **"Não Há Restrição - Qualificado"**, que soma **410 fundos**, além dos fundos reservados e exclusivos para investidores profissionais (**Reservado - Profissional** com **570 fundos** e **Exclusivo - Profissional** com **1.110 fundos**). Esses fundos reservados e exclusivos indicam uma segmentação clara para investidores que possuem maior conhecimento sobre o mercado financeiro e potencialmente maior capital disponível.
+Destaca-se também o número expressivo de fundos destinados a investidores qualificados na categoria **"Não Há Restrição - Qualificado"**, que soma **410 fundos**, além dos fundos reservados e exclusivos para investidores profissionais (**Reservado - Profissional** com **570 fundos** e **Exclusivo - Profissional** com **1.110 fundos**). 
 
 Por outro lado, fundos voltados especificamente para investidores qualificados nas modalidades reservada (**Reservado - Qualificado**) e exclusiva (**Exclusivo - Qualificado**) possuem representação relativamente baixa, com **110** e **42 fundos**, respectivamente. Também aparece com pouca representatividade a combinação **"Reservado - Geral"**, com apenas **14 fundos**.
 
-De maneira geral, os dados evidenciam que os fundos sem restrição de acesso são predominantes, principalmente aqueles voltados ao público geral e profissional, mostrando um mercado bastante aberto, mas também segmentado em nichos específicos, como os fundos exclusivos e reservados a investidores profissionais. Isso sugere que os gestores buscam atender diferentes perfis de investidores com estratégias direcionadas ao nível de sofisticação e exigências específicas.
+Não é nenhuma surpresa que os fundos destinados ao público em geral sejam predominantes entre os fundos de investimento. Chama a atenção a grande quantidade de fundos **Exclusivos** voltados para investidores profissionais, representando quase metade dos fundos destinados ao público em geral. Dada a característica desses fundos, aparentemente este é um mecanismo utilizado por classes profissionais e que pode ser objeto de um estudo mais aprofundado no futuro, com o objetivo de compreender melhor as razões por trás desse fenômeno.
 
 ```{r classes de fundos}
 extrato_fi %>% 
@@ -391,13 +424,16 @@ extrato_fi %>%
   )
 ```
 
-A análise da tabela que relaciona a Política de Investimento dos fundos, juntamente com as características Fundo Espelho e Fundo de Cotas, mostra claramente uma concentração predominante nos fundos com gestão "Ativa e Não-Referenciada", especialmente aqueles que não são fundos espelho nem fundos de cotas, com um total expressivo de 1.522 fundos. A seguir, destacam-se fundos com a mesma política de gestão, mas que são fundos de cotas (577 fundos).
+Ao tratarmos sobre as **Política de Investimento dos fundos**, juntamente com as características **Fundo Espelho** e **Fundo de Cotas**, podemos ver claramente uma concentração predominante nos fundos com gestão "Ativa e Não-Referenciada", especialmente aqueles que não são fundos espelho nem fundos de cotas, com um total expressivo de 1.522 fundos. A seguir, destacam-se fundos com a mesma política de gestão, mas que são fundos de cotas (577 fundos).
 
-Outro grupo com alta representatividade são os fundos com política de investimento “Ativa e Referenciada”, principalmente aqueles que não são fundos espelho nem de cotas (881 fundos), seguidos por aqueles que são fundos de cotas (246 fundos). Ainda nessa política de gestão, há uma menor presença dos fundos que são ao mesmo tempo fundos espelho e fundos de cotas, com apenas 44 fundos.
+Outro grupo com alta representatividade são os fundos com política de investimento **Ativa e Referenciada**, principalmente aqueles que não são fundos espelho nem de cotas (881 fundos), seguidos por aqueles que são fundos de cotas (246 fundos). Ainda nessa política de gestão, há uma menor presença dos fundos que são ao mesmo tempo fundos espelho e fundos de cotas, com apenas 44 fundos.
 
-Entre os fundos com política “Passiva”, percebe-se uma divisão mais equilibrada entre aqueles que são fundos de cotas (358 fundos) e os que não são (333 fundos). Já na categoria “Enhanced”, há uma participação bastante reduzida, sendo apenas 25 fundos não espelho e não fundos de cotas, 11 fundos que são apenas fundos de cotas, e apenas 1 fundo que combina ambas características.
+Entre os fundos com política **Passiva**, percebe-se uma divisão mais equilibrada entre aqueles que são fundos de cotas (358 fundos) e os que não são (333 fundos). Já na categoria **Enhanced**, há uma participação bastante reduzida, sendo apenas 25 fundos não espelho e não fundos de cotas, 11 fundos que são apenas fundos de cotas, e apenas 1 fundo que combina ambas características.
 
-No geral, fica clara a preferência dos gestores e investidores pela política de gestão ativa, sobretudo não-referenciada, enquanto estratégias mais específicas e menos convencionais, como a gestão “Enhanced” ou fundos espelho com cotas, mantêm representatividade bastante limitada. Esses dados indicam que o mercado brasileiro de fundos ainda prioriza estratégias tradicionais e ativas de investimento.
+Como podemos ver, o número de fundos foi reduzido em cerca de 800. Isso se deve ao fato de termos filtrado os fundos que não possuíam dados referentes à política de investimento, os quais foram removidos, mantendo essa filtragem ao longo da análise. A ideia é termos uma amostra mais concisa, tratando apenas dos fundos que possuem todas as informações disponíveis, a fim de garantir uma comparação mais justa entre os fundos de investimento.
+
+No geral, fica clara a preferência dos gestores e investidores pela política de gestão ativa, sobretudo não referenciada, enquanto estratégias mais específicas e menos convencionais, como a gestão “Enhanced” ou fundos espelho com cotas, mantêm representatividade bastante limitada. Esses dados indicam que o mercado brasileiro de fundos ainda prioriza estratégias tradicionais e ativas de investimento. Ainda mais surpreendente é o fato de priorizarem a característica de fundos não referenciados, considerando a própria natureza do mercado de renda fixa, no qual os juros são a principal referência.
+
 
 ```{r detalhe qualitativos }
 extrato_fi %>% 
@@ -463,6 +499,8 @@ A segunda categoria mais representativa é composta pelos fundos com política *
 Por outro lado, os fundos de política **"Passiva"** aparecem em número intermediário, destacando-se aqueles que não têm taxas (**669 fundos**). A aplicação de taxa de performance também é pouco comum nessa categoria, contando com apenas **35 fundos**, enquanto a cobrança simultânea de taxa de performance e de saída ocorre em apenas 2 fundos.
 
 Esses resultados indicam claramente que os fundos ativos são predominantes no mercado, especialmente os não-referenciados, sugerindo uma maior preferência dos investidores por estratégias flexíveis. Além disso, fundos com menor cobrança de taxas (taxa de ingresso, performance ou saída) apresentam uma quantidade significativamente superior, apontando uma preferência por estruturas mais simples em termos de custos associados ao investimento.
+
+A seguir vamos ver o comportamento da captação destes fundos desde 2010.
 
 ```{r grafico de captação}
 fundos_rf %>%
@@ -566,14 +604,12 @@ fundos_rf %>%
   ) %>%
   e_grid(
     bottom = 120,  # espaço extra pra caber legenda
-    left = 50,
-    right = 30,
+    left = 0,
+    right = 0,
     top = 60
   )
 
 ```
-
-O gráfico apresenta a evolução da **captação líquida** dos fundos de Renda Fixa classificados pela ANBIMA, no período de aproximadamente 2010 até o início de 2024. A captação líquida representa a diferença entre os aportes e os resgates realizados pelos investidores, sendo um importante indicador da atratividade desses fundos ao longo do tempo. Os dados estão expressos em bilhões de reais e segmentados por categorias de fundos.
 
 Nos primeiros anos do gráfico (2010 até cerca de 2016), a captação líquida se manteve relativamente estável, com oscilações modestas e predominância de entradas líquidas positivas. A partir de 2017, observa-se um aumento na volatilidade, com períodos de captação elevada, seguidos por momentos de fortes resgates. Essa tendência se intensifica após 2020, com variações muito mais expressivas entre meses ou trimestres.
 
@@ -625,8 +661,6 @@ fundos_rf %>%
   )
 ```
 
-O gráfico apresenta a evolução do patrimônio líquido dos fundos de investimento classificados pela ANBIMA ao longo do tempo, abrangendo o período de aproximadamente 2010 até o início de 2024. Os dados estão segmentados por diferentes tipos de fundos de Renda Fixa e expressos em bilhões de reais. De maneira geral, observa-se uma tendência clara de crescimento contínuo no patrimônio líquido desses fundos, com uma aceleração mais acentuada a partir de 2020. No ponto mais recente do gráfico, o valor total ultrapassa a marca dos 350 bilhões de reais.
-
 Entre as categorias analisadas, os fundos de **Renda Fixa Duração Livre Grau de Investimento** se destacam como uma das classes que mais cresceu nos últimos anos, especialmente a partir de 2021, assumindo uma participação significativa no total. Da mesma forma, os fundos de **Renda Fixa Duração Livre Soberano** também apresentaram expansão expressiva, principalmente após 2020, refletindo a busca por alternativas mais flexíveis dentro da renda fixa.
 
 Os fundos de **Renda Fixa Duração Baixa Soberano** e **Renda Fixa Duração Baixa Grau de Investimento** mantêm uma presença constante e relevante ao longo do tempo. Destaca-se que o fundo soberano sofreu variações mais marcantes em certos períodos, como uma queda perceptível em 2021 seguida de uma posterior recuperação. Já as categorias de **Renda Fixa Simples** e **Outros** mostram trajetórias distintas: enquanto os “Outros” crescem de forma estável, os fundos “Simples” surgem mais recentemente no gráfico, apresentando uma evolução rápida e relevante.
@@ -662,6 +696,13 @@ fundos_rf %>%
           ) ~ `Tipo ANBIMA`,
           TRUE ~ "Outros"
         ))
+  ) %>% 
+  left_join(
+    rbcb::get_series(4391) %>% 
+      mutate(Ano = lubridate::year(date)) %>% 
+      filter(Ano >= 2010) %>% 
+      summarise(CDI = last((cumprod((`4391`/100)+1)-1)*100),
+                .by = Ano)
   ) -> rentabilidade_anual_fundos_rf
 
 rentabilidade_anual_fundos_rf %>% 
@@ -669,6 +710,20 @@ rentabilidade_anual_fundos_rf %>%
                              .default = "In")) %>% 
   filter(Outlier == "Out") %>% 
   distinct(CNPJ_FUNDO) -> fundos_out
+
+linhas_cdi <- rentabilidade_anual_fundos_rf %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Renda Fixa Duração Livre Crédito Livre",
+    "Renda Fixa Duração Livre Grau de Investimento",
+    "Renda Fixa Duração Baixa Grau de Investimento",
+    "Renda Fixa Duração Livre Soberano"
+  )) %>% 
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
 
 rentabilidade_anual_fundos_rf %>% 
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
@@ -679,6 +734,12 @@ rentabilidade_anual_fundos_rf %>%
             "Renda Fixa Duração Livre Soberano")) %>% 
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
   facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
   labs(
     title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
@@ -693,10 +754,36 @@ rentabilidade_anual_fundos_rf %>%
   )
 ```
 
+A distribuição da rentabilidade anual dos fundos de Renda Fixa, segundo a classificação ANBIMA, entre 2010 e 2024, revela padrões distintos de comportamento entre os diferentes tipos de estratégias. Os dados, representados em gráficos do tipo violino, permitem observar tanto a mediana dos retornos quanto a dispersão e densidade dos resultados ao longo do tempo.
+
+Os fundos de **Renda Fixa Duração Baixa Grau de Investimento** apresentaram, de forma geral, retornos historicamente positivos e consistentes. Entre 2010 e 2019, as medianas de rentabilidade mantiveram-se majoritariamente entre 7% e 12%, com baixa dispersão, indicando um perfil de risco mais conservador. A partir de 2020, observa-se uma leve redução na mediana e um aumento na variabilidade dos retornos, refletindo o ambiente de maior incerteza econômica. Em 2024, entretanto, há uma recuperação, com boa concentração de retornos positivos.
+
+No caso dos fundos de **Renda Fixa Duração Livre Crédito Livre**, verifica-se uma rentabilidade historicamente mais volátil. Embora alguns anos, como 2013 a 2017, tenham registrado medianas elevadas (acima de 10%), os períodos de 2021 e 2022 marcaram fortes perdas para muitos fundos da categoria, evidenciando os riscos associados à exposição ao crédito privado. Em 2024, a mediana volta a ser positiva, ainda que com ampla dispersão entre os fundos, o que sinaliza uma recuperação heterogênea dentro do segmento.
+
+Os fundos de **Renda Fixa Duração Livre Grau de Investimento** seguiram trajetória semelhante à dos de duração baixa, com rentabilidades estáveis e positivas até 2019. A partir de 2020, o cenário se altera, com redução das medianas e aumento na dispersão dos resultados, indicando maior influência das condições macroeconômicas sobre o desempenho. Os anos de 2022 e 2023 registram medianas próximas de zero, com recuperação parcial em 2024, mas ainda acompanhada de significativa variabilidade entre os fundos.
+
+Por fim, os fundos de **Renda Fixa Duração Livre Soberano**, historicamente mais previsíveis e conservadores, também passaram a apresentar maior volatilidade a partir de 2017. Houve anos de retorno negativo, como em 2020 e 2021, e a mediana de rentabilidade manteve-se em patamares mais baixos nos últimos anos. Em 2024, observa-se leve recuperação, embora com alta dispersão, possivelmente refletindo diferentes estratégias adotadas dentro da própria categoria.
+
+Em síntese, os dados mostram que, mesmo entre os fundos de perfil mais conservador, houve aumento da dispersão e redução na previsibilidade dos retornos após 2020. Esse cenário reflete os desafios enfrentados pelo mercado de renda fixa nos últimos anos, incluindo oscilações na taxa de juros, incertezas macroeconômicas e reavaliações de risco de crédito. Ainda assim, o ano de 2024 apresenta sinais de retomada da rentabilidade em todas as categorias, embora com comportamentos bastante distintos entre os fundos.
+
 ```{r analise de rentabilidades 2}
 #| fig-width: 12
 #| fig-height: 8
 #| fig-align: "center"
+
+linhas_cdi <- rentabilidade_anual_fundos_rf %>%
+  filter(!`Tipo ANBIMA` %in% c(
+    "Renda Fixa Duração Livre Crédito Livre",
+    "Renda Fixa Duração Livre Grau de Investimento",
+    "Renda Fixa Duração Baixa Grau de Investimento",
+    "Renda Fixa Duração Livre Soberano"
+  )) %>% 
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
 
 rentabilidade_anual_fundos_rf %>% 
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
@@ -710,6 +797,12 @@ rentabilidade_anual_fundos_rf %>%
               color = "gray30", 
               alpha = 0.8, 
               draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
   facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
   labs(
     title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
@@ -723,4 +816,16 @@ rentabilidade_anual_fundos_rf %>%
     panel.spacing = unit(1, "lines")
   )
 ```
+
+Esses gráficos apresentam a distribuição da rentabilidade anual (%) de mais quatro categorias de fundos de Renda Fixa, segundo a classificação ANBIMA, entre os anos de 2010 a 2024. Os gráficos do tipo violino permitem visualizar tanto a mediana (linha vermelha) quanto a dispersão e a densidade dos retornos para cada classe em cada ano.
+
+A categoria **Outros** engloba fundos de Renda Fixa que não se enquadram nas classificações padronizadas da ANBIMA, podendo incluir estratégias mais específicas ou híbridas. A rentabilidade média ao longo dos anos foi positiva, com medianas geralmente entre 7% e 15%, demonstrando relativa consistência. Em certos anos, como 2013, 2018 e 2022, a dispersão dos retornos foi mais acentuada, indicando uma maior heterogeneidade entre os fundos da categoria. Em 2024, a rentabilidade permanece positiva, com uma distribuição moderadamente ampla.
+
+A classe **Renda Fixa Duração Baixa Soberano** apresenta um histórico de retornos estáveis e conservadores, condizente com a alocação predominante em títulos públicos de curto prazo. As medianas de rentabilidade permanecem entre 7% e 10% na maior parte dos anos, com baixa variação entre os fundos. Entre 2020 e 2022, houve um leve declínio nos resultados, reflexo do ambiente de juros baixos. A partir de 2023, os retornos voltam a se alinhar ao padrão histórico, sugerindo uma normalização após o período de instabilidade econômica.
+
+Os fundos da categoria **Renda Fixa Indexados**, que acompanham índices de preços ou de mercado, apresentaram uma maior variabilidade nos resultados, tanto em dispersão quanto em mediana. Em diversos anos, como 2013, 2015 e 2020, observa-se ampla faixa de rentabilidade — com fundos registrando desde perdas até ganhos superiores a 25%. Isso demonstra forte dependência das condições macroeconômicas e da indexação utilizada. A mediana dos retornos caiu acentuadamente entre 2020 e 2022, com início de recuperação observado em 2023 e 2024.
+
+A categoria **Renda Fixa Simples**, voltada para investidores de perfil conservador, apresentou menor dispersão e retornos mais modestos ao longo do tempo. As medianas de rentabilidade oscilaram entre 5% e 10%, com exceção dos anos entre 2020 e 2022, quando houve queda significativa, impulsionada pela redução das taxas de juros reais. A partir de 2023, nota-se uma recuperação consistente, com as medianas retornando à faixa de 10% e menor variação entre os fundos.
+
+Em síntese, os gráficos mostram que, enquanto categorias como **Renda Fixa Simples** e **Renda Fixa Duração Baixa Soberano** mantêm um comportamento mais previsível e conservador, outras, como **Renda Fixa Indexados** e **Outros**, apresentam maior sensibilidade às condições macroeconômicas e maior volatilidade. Apesar das dificuldades enfrentadas entre 2020 e 2022, os anos de 2023 e 2024 indicam uma retomada generalizada da rentabilidade nos fundos de Renda Fixa, ainda que com diferentes padrões de dispersão, refletindo o perfil e a estratégia específica de cada classe.
 
