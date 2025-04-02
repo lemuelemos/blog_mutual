@@ -20,6 +20,8 @@ Neste primeiro post, abordaremos questões mais técnicas, como o download dos d
 
 Vamos cobrir todas as etapas do processo, como coleta dos dados, limpeza, manipulação e armazenamento. Além do processamento dos dados, vamos criar nossas análises sobre essas informações, a fim de entender o comportamento da indústria de fundos.
 
+Este primeiro post será mais extenso, pois abrangerá mais etapas do processo de análise e processamento dos dados. Peço a compreensão de todos e convido-os a continuarem acompanhando as próximas etapas.
+
 ### Fonte de Dados
 
 Vamos utilizar como base de dados primária os dados presentes na <a href="https://dados.cvm.gov.br/group/fundos-de-investimento" target="_blank">CVM</a>, de onde pegaremos todos os dados referentes aos dados de cotas, dados cadastrais e o que é chamado de extrato de informações. Além disso, vamos utilizar dados fornecidos pela ANBIMA. Vamos utilizar as classificações dos fundos presentes nos dados cadastrais que a instituição utiliza. A escolha de utilização da classificação ANBIMA, está no fato de que durante o processo de tratamento de dados em minha tese de doutorado, percebi algumas inconsistências na base da CVM.
@@ -117,6 +119,8 @@ invisible(file.remove(list.files("./posts/desempenho_fundos_rf/informe_diario/",
 future::plan(future::sequential)
 ```
 
+Precisamos configurar o tempo máximo de espera (timeout) em cada solicitação de download, já que alguns links podem levar mais tempo do que o habitual para responder. Quando esse limite não é definido, a função pode falhar caso a resposta ultrapasse o tempo padrão de espera, o que já nos causou problemas em situações de atraso na transferência dos arquivos.
+
 Depois de baixar todos os arquivos, precisamos ler cada um dos CSVs e unificá-los em um único objeto. Essa etapa pode ser bastante exigente em termos de recursos e, por isso, pode não rodar tão facilmente em alguns computadores. No meu caso, como a minha máquina tem 32 GB de memória, consegui processar tudo sem maiores problemas.
 
 ```{r leitura dos csvs,cache=T, eval = FALSE}
@@ -176,6 +180,7 @@ rm(fundos_175_anbima)
 
 
 Aqui, como os dados filtrados resultaram em uma quantidade menor, o tamanho da base nos permite trabalhar tudo dentro do R sem problemas de desempenho. O `DuckDB` é fundamental para filtrar e unir as bases, pois o tempo de execução é bastante reduzido devido à sua maior eficiência ao lidar com grandes volumes de dados. Apenas a base de FI, por exemplo, possui cerca de 20 milhões de linhas, o que tornaria a análise diretamente no R muito lenta. Ao reduzir o tamanho da base, passamos a poder trabalhar tudo dentro do próprio R, sem precisar utilizar o `DuckDB`. É isso que fazemos a seguir.
+
 
 ```{r filtragem dos fundos de rf, cache=FALSE}
 #| code-fold: false
@@ -276,7 +281,7 @@ Neste estudo, utilizo como referência o arquivo disponibilizado pela ANBIMA, qu
 
 Recomendo ao leitor interessado acessar diretamente o arquivo completo caso deseje explorar detalhadamente todas as informações disponíveis.
 
-Vamos baixar os dados da CVM diretamente em nonna máquina, porém não utilizaremos todas as 117 colunas disponíveis. Com base na documentação das variáveis disponibilizada pela Comissão de Valores Mobiliários (CVM) no link <a href="https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/META/meta_extrato_fi.txt" target="_blank">Documentação das Variáveis do Extrato de Informações</a>, faremos uma seleção das variáveis consideradas mais relevantes para a análise desenvolvida neste estudo:
+Vamos baixar os dados da CVM diretamente em nossa máquina, porém não utilizaremos todas as 117 colunas disponíveis. Com base na documentação das variáveis disponibilizada pela Comissão de Valores Mobiliários (CVM) no link <a href="https://dados.cvm.gov.br/dados/FI/DOC/EXTRATO/META/meta_extrato_fi.txt" target="_blank">Documentação das Variáveis do Extrato de Informações</a>, faremos uma seleção das variáveis consideradas mais relevantes para a análise desenvolvida neste estudo:
 
 -   **PUBLICO_ALVO:** público a que se destina o fundo de investimento.
 -   **DISTRIB:** forma principal de distribuição do fundo.
@@ -329,7 +334,7 @@ fundos_rf %>%
   ) -> fundos_rf
 ```
 
-No geral, a explicação dada anteriormente já permite uma interpretação direta do tipo de informação que ela busca transmitir. Porém, creio que as políticas de investimento merecem um detalhamento maior, pois sua interpretação não é tão direta. O documento publicado pela Comissão de Valores Mobiliários (CVM), disponível no link <a href="https://www.gov.br/cvm/pt-br/centrais-de-conteudo/publicacoes/estudos/arr-regime-informacional-fundos-555.pdf" target="_blank">Resumo CVM Instrução CVM 175</a>, apresenta informações essenciais sobre o regime informacional aplicável aos fundos de investimento regulamentados pela Instrução CVM nº 555. Entre os tópicos abordados no estudo estão as principais políticas de investimento adotadas pelos fundos, que são resumidas a seguir:
+No geral, a explicação fornecida pela descrição das variáveis já permite uma interpretação direta do tipo de informação transmitida. Entretanto, as políticas de investimento exigem um detalhamento maior, pois sua compreensão não é tão imediata. No documento publicado pela Comissão de Valores Mobiliários (CVM), disponível em <a href="https://www.gov.br/cvm/pt-br/centrais-de-conteudo/publicacoes/estudos/arr-regime-informacional-fundos-555.pdf" target="_blank">Resumo CVM Instrução CVM 175</a>, são apresentados pontos essenciais sobre o regime informacional aplicável aos fundos de investimento regulamentados pela Instrução CVM nº 555. Entre os tópicos abordados estão as principais políticas de investimento adotadas pelos fundos, que podem ser resumidas da seguinte forma:
 
 **Tipos de Políticas de Investimento**
 
@@ -603,9 +608,7 @@ fundos_rf %>%
     left = "center"
   ) %>%
   e_grid(
-    bottom = 120,  # espaço extra pra caber legenda
-    left = 0,
-    right = 0,
+    bottom = 120,  
     top = 60
   )
 
@@ -615,9 +618,7 @@ Nos primeiros anos do gráfico (2010 até cerca de 2016), a captação líquida 
 
 Durante os anos de 2020 e 2021, destacam-se movimentos de captação extremamente positivos, especialmente nos fundos de **Renda Fixa Duração Baixa Soberano** e **Renda Fixa Simples**, que aparecem com barras altas e frequentes nesse período. No entanto, a partir de 2022, há uma mudança significativa, com diversos episódios de captação negativa, indicando grandes volumes de resgates — particularmente visíveis nas categorias de **Renda Fixa Duração Baixa Soberano**, **Duração Livre Grau de Investimento** e **Renda Fixa Simples**.
 
-Esses resgates mais acentuados nos últimos anos podem estar associados a mudanças nas condições econômicas, como aumento da taxa de juros, inflação, ou reprecificação de ativos, levando investidores a buscar alternativas fora dos fundos de renda fixa tradicionais.
-
-Em resumo, o gráfico revela que, embora o patrimônio líquido dos fundos de renda fixa tenha crescido ao longo do tempo (como visto no gráfico anterior), a captação líquida passou a oscilar mais fortemente nos últimos anos, com um padrão mais irregular e períodos marcantes de saídas de recursos. Essa dinâmica sugere um ambiente mais volátil e seletivo por parte dos investidores, influenciado pelas condições do mercado e pelas estratégias específicas de cada tipo de fundo.
+Outra informação importante a ser analisada consiste no **PL** por tipo ANBIMA, onde podemos ver como o PL dos fundos de renda fixa por tipo evoluiu ao longo dos anos.  
 
 ```{r custodia por tipo anbima}
 fundos_rf %>%
@@ -647,7 +648,7 @@ fundos_rf %>%
   e_charts(Competência) %>%
   e_bar(`Custódia`,stack = "total",series = "Tipo ANBIMA") %>% 
   e_tooltip(trigger = "axis") %>%
-  e_title("Patrimônio Líquida por Tipo ANBIMA ao Longo do Tempo") %>%
+  e_title("Patrimônio Líquido por Tipo ANBIMA ao Longo do Tempo") %>%
   e_x_axis(name = "Competência",type = "time") %>%
   e_y_axis(name = "Custódia (em bilhões)") %>%
   e_legend(
@@ -666,6 +667,8 @@ Entre as categorias analisadas, os fundos de **Renda Fixa Duração Livre Grau d
 Os fundos de **Renda Fixa Duração Baixa Soberano** e **Renda Fixa Duração Baixa Grau de Investimento** mantêm uma presença constante e relevante ao longo do tempo. Destaca-se que o fundo soberano sofreu variações mais marcantes em certos períodos, como uma queda perceptível em 2021 seguida de uma posterior recuperação. Já as categorias de **Renda Fixa Simples** e **Outros** mostram trajetórias distintas: enquanto os “Outros” crescem de forma estável, os fundos “Simples” surgem mais recentemente no gráfico, apresentando uma evolução rápida e relevante.
 
 Por fim, os fundos de **Renda Fixa Duração Livre Crédito Livre** e **Renda Fixa Indexados** possuem participação menor no total, mas também mostram crescimento consistente, com destaque para o primeiro, que vem ganhando espaço de forma gradual. Em resumo, o gráfico revela um mercado de fundos de renda fixa em expansão no Brasil, com destaque para fundos de duração livre, que oferecem maior flexibilidade de gestão e têm atraído cada vez mais recursos, possivelmente em resposta à volatilidade econômica e à busca por rentabilidade com controle de risco.
+
+Por último, vamos analisar as rentabilidades anuais em comparação com o CDI, o principal benchmark desse mercado, além de observar como as rentabilidades desses fundos estão distribuídas. Para isso, optamos por excluir da amostra todos os fundos que apresentaram uma rentabilidade anual acima de 50% em qualquer período. Dada a natureza dos fundos de renda fixa, rentabilidades superiores a 50% tendem a ser pouco realistas ou situações muito pontuais, tema que aprofundaremos em postagens futuras.
 
 ```{r analise de rentabilidades 1}
 #| fig-width: 12
@@ -706,7 +709,7 @@ fundos_rf %>%
   ) -> rentabilidade_anual_fundos_rf
 
 rentabilidade_anual_fundos_rf %>% 
-  mutate(Outlier = case_when(`Rent (%)` > 40 | `Rent (%)` < -40 ~ "Out",
+  mutate(Outlier = case_when(`Rent (%)` > 50 | `Rent (%)` < -50 ~ "Out",
                              .default = "In")) %>% 
   filter(Outlier == "Out") %>% 
   distinct(CNPJ_FUNDO) -> fundos_out
@@ -756,9 +759,9 @@ rentabilidade_anual_fundos_rf %>%
 
 A distribuição da rentabilidade anual dos fundos de Renda Fixa, segundo a classificação ANBIMA, entre 2010 e 2024, revela padrões distintos de comportamento entre os diferentes tipos de estratégias. Os dados, representados em gráficos do tipo violino, permitem observar tanto a mediana dos retornos quanto a dispersão e densidade dos resultados ao longo do tempo.
 
-Os fundos de **Renda Fixa Duração Baixa Grau de Investimento** apresentaram, de forma geral, retornos historicamente positivos e consistentes. Entre 2010 e 2019, as medianas de rentabilidade mantiveram-se majoritariamente entre 7% e 12%, com baixa dispersão, indicando um perfil de risco mais conservador. A partir de 2020, observa-se uma leve redução na mediana e um aumento na variabilidade dos retornos, refletindo o ambiente de maior incerteza econômica. Em 2024, entretanto, há uma recuperação, com boa concentração de retornos positivos.
+Os fundos de **Renda Fixa Duração Baixa Grau de Investimento** apresentaram, de forma geral, retornos historicamente positivos e consistentes. Entre 2010 e 2019, as medianas de rentabilidade mantiveram-se majoritariamente entre 7% e 12%, com baixa dispersão, indicando um perfil de risco mais conservador. A partir de 2020, observa-se uma leve redução na mediana e um aumento na variabilidade dos retornos. Em 2024, entretanto, há uma recuperação, com boa concentração de retornos positivos.
 
-No caso dos fundos de **Renda Fixa Duração Livre Crédito Livre**, verifica-se uma rentabilidade historicamente mais volátil. Embora alguns anos, como 2013 a 2017, tenham registrado medianas elevadas (acima de 10%), os períodos de 2021 e 2022 marcaram fortes perdas para muitos fundos da categoria, evidenciando os riscos associados à exposição ao crédito privado. Em 2024, a mediana volta a ser positiva, ainda que com ampla dispersão entre os fundos, o que sinaliza uma recuperação heterogênea dentro do segmento.
+No caso dos fundos de **Renda Fixa Duração Livre Crédito Livre**, verifica-se uma rentabilidade historicamente mais volátil. Embora alguns anos, como 2013 a 2017, tenham registrado medianas elevadas (acima de 10%), os períodos de 2021 e 2022 marcaram fortes perdas para muitos fundos da categoria. Em 2024, a mediana volta a ser positiva, ainda que com ampla dispersão entre os fundos, o que sinaliza uma recuperação heterogênea dentro do segmento.
 
 Os fundos de **Renda Fixa Duração Livre Grau de Investimento** seguiram trajetória semelhante à dos de duração baixa, com rentabilidades estáveis e positivas até 2019. A partir de 2020, o cenário se altera, com redução das medianas e aumento na dispersão dos resultados, indicando maior influência das condições macroeconômicas sobre o desempenho. Os anos de 2022 e 2023 registram medianas próximas de zero, com recuperação parcial em 2024, mas ainda acompanhada de significativa variabilidade entre os fundos.
 
@@ -817,15 +820,29 @@ rentabilidade_anual_fundos_rf %>%
   )
 ```
 
-Esses gráficos apresentam a distribuição da rentabilidade anual (%) de mais quatro categorias de fundos de Renda Fixa, segundo a classificação ANBIMA, entre os anos de 2010 a 2024. Os gráficos do tipo violino permitem visualizar tanto a mediana (linha vermelha) quanto a dispersão e a densidade dos retornos para cada classe em cada ano.
 
 A categoria **Outros** engloba fundos de Renda Fixa que não se enquadram nas classificações padronizadas da ANBIMA, podendo incluir estratégias mais específicas ou híbridas. A rentabilidade média ao longo dos anos foi positiva, com medianas geralmente entre 7% e 15%, demonstrando relativa consistência. Em certos anos, como 2013, 2018 e 2022, a dispersão dos retornos foi mais acentuada, indicando uma maior heterogeneidade entre os fundos da categoria. Em 2024, a rentabilidade permanece positiva, com uma distribuição moderadamente ampla.
 
-A classe **Renda Fixa Duração Baixa Soberano** apresenta um histórico de retornos estáveis e conservadores, condizente com a alocação predominante em títulos públicos de curto prazo. As medianas de rentabilidade permanecem entre 7% e 10% na maior parte dos anos, com baixa variação entre os fundos. Entre 2020 e 2022, houve um leve declínio nos resultados, reflexo do ambiente de juros baixos. A partir de 2023, os retornos voltam a se alinhar ao padrão histórico, sugerindo uma normalização após o período de instabilidade econômica.
+A classe **Renda Fixa Duração Baixa Soberano** apresenta um histórico de retornos estáveis e conservadores, condizente com a alocação predominante em títulos públicos de curto prazo. As medianas de rentabilidade permanecem entre 7% e 10% na maior parte dos anos, com baixa variação entre os fundos. A partir de 2023, os retornos voltam a se alinhar ao padrão histórico, sugerindo uma normalização após o período de instabilidade econômica.
 
-Os fundos da categoria **Renda Fixa Indexados**, que acompanham índices de preços ou de mercado, apresentaram uma maior variabilidade nos resultados, tanto em dispersão quanto em mediana. Em diversos anos, como 2013, 2015 e 2020, observa-se ampla faixa de rentabilidade — com fundos registrando desde perdas até ganhos superiores a 25%. Isso demonstra forte dependência das condições macroeconômicas e da indexação utilizada. A mediana dos retornos caiu acentuadamente entre 2020 e 2022, com início de recuperação observado em 2023 e 2024.
+Os fundos da categoria **Renda Fixa Indexados**, que acompanham índices de preços ou de mercado, apresentaram uma maior variabilidade nos resultados, tanto em dispersão quanto em mediana. Em diversos anos, como 2013, 2015 e 2020, observa-se ampla faixa de rentabilidade — com fundos registrando desde perdas até ganhos superiores a 25%. A mediana dos retornos caiu acentuadamente entre 2020 e 2022, com início de recuperação observado em 2023 e 2024.
 
-A categoria **Renda Fixa Simples**, voltada para investidores de perfil conservador, apresentou menor dispersão e retornos mais modestos ao longo do tempo. As medianas de rentabilidade oscilaram entre 5% e 10%, com exceção dos anos entre 2020 e 2022, quando houve queda significativa, impulsionada pela redução das taxas de juros reais. A partir de 2023, nota-se uma recuperação consistente, com as medianas retornando à faixa de 10% e menor variação entre os fundos.
+A categoria **Renda Fixa Simples**, voltada para investidores de perfil conservador, apresentou menor dispersão e retornos mais modestos ao longo do tempo. As medianas de rentabilidade oscilaram entre 5% e 10%, com exceção dos anos entre 2020 e 2022, quando houve queda significativa. A partir de 2023, nota-se uma recuperação consistente, com as medianas retornando à faixa de 10% e menor variação entre os fundos.
 
-Em síntese, os gráficos mostram que, enquanto categorias como **Renda Fixa Simples** e **Renda Fixa Duração Baixa Soberano** mantêm um comportamento mais previsível e conservador, outras, como **Renda Fixa Indexados** e **Outros**, apresentam maior sensibilidade às condições macroeconômicas e maior volatilidade. Apesar das dificuldades enfrentadas entre 2020 e 2022, os anos de 2023 e 2024 indicam uma retomada generalizada da rentabilidade nos fundos de Renda Fixa, ainda que com diferentes padrões de dispersão, refletindo o perfil e a estratégia específica de cada classe.
+Em síntese, enquanto categorias como **Renda Fixa Simples** e **Renda Fixa Duração Baixa Soberano** mantêm um comportamento mais previsível e conservador, outras, como **Renda Fixa Indexados** e **Outros**, apresentam maior volatilidade. Apesar das dificuldades enfrentadas entre 2020 e 2022, os anos de 2023 e 2024 indicam uma retomada generalizada da rentabilidade nos fundos de Renda Fixa, ainda que com diferentes padrões de dispersão, refletindo o perfil e a estratégia específica de cada classe.
+
+## Conclusões
+
+Podemos analisar aqui um pouco do perfil dos fundos de investimento de renda fixa. A ideia é apresentar um enfoque didático sobre o processo de análise de dados, sem aprofundar demasiadamente o tema nesta etapa. Ao longo do tempo, pretendo desenvolver estudos mais completos, focando na extração de insights a partir dos dados e menos na parte técnica do código.
+
+Gostaria de destacar alguns pontos. Em primeiro lugar, constatamos que a maioria dos fundos de renda fixa adota políticas de investimento ativas e não referenciadas. Isso desperta a curiosidade acerca do motivo pelo qual, mesmo sendo uma categoria naturalmente atrelada às taxas de juros, os fundos optam por se classificar dessa maneira.
+
+Outro aspecto notável diz respeito à distribuição dos retornos. Embora grande parte deles se concentre próxima ao CDI, ocorrem distorções significativas tanto para cima quanto para baixo. Surge então a questão de saber se essas discrepâncias são inerentes à indústria ou se podem refletir inconsistências nos dados. Uma análise mais aprofundada será necessária para entender melhor essa dinâmica.
+
+Encerro aqui nossa análise e fico à disposição para discutirmos qualquer aspecto do código ou dos dados. No próximo post, trataremos agora dos fundos multimercados. Agradeço a todos que dedicaram um tempo para ler este texto e nos encontramos em breve.
+
+
+
+
+
 
