@@ -46,7 +46,7 @@
     "href": "posts/index.html",
     "title": "Posts",
     "section": "",
-    "text": "Ordenar por\n       Pré-selecionado\n         \n          Título\n        \n         \n          Data - Mais velho\n        \n         \n          Data - O mais novo\n        \n     \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nDesempenho dos Fundos de Renda Fixa\n\n\n\n2 de abr. de 2025\n\n\n\n\n\n\n\n\nNenhum item correspondente"
+    "text": "Ordenar por\n       Pré-selecionado\n         \n          Título\n        \n         \n          Data - Mais velho\n        \n         \n          Data - O mais novo\n        \n     \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nDesempenho dos Fundos de Renda Fixa\n\n\n\n2 de abr. de 2025\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nDesempenho dos Fundos de Renda Fixa\n\n\n\n2 de abr. de 2025\n\n\n\n\n\n\n\n\nNenhum item correspondente"
   },
   {
     "objectID": "posts/desempenho_fundos_rf/index.html",
@@ -75,5 +75,12 @@
     "title": "Desempenho dos Fundos de Renda Fixa",
     "section": "Conclusões",
     "text": "Conclusões\nPodemos analisar aqui um pouco do perfil dos fundos de investimento de renda fixa. A ideia é apresentar um enfoque didático sobre o processo de análise de dados, sem aprofundar demasiadamente o tema nesta etapa. Ao longo do tempo, pretendo desenvolver estudos mais completos, focando na extração de insights a partir dos dados e menos na parte técnica do código.\nGostaria de destacar alguns pontos. Em primeiro lugar, constatamos que a maioria dos fundos de renda fixa adota políticas de investimento ativas e não referenciadas. Isso desperta a curiosidade acerca do motivo pelo qual, mesmo sendo uma categoria naturalmente atrelada às taxas de juros, os fundos optam por se classificar dessa maneira.\nOutro aspecto notável diz respeito à distribuição dos retornos. Embora grande parte deles se concentre próxima ao CDI, ocorrem distorções significativas tanto para cima quanto para baixo. Surge então a questão de saber se essas discrepâncias são inerentes à indústria ou se podem refletir inconsistências nos dados. Uma análise mais aprofundada será necessária para entender melhor essa dinâmica.\nEncerro aqui nossa análise e fico à disposição para discutirmos qualquer aspecto do código ou dos dados. No próximo post, trataremos agora dos fundos multimercados. Agradeço a todos que dedicaram um tempo para ler este texto e nos encontramos em breve."
+  },
+  {
+    "objectID": "posts/desempenho_multimercado/index.html",
+    "href": "posts/desempenho_multimercado/index.html",
+    "title": "Desempenho dos Fundos de Renda Fixa",
+    "section": "",
+    "text": "Teste"
   }
 ]

@@ -1,0 +1,17 @@
+---
+title: "Desempenho dos Fundos de Renda Fixa"
+author: "Lemuel Lemos"
+date: "2025-04-02"
+categories: [fundos de investimentos, desempenho, multimercado]
+image: "image.jpg"
+execute:
+  warning: false
+  message: false
+format:
+  html:
+    code-fold: true         # Mostra botão para esconder/exibir o código
+    code-summary: "Mostrar código"  # Texto do botão (padrão: "Code")
+---
+
+Teste
+
