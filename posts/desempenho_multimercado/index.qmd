@@ -13,5 +13,38 @@ format:
     code-summary: "Mostrar código"  # Texto do botão (padrão: "Code")
 ---
 
-Teste
+Continuando nos post sobre os fundos de investimentos, vamos repetir as anãlises que realizamos para os fundos de renda fixa, agora ara os fundos multimercados. O primeiro ponto vamos definir o que são fundos multimercados. No site da <a href="https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/fundo-de-investimento-multimercado-fim-rv.htm" target="_blank">B3</a> temos a seguinte definição:
+
+:::{.callout-tip}
+## Definição B3
+Os Fundos Multimercado, como o próprio nome diz, são fundos que investem em diversos mercados sem a concentração de investimento em um único segmento e/ou setor. São uma alternativa para quem busca diversificar a carteira de forma prática, pois reúnem em um só produto vários tipos de ativos.
+
+Os multimercados podem aplicar em diferentes mercados (renda fixa, renda variável, ações, outros fundos, câmbio e entre outros), além de usar derivativos para alavancagem (técnica que se assemelha a um endividamento, com o objetivo de maximizar a rentabilidade) ou para proteção da carteira. Eles preveem uma maior liberdade de gestão e buscam oferecer aos investidores um rendimento mais alto que em aplicações conservadoras, porém podem ser mais arriscados dado o grau de risco intrínseco ao fundo (sempre consultar o seu perfil de investidor para saber quais os produtos que mais se enquadram nos seus objetivos).
+
+No geral, os Fundos Multimercados são uma categoria de Fundos de Investimentos que podem alocar capital em diferentes tipos de ativos, sejam de Renda Fixa e/ou Variável, sempre buscando a melhor rentabilidade.
+:::
+
+```{r carregamento de pacotes}
+#| code-fold: false
+library(dplyr)
+library(dbplyr)
+library(tidyr)
+library(furrr)
+library(reactable)
+library(htmltools)
+library(ggplot2)
+library(scales)
+library(ggimprensa)
+library(zoo)
+library(echarts4r)
+
+# Conectando a base de dados
+con <- DBI::dbConnect(duckdb::duckdb(), 
+                 dbdir = "fundos_db.duckdb",
+                 read_only = FALSE)
+
+```
+
+
+
 
