@@ -350,3 +350,161 @@ fundos_mm %>%
   )
 
 
+
+fundos_mm %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(
+    Ano = as.numeric(strftime(DT_COMPTC, "%Y"))
+  ) %>%
+  filter(Ano >= 2010 & Ano <= 2024) %>% 
+  select(Ano, CNPJ_FUNDO, DT_COMPTC,VL_QUOTA) %>% 
+  arrange(Ano, CNPJ_FUNDO, DT_COMPTC) %>% 
+  collect() %>% 
+  summarise(`Rent (%)` = ((last(VL_QUOTA)/first(VL_QUOTA)) - 1)*100,
+            .by = c("Ano", "CNPJ_FUNDO")) -> rentabilidade_fundos_mm
+
+
+
+rentabilidade_fundos_mm %>% 
+  left_join(
+    fundos_mm %>% 
+      distinct(CNPJ_FUNDO, `Tipo ANBIMA`) %>% 
+      collect()
+  ) %>% 
+  left_join(
+    rbcb::get_series(4391) %>% 
+      mutate(Ano = lubridate::year(date)) %>% 
+      filter(Ano >= 2010) %>% 
+      summarise(CDI = last((cumprod((`4391`/100)+1)-1)*100),
+                .by = Ano)
+  ) -> rentabilidade_fundos_mm
+
+rentabilidade_fundos_mm %>% 
+  mutate(Outlier = case_when(`Rent (%)` > 200 | `Rent (%)` < -200 ~ "Out",
+                             .default = "In")) %>% 
+  filter(Outlier == "Out") %>% 
+  distinct(CNPJ_FUNDO) -> fundos_out
+
+
+linhas_cdi <- rentabilidade_fundos_mm %>%
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Livre",
+    "Multimercados Macro" ,
+    "Multimercados Investimento no Exterior",
+    "Multimercados Juros e Moedas")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+
+rentabilidade_fundos_mm %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Livre",
+    "Multimercados Macro" ,
+    "Multimercados Investimento no Exterior",
+    "Multimercados Juros e Moedas")) %>% 
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+
+
+linhas_cdi <- rentabilidade_fundos_mm %>%
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Balanceados",
+    "Multimercados Dinâmico",
+    "Multimercados Trading",
+    "Multimercados Capital Protegido")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+
+rentabilidade_fundos_mm %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Balanceados",
+    "Multimercados Dinâmico",
+    "Multimercados Trading",
+    "Multimercados Capital Protegido")) %>% 
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+
+
+linhas_cdi <- rentabilidade_fundos_mm %>%
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Long and Short - Direcional",
+    "Multimercados Long and Short - Neutro",
+    "Multimercados Estratégia Específica")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+
+rentabilidade_fundos_mm %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Long and Short - Direcional",
+    "Multimercados Long and Short - Neutro",
+    "Multimercados Estratégia Específica")) %>% 
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
