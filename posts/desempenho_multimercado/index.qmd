@@ -1,7 +1,7 @@
 ---
-title: "Desempenho dos Fundos de Renda Fixa"
+title: "Raio X Fundos Multimercados"
 author: "Lemuel Lemos"
-date: "2025-04-02"
+date: "2025-04-10"
 categories: [fundos de investimentos, desempenho, multimercado]
 image: "image.jpg"
 execute:
@@ -13,7 +13,9 @@ format:
     code-summary: "Mostrar código"  # Texto do botão (padrão: "Code")
 ---
 
-Continuando nos post sobre os fundos de investimentos, vamos repetir as anãlises que realizamos para os fundos de renda fixa, agora ara os fundos multimercados. O primeiro ponto vamos definir o que são fundos multimercados. No site da <a href="https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/fundo-de-investimento-multimercado-fim-rv.htm" target="_blank">B3</a> temos a seguinte definição:
+Dando continuidade à nossa série de posts sobre fundos de investimento, vamos agora aplicar aos fundos multimercado a mesma abordagem que utilizamos para os fundos de renda fixa. Esses conteúdos têm como objetivo oferecer uma visão geral de como o mercado está estruturado. Por enquanto, as análises são mais simples, mas vamos aprofundando o nível de complexidade com o tempo.
+
+Para começar, vamos definir o que são os fundos multimercado. No site da <a href="https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/fundo-de-investimento-multimercado-fim-rv.htm" target="_blank">B3</a>, encontramos a seguinte definição:
 
 :::{.callout-tip}
 ## Definição B3
@@ -24,8 +26,8 @@ Os multimercados podem aplicar em diferentes mercados (renda fixa, renda variáv
 No geral, os Fundos Multimercados são uma categoria de Fundos de Investimentos que podem alocar capital em diferentes tipos de ativos, sejam de Renda Fixa e/ou Variável, sempre buscando a melhor rentabilidade.
 :::
 
+
 ```{r carregamento de pacotes}
-#| code-fold: false
 library(dplyr)
 library(dbplyr)
 library(tidyr)
@@ -84,6 +86,7 @@ fundos_mm %>%
 
 ```
 
+Dessa vez os código estarão todos recolhidos no texto. Como ele repete muita coisa do post sobre os fundos de renda fixa não há necessidade de vê-los novamente. O primeiro ponto que vamos abalisar será a quantidade de fundos por tipo Anbima que estão descritos na tabela abaixo.
 
 ```{r quatidade de fundos}
 
@@ -132,6 +135,9 @@ fundos_mm %>%
 
 ```
 
+Atualmente, existem 14.939 fundos multimercados registrados, distribuídos em diferentes estratégias conforme a classificação da ANBIMA. A maior parte se concentra em dois tipos: “Multimercados Investimento no Exterior”, com 7.687 fundos (51,46%), e “Multimercados Livre”, com 5.073 fundos (33,96%). Juntas, essas categorias representam mais de 85% do total, indicando uma preferência clara por estratégias com maior liberdade de alocação e exposição internacional.
+
+Outras categorias, como “Multimercados Macro” (6,39%) e “Estratégia Específica” (3,49%), também têm presença relevante, ainda que bem menor. Já os fundos classificados como “Dinâmico”, “Juros e Moedas”, “Long and Short” (nas versões Direcional e Neutro), “Capital Protegido”, “Balanceados” e “Trading” possuem participações muito reduzidas, sugerindo que são estratégias menos adotadas ou voltadas a nichos bastante específicos dentro do universo multimercado.
 
 ```{r caracteristica do investidor}
 fundos_mm %>% 
@@ -156,6 +162,11 @@ fundos_mm %>%
   )
 ```
 
+A maioria dos fundos multimercados é voltada para investidores profissionais, com destaque para os fundos “Exclusivos” (4.060) e “Reservados” (3.407) destinados a esse público. Além disso, há 2.595 fundos classificados como “Não Há Restrição” também voltados para profissionais, totalizando 10.062 fundos (cerca de 67% do total) acessíveis apenas a esse perfil.
+
+Os fundos para investidores qualificados aparecem em seguida, com destaque para aqueles sem restrição formal (1.920) e os do tipo reservado (278). Já os fundos destinados ao público geral são menos numerosos, com 2.190 classificados como “Não Há Restrição” e apenas 61 como “Reservado”.
+
+Há ainda registros residuais com combinações menos comuns — como fundos exclusivos para qualificados (36), entradas repetidas com pequenas variações de grafia e até mesmo uma linha com classificação indefinida (ND), mostrando certa inconsistência na base de dados.
 
 ```{r tipos de fundos}
 tbl(con,"extrato_fi")  %>% 
@@ -205,7 +216,15 @@ tbl(con,"extrato_fi")  %>%
 
 ```
 
-```{r}
+A maioria dos fundos multimercados adota uma política de investimento ativa e não-referenciada, com 5.623 fundos operando de forma direta (sem serem fundos de cotas ou espelho) e mais 3.088 como fundos de cotas. Também há 590 fundos com essa mesma política funcionando como espelhos de outros.
+
+Os fundos com política ativa e referenciada aparecem em seguida, somando 2.685 registros, sendo 1.456 operando diretamente, 1.017 como fundos de cotas e 212 como espelhos.
+
+As políticas “Enhanced” e “Passiva” são bem menos representativas. Os fundos passivos somam 735, a maioria estruturada como fundos de cotas (428) ou espelhos (147). Já os fundos com política “Enhanced” totalizam apenas 87 registros, sinalizando que essa estratégia é pouco adotada no universo dos multimercados.
+
+A predominância de fundos ativos, especialmente os não-referenciados, reforça o caráter mais flexível e dinâmico típico dessa classe de investimento.
+
+```{r taxas}
 tbl(con,"extrato_fi") %>% 
   collect() %>% 
   filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_mm, CNPJ_FUNDO))$CNPJ_FUNDO) %>%
@@ -263,6 +282,16 @@ tbl(con,"extrato_fi") %>%
   )
 ```
 
+A maioria dos fundos multimercados segue uma política ativa e não-referenciada e não cobra taxas de ingresso, performance ou saída — são 7.504 fundos com esse perfil, o que representa a estrutura mais comum da indústria.
+
+Entre os que cobram taxa de performance, a variação mais frequente é a ausência de taxa de ingresso e saída, com 1.531 fundos adotando esse modelo. Já a combinação completa de todas as taxas (ingresso, performance e saída) é rara, com apenas 2 fundos nessa condição.
+
+Os fundos com política ativa e referenciada também se destacam por não cobrar taxas na maior parte dos casos (1.791 fundos). No entanto, há uma quantidade relevante que combina taxa de performance com taxa de saída (151 fundos) ou que cobra apenas uma das duas.
+
+As políticas passiva e enhanced, menos comuns, seguem padrão semelhante de estrutura mais enxuta em termos de taxas. A maioria desses fundos também evita cobrar taxa de ingresso, e a presença de taxa de performance aparece apenas em uma parcela menor.
+
+O cenário geral aponta para uma predominância de fundos que evitam onerar o investidor com múltiplas taxas, especialmente nos modelos mais amplamente adotados.
+
 ```{r evolução captação}
 fundos_mm %>%
   filter(!is.na(POLIT_INVEST)) %>%
@@ -312,7 +341,13 @@ fundos_mm %>%
   e_grid(left = "10%", right = "10%") 
 ```
 
-```{r}
+O gráfico mostra a evolução da captação dos fundos multimercados desde 2010. Até 2020, o setor apresentou crescimento contínuo, com captação líquida positiva na maioria dos trimestres e aumento constante da captação líquida acumulada, que ultrapassou a marca de R$ 1 trilhão no auge, em 2021.
+
+A partir de 2022, observa-se uma reversão significativa nesse movimento. Os resgates passaram a superar consistentemente as captações, levando a captação líquida para o campo negativo em diversos períodos. Como consequência, a linha de captação líquida acumulada entrou em forte trajetória de queda, devolvendo boa parte do crescimento acumulado ao longo da década anterior.
+
+Esse comportamento sugere uma mudança relevante no apetite dos investidores por essa classe de fundos nos últimos anos, possivelmente influenciada por fatores como cenário macroeconômico, volatilidade dos mercados e competição com outros produtos de investimento.
+
+```{r evolução captação líquida}
 fundos_mm %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(
@@ -350,7 +385,13 @@ fundos_mm %>%
   )
 ```
 
-```{r}
+A captação líquida por tipo ANBIMA mostra que, ao longo do tempo, os fundos multimercados apresentaram variações importantes entre suas subclasses. Entre 2016 e 2021, houve crescimento expressivo liderado principalmente pelos fundos “Multimercados Livre” e “Multimercados Investimento no Exterior”, que registraram os maiores volumes líquidos positivos nesse período.
+
+A partir de 2022, no entanto, a tendência se inverte. Praticamente todas as categorias passaram a registrar captação líquida negativa, com destaque para os fundos “Multimercados Livre” e “Multimercados Macro”, que concentraram os maiores volumes de resgates. No primeiro trimestre de 2024, a saída líquida foi particularmente acentuada, refletindo um movimento generalizado de retirada de recursos do setor.
+
+Esse cenário evidencia uma perda de tração dos fundos multimercados em geral, com destaque negativo justamente nas categorias que antes lideravam os aportes. A mudança de comportamento dos investidores é clara e reforça o desafio enfrentado por essa classe nos últimos anos.
+
+```{r custodia}
 fundos_mm %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(
@@ -382,7 +423,13 @@ fundos_mm %>%
   )
 ```
 
-```{r}
+O gráfico mostra a evolução do patrimônio líquido dos fundos multimercados por tipo ANBIMA desde 2010. Entre 2016 e 2021, observa-se uma trajetória de forte crescimento, impulsionada principalmente pelos fundos “Multimercados Investimento no Exterior” e “Multimercados Livre”, que passaram a responder pela maior parte do patrimônio do setor.
+
+A partir de 2022, esse crescimento estagnou e, em seguida, deu lugar a uma leve retração. Ainda que o volume total permaneça elevado, há uma clara estabilização, com pequenas quedas nos trimestres mais recentes, refletindo os resgates observados anteriormente.
+
+Apesar disso, a composição do patrimônio se manteve relativamente estável, com os fundos de investimento no exterior mantendo a liderança, seguidos pelos fundos livres e pelos macro. As demais categorias seguem com participação marginal, reforçando a concentração do patrimônio nos principais tipos de estratégia.
+
+```{r rentabilidade 1}
 fundos_mm %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(
@@ -457,7 +504,19 @@ rentabilidade_fundos_mm %>%
   )
 ```
 
-```{r}
+O gráfico mostra a distribuição anual da rentabilidade dos principais tipos de fundos multimercados desde 2010. Em todos os casos, observa-se uma variação considerável nos resultados entre os diferentes fundos de uma mesma categoria, com anos de forte dispersão e outros de desempenho mais concentrado.
+
+Os fundos **Multimercados Investimento no Exterior** apresentaram alta volatilidade, com anos de rentabilidades bastante elevadas, mas também períodos de perdas expressivas. A mediana (linha vermelha) se manteve positiva na maioria dos anos, mas com tendência de queda nos últimos períodos.
+
+Os **Multimercados Juros e Moedas** demonstram comportamento mais estável, com menor dispersão e medianas consistentemente positivas, refletindo o perfil mais conservador dessa estratégia.
+
+Nos **Multimercados Livre**, há uma variação maior entre os fundos, com alguns anos apresentando perdas relevantes para parte dos gestores. Ainda assim, a mediana tende a ser levemente positiva ao longo do tempo.
+
+Já os **Multimercados Macro** mostram o maior grau de dispersão entre os tipos analisados, com resultados que vão de perdas expressivas a ganhos muito elevados, especialmente entre 2015 e 2020. A mediana, no entanto, se manteve em torno de 5% a 10% na maior parte dos anos.
+
+O gráfico evidencia que, apesar do potencial de retorno elevado, os fundos multimercados — principalmente os das categorias mais livres e macro — estão sujeitos a uma volatilidade significativa, exigindo maior tolerância ao risco por parte do investidor.
+
+```{r rentabilidade 2}
 linhas_cdi <- rentabilidade_fundos_mm %>%
   distinct(`Tipo ANBIMA`, Ano, CDI) %>%
   filter(`Tipo ANBIMA` %in% c(
@@ -500,7 +559,15 @@ rentabilidade_fundos_mm %>%
   )
 ```
 
-```{r}
+Os fundos **Multimercados Balanceados** apresentam distribuição de rentabilidade relativamente estável ao longo do tempo, com medianas positivas em praticamente todos os anos. Apesar de alguma volatilidade, especialmente após 2018, a maioria dos fundos entregou retornos consistentes.
+
+Nos **Multimercados Capital Protegido**, a dispersão é mais ampla, mas a mediana permanece estável e positiva, geralmente entre 5% e 15%. Essa categoria tende a proteger o capital investido, o que se reflete em uma menor frequência de perdas extremas.
+
+Os **Multimercados Dinâmico** apresentam comportamento mais volátil, com uma dispersão significativa nas rentabilidades. Ainda assim, a mediana anual se manteve em território positivo na maior parte do período, apesar de algumas quedas recentes.
+
+Já os **Multimercados Trading** mostraram performance bastante variável, com anos de destaque — como 2015 e 2016 — seguidos por períodos de rentabilidades medianas mais baixas ou até negativas. É uma categoria mais tática, sujeita a altos e baixos conforme o cenário de mercado.
+
+```{r rentabilidade 3}
 linhas_cdi <- rentabilidade_fundos_mm %>%
   distinct(`Tipo ANBIMA`, Ano, CDI) %>%
   filter(`Tipo ANBIMA` %in% c(
@@ -541,3 +608,8 @@ rentabilidade_fundos_mm %>%
   )
 ```
 
+Os **Multimercados Estratégia Específica** apresentam alta dispersão de rentabilidade ao longo dos anos, com mediana geralmente positiva, mas com forte variação entre os fundos. Isso reflete a natureza heterogênea da categoria, que reúne estratégias distintas e menos padronizadas.
+
+Nos **Multimercados Long and Short - Direcional**, a rentabilidade mediana também se mantém em território positivo na maior parte dos anos, mas com episódios pontuais de perdas e uma dispersão relevante, especialmente em momentos de maior volatilidade no mercado.
+
+Já os **Multimercados Long and Short - Neutro** mostram desempenho historicamente mais consistente, com medianas positivas e menos volatilidade até 2018. A partir de 2019, no entanto, há maior variação entre os fundos e uma queda na mediana, embora ela volte a subir nos anos mais recentes.
