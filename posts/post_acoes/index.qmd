@@ -1,0 +1,649 @@
+---
+title: "Raio X Fundos Multimercados"
+author: "Lemuel Lemos"
+date: "2025-04-11"
+categories: [fundos de investimentos, desempenho, fondos de ações]
+image: "image.jpg"
+execute:
+  warning: false
+  message: false
+format:
+  html:
+    code-fold: true         # Mostra botão para esconder/exibir o código
+    code-summary: "Mostrar código"  # Texto do botão (padrão: "Code")
+---
+
+Dando continuidade à nossa série de posts sobre fundos de investimento, vamos agora aplicar aos fundos multimercado a mesma abordagem que utilizamos para os fundos de renda fixa. Esses conteúdos têm como objetivo oferecer uma visão geral de como o mercado está estruturado. Por enquanto, as análises são mais simples, mas vamos aprofundando o nível de complexidade com o tempo.
+
+Para começar, vamos definir o que são os fundos multimercado. No site da <a href="https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/fundo-de-investimento-multimercado-fim-rv.htm" target="_blank">B3</a>, encontramos a seguinte definição:
+
+:::{.callout-tip}
+## Definição B3
+Os Fundos Multimercado, como o próprio nome diz, são fundos que investem em diversos mercados sem a concentração de investimento em um único segmento e/ou setor. São uma alternativa para quem busca diversificar a carteira de forma prática, pois reúnem em um só produto vários tipos de ativos.
+
+Os multimercados podem aplicar em diferentes mercados (renda fixa, renda variável, ações, outros fundos, câmbio e entre outros), além de usar derivativos para alavancagem (técnica que se assemelha a um endividamento, com o objetivo de maximizar a rentabilidade) ou para proteção da carteira. Eles preveem uma maior liberdade de gestão e buscam oferecer aos investidores um rendimento mais alto que em aplicações conservadoras, porém podem ser mais arriscados dado o grau de risco intrínseco ao fundo (sempre consultar o seu perfil de investidor para saber quais os produtos que mais se enquadram nos seus objetivos).
+
+No geral, os Fundos Multimercados são uma categoria de Fundos de Investimentos que podem alocar capital em diferentes tipos de ativos, sejam de Renda Fixa e/ou Variável, sempre buscando a melhor rentabilidade.
+:::
+
+Os fundos multimercados são um importante instrumento de investimento, principalmente por sua flexibilidade em alocar recursos em diferentes classes de ativos. Observamos que os tipos ANBIMA costumam estar bem relacionados às estratégias adotadas por esses fundos — como é o caso dos fundos Long and Short, Macro e Trading. Alguns estão mais expostos a fatores específicos, como juros e moedas, enquanto outros apresentam foco geográfico, como os Multimercados com Investimento no Exterior.
+
+```{r carregamento de pacotes}
+library(dplyr)
+library(dbplyr)
+library(tidyr)
+library(furrr)
+library(reactable)
+library(htmltools)
+library(ggplot2)
+library(scales)
+library(ggimprensa)
+library(zoo)
+library(echarts4r)
+
+# Conectando a base de dados
+con <- DBI::dbConnect(duckdb::duckdb(), 
+                      dbdir = "fundos_db.duckdb",
+                      read_only = FALSE)
+
+informes_diarios <- tbl(con,"informes_diarios") 
+
+informes_diarios %>% 
+  mutate(
+    CNPJ_FUNDO = case_when(is.na(CNPJ_FUNDO) ~ CNPJ_FUNDO_CLASSE,
+                           .default = CNPJ_FUNDO),
+    TP_FUNDO = case_when(is.na(TP_FUNDO) ~ TP_FUNDO_CLASSE,
+                         .default = TP_FUNDO)
+  ) %>% 
+  mutate(CNPJ_FUNDO = sql("regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')")) %>% 
+  left_join(
+    tbl(con, "fundos_175_anbima") %>% 
+      filter(`CNPJ do Fundo` != "58137699000116") %>%  # Esse fundo em especifico possuia valores duplicados
+      select(
+        `Código ANBIMA`, Estrutura, `CNPJ do Fundo`, `Nome Comercial`, Status,
+        `Categoria ANBIMA`, `Tipo ANBIMA`, `Composição do Fundo`,
+        `Aberto Estatutariamente`, `Tributação Alvo`, `Primeiro Aporte`,
+        `Tipo de Investidor`, `Característica do Investidor`,
+        `Cota de Abertura`, `Aplicação Inicial Mínima`, 
+        `Prazo Pagamento Resgate em dias`
+      ),
+    by = c("CNPJ_FUNDO" = "CNPJ do Fundo")
+  ) %>% 
+  # Filtra apenas fundos classificados como "Multimercado"
+  filter(`Categoria ANBIMA` == "Multimercados") -> fundos_mm
+
+
+fundos_mm %>% 
+  left_join(
+    tbl(con,"extrato_fi") %>% 
+      select(CNPJ_FUNDO_CLASSE,PUBLICO_ALVO, DISTRIB, POLIT_INVEST, 
+             FUNDO_COTAS,FUNDO_ESPELHO, APLIC_MIN, ATUALIZ_DIARIA_COTA,
+             TAXA_SAIDA_PAGTO_RESGATE, TAXA_ADM, EXISTE_TAXA_PERFM,
+             TAXA_PERFM, PARAM_TAXA_PERFM, CALC_TAXA_PERFM,
+             EXISTE_TAXA_INGRESSO, EXISTE_TAXA_SAIDA,
+             INVEST_EXTERIOR, ATIVO_CRED_PRIV),
+    by = c("CNPJ_FUNDO" = "CNPJ_FUNDO_CLASSE") 
+  ) -> fundos_mm
+
+```
+
+Dessa vez, os códigos estarão todos recolhidos no texto. Como há bastante repetição em relação ao post sobre os fundos de renda fixa, não é necessário mostrá-los novamente. O primeiro ponto que vamos analisar é a quantidade de fundos por tipo ANBIMA, conforme descrito na tabela abaixo.
+
+```{r quatidade de fundos}
+
+fundos_mm %>%
+  distinct(CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
+  count(`Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
+  collect() %>% 
+  arrange(-n) %>%  
+  rename(Quantidade = n) %>%  
+  mutate(`Part (%)` = Quantidade / sum(Quantidade) * 100) %>%  
+  mutate(`Part Acum (%)` = cumsum(`Part (%)`)) %>%  
+  reactable::reactable(
+    pagination = FALSE,  
+    defaultColDef = colDef(minWidth = 120),  
+    resizable = TRUE,  
+    columns = list(
+      `Categoria ANBIMA` = colDef(width = 130),  
+      `Tipo ANBIMA` = colDef(width = 340),  
+      Quantidade = colDef(
+        width = 120,
+        align = "right",  
+        format = colFormat(separators = TRUE),  
+        footer = function(values) {  
+          htmltools::tags$b("Total: ") %>%  
+            htmltools::tagAppendChildren(htmltools::tags$span(sum(values)))  
+        }
+      ),
+      `Part (%)` = colDef(
+        width = 80,
+        align = "right",  
+        format = colFormat(suffix = "%", digits = 2),  
+        footer = function(values) {  
+          htmltools::tags$b("100%")  
+        }
+      ),
+      `Part Acum (%)` = colDef(
+        width = 120,
+        align = "right",  
+        format = colFormat(suffix = "%", digits = 2),  
+        footer = function(values) {  
+          htmltools::tags$b("100%")  
+        }
+      )
+    )
+  )
+
+```
+
+Atualmente, existem 14.939 fundos multimercados registrados, distribuídos entre diferentes estratégias conforme a classificação da ANBIMA. A maior parte está concentrada em dois tipos: “Multimercados Investimento no Exterior”, com 7.687 fundos (51,46%), e “Multimercados Livre”, com 5.073 fundos (33,96%). Juntas, essas categorias representam mais de 85% do total, com destaque para a predominância dos fundos com foco em investimentos no exterior.
+
+Uma possível explicação para esse domínio é que, no passado, o mercado brasileiro oferecia poucas alternativas para investir fora do país. Nesse contexto, os fundos multimercados se tornaram uma das formas mais acessíveis de obter exposição internacional.
+
+Outras categorias, como “Multimercados Macro” (6,39%) e “Estratégia Específica” (3,49%), também têm presença relevante, embora bem menor. Já os fundos classificados como “Dinâmico”, “Juros e Moedas”, “Long and Short” (nas versões Direcional e Neutro), “Capital Protegido”, “Balanceados” e “Trading” apresentam participações bastante reduzidas, sugerindo estratégias menos adotadas ou voltadas a nichos específicos dentro do universo multimercado. 
+
+```{r caracteristica do investidor}
+fundos_mm %>% 
+  distinct(CNPJ_FUNDO,`Tipo de Investidor`,`Característica do Investidor`) %>% 
+  count(`Tipo de Investidor`,`Característica do Investidor`) %>% 
+  collect() %>% 
+  arrange(-n) %>% 
+  rename(Quantidade = n) %>% 
+  reactable::reactable(
+    pagination = FALSE,  # Desativa a paginação da tabela
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Coloca a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Adiciona a soma total ao lado
+        }
+      )
+    )
+  )
+```
+
+A maioria dos fundos multimercados é voltada para investidores profissionais, com destaque para os fundos “Exclusivos” (4.060) e “Reservados” (3.407) destinados a esse público. Além disso, há 2.595 fundos classificados como “Não Há Restrição” também voltados para profissionais, totalizando 10.062 fundos (cerca de 67% do total) acessíveis apenas a esse perfil.
+
+Os fundos para investidores qualificados aparecem em seguida, com destaque para aqueles sem restrição formal (1.920) e os do tipo reservado (278). Já os fundos destinados ao público geral são menos numerosos, com 2.190 classificados como “Não Há Restrição” e apenas 61 como “Reservado”.
+
+Vemos aqui outra característica muito relevante: por que os fundos destinados a investidores profissionais representam a maioria entre os fundos multimercados? Fiz uma breve pesquisa, analisando uma amostra de fundos diretamente no site da ANBIMA, e os dados se confirmam. Essa predominância sugere um tema que merece investigação mais aprofundada, especialmente considerando a forte presença dos fundos exclusivos nesse grupo.
+
+Ao buscar a definição do que são esses fundos exclusivos, encontrei a seguinte descrição no **Código ANBIMA de Regulação e Melhores Práticas para a Atividade de Gestão de Patrimônio Financeiro no Mercado Doméstico:**
+
+
+:::{.callout-tip}
+## Definição ANBIMA
+“Fundo Exclusivo” significa, nos termos das normas da CVM, o fundo de investimento ou fundo de
+investimento em cotas de fundos de investimento destinado a investidores qualificados e constituído
+para receber aplicações de um único cotista.
+:::
+
+O documento se encontra <a href="https://www.anbima.com.br/circulares/arqs/cir2010000088_C%C3%B3digo%20de%20Gest%C3%A3o%20de%20Patrim%C3%B4nio%20Financeiro.pdf" target="_blank">aqui.</a> O que esse dado nos mostra é que os fundos multimercados também se destacam como um dos principais instrumentos utilizados pelo mercado de *wealth*, voltado para atender investidores de alta renda que buscam criar fundos exclusivos para facilitar a gestão de seus recursos.
+
+Vale lembrar que os fundos exclusivos já foram um importante mecanismo de planejamento tributário, pois o imposto de renda só era devido no momento do resgate. Essa característica, no entanto, foi alterada com a publicação da <a href="https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/mpv/mpv1184.htm" target="_blank">Medida Provisória (MP) 1.184, de agosto de 2023,</a> que passou a exigir a cobrança periódica de IR via sistema de *come-cotas*, alinhando esses fundos às demais estruturas de investimento.
+
+
+```{r tipos de fundos}
+tbl(con,"extrato_fi")  %>% 
+  distinct(DT_COMPTC, CNPJ_FUNDO_CLASSE, POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>%
+  collect() %>% 
+  filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_mm, CNPJ_FUNDO))$CNPJ_FUNDO) %>% 
+  mutate(DT_COMPTC = as.Date(DT_COMPTC)) %>%  # Converte a data para o formato adequado
+  arrange(DT_COMPTC) %>%  # Ordena as datas de competência
+  group_by(CNPJ_FUNDO_CLASSE) %>% 
+  summarise_all(last) %>%  # Mantém apenas a última entrada por fundo
+  ungroup() %>% 
+  mutate(
+    FUNDO_ESPELHO = case_when(
+      is.na(FUNDO_ESPELHO) ~ "Não",
+      FUNDO_ESPELHO == "N" ~ "Não",
+      .default = "Sim"
+    ),
+    FUNDO_COTAS = case_when(
+      FUNDO_COTAS == "N" ~ "Não",
+      .default = "Sim"
+    )
+  ) %>% 
+  count(POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>% 
+  rename(
+    `Política de Investimento` = POLIT_INVEST,
+    `Fundo Espelho` = FUNDO_ESPELHO,
+    `Fundo de Cotas` = FUNDO_COTAS,
+    Quantidade = n
+  ) %>%
+  reactable(
+    pagination = FALSE,  # Desativa a paginação
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      `Política de Investimento` = colDef(width = 250),  # Define largura da coluna
+      `Fundo Espelho` = colDef(width = 150),  # Define largura da coluna
+      `Fundo de Cotas` = colDef(width = 150),  # Define largura da coluna
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Exibe a soma total ao lado
+        }
+      )
+    )
+  )
+
+```
+
+A maioria dos fundos multimercados adota uma política de investimento ativa e não-referenciada, com 5.623 fundos operando de forma direta (sem serem fundos de cotas ou espelho) e outros 3.088 estruturados como fundos de cotas. Além disso, 590 fundos seguem essa mesma política atuando como espelhos.
+
+Em seguida, aparecem os fundos com política ativa e referenciada, totalizando 2.685 registros — sendo 1.456 operando diretamente, 1.017 como fundos de cotas e 212 como espelhos.
+
+As políticas “Enhanced” e “Passiva” são bem menos representativas. Os fundos passivos somam 735, sendo a maioria fundos de cotas (428) ou espelhos (147). Já os fundos com política “Enhanced” totalizam apenas 87 registros, o que indica uma adoção ainda bastante limitada dessa abordagem dentro da classe de multimercados.
+
+O ponto que chama atenção aqui é a grande predominância de fundos de cotas na estrutura dos multimercados — aspecto que também merece uma análise mais aprofundada. Esse modelo pode estar ligado à forma como algumas gestoras estruturam suas operações, criando um fundo “master” que concentra a estratégia principal, enquanto os demais fundos da casa alocam seus recursos nesse veículo central. Novamente, igual aos fundos de renda fixa, temos predominância de estratégias não referenciadas. 
+
+```{r taxas}
+tbl(con,"extrato_fi") %>% 
+  collect() %>% 
+  filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_mm, CNPJ_FUNDO))$CNPJ_FUNDO) %>%
+  distinct(DT_COMPTC, 
+           CNPJ_FUNDO_CLASSE, 
+           POLIT_INVEST, 
+           EXISTE_TAXA_INGRESSO, 
+           EXISTE_TAXA_PERFM, 
+           EXISTE_TAXA_SAIDA) %>% 
+  count(POLIT_INVEST, 
+        EXISTE_TAXA_INGRESSO, 
+        EXISTE_TAXA_PERFM, 
+        EXISTE_TAXA_SAIDA) %>%
+  mutate(
+    EXISTE_TAXA_INGRESSO = case_match(
+      EXISTE_TAXA_INGRESSO, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_INGRESSO),
+    EXISTE_TAXA_PERFM = case_match(
+      EXISTE_TAXA_PERFM, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_PERFM),
+    EXISTE_TAXA_SAIDA = case_match(
+      EXISTE_TAXA_SAIDA, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_SAIDA)
+  ) %>% 
+  rename(
+    `Política de Investimento` = POLIT_INVEST,
+    `Taxa de Ingresso` = EXISTE_TAXA_INGRESSO,
+    `Taxa de Performance` = EXISTE_TAXA_PERFM,
+    `Taxa de Saída` = EXISTE_TAXA_SAIDA,
+    Quantidade = n
+  ) %>%
+  reactable(
+    pagination = FALSE,  # Desativa a paginação
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      `Política de Investimento` = colDef(width = 300),  # Define largura da coluna
+      `Taxa de Ingresso` = colDef(width = 120),  # Define largura da coluna
+      `Taxa de Performance` = colDef(width = 120),  # Define largura da coluna
+      `Taxa de Saída` = colDef(width = 120),  # Define largura da coluna
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Exibe a soma total ao lado
+        }
+      )
+    )
+  )
+```
+
+A maioria dos fundos multimercados segue uma política ativa e não-referenciada e não cobra taxas de ingresso, performance ou saída — são 7.504 fundos com esse perfil, o que representa a estrutura mais comum da indústria.
+
+Entre os que cobram taxa de performance, a variação mais frequente é a ausência de taxa de ingresso e saída, com 1.531 fundos adotando esse modelo. Já a combinação completa de todas as taxas (ingresso, performance e saída) é rara, com apenas 2 fundos nessa condição.
+
+Os fundos com política ativa e referenciada também se destacam por não cobrar taxas na maior parte dos casos (1.791 fundos). No entanto, há uma quantidade relevante que combina taxa de performance com taxa de saída (151 fundos) ou que cobra apenas uma das duas.
+
+As políticas passiva e enhanced, menos comuns, seguem padrão semelhante de estrutura mais enxuta em termos de taxas. A maioria desses fundos também evita cobrar taxa de ingresso, e a presença de taxa de performance aparece apenas em uma parcela menor.
+
+```{r evolução captação}
+fundos_mm %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  select(DT_COMPTC,`Categoria ANBIMA`,CAPTC_DIA,RESG_DIA) %>% 
+  collect() %>% 
+  mutate(Competência = as.yearqtr(DT_COMPTC)) %>%
+  filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
+  summarise(
+    Captação = sum(CAPTC_DIA) / 1e9,
+    Resgates = -sum(RESG_DIA) / 1e9,
+    .by = c("Competência", "Categoria ANBIMA")
+  ) %>%
+  mutate(CAPTC_LIQ = Captação + Resgates) %>%
+  pivot_wider(
+    names_from = "Categoria ANBIMA",
+    values_from = "CAPTC_LIQ"
+  ) %>%
+  rename(`Captação líquida` = Multimercados) %>%
+  arrange(Competência) %>%
+  mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`),
+         Competência = as.Date(Competência)) %>%
+  arrange(Competência) %>% 
+  e_charts(Competência) %>%
+  e_bar(Captação, name = "Captação", 
+        color = "steelblue", 
+        stack = "total") %>%
+  e_bar(Resgates, 
+        name = "Resgates", 
+        color = "tomato", 
+        stack = "total") %>%
+  e_line(`Captação líquida`, 
+         name = "Captação líquida", 
+         color = "darkgreen") %>%
+  e_line(`Captação líquida acumulada`, 
+         name = "Captação líquida acumulada", 
+         color = "purple") %>%
+  e_title(
+    text = "Histórico de Captação",
+    subtext = "Captação e Resgates com sua evolução trimestral desde o início de 2010"
+  ) %>%
+  e_legend(right = TRUE) %>%
+  e_tooltip(trigger = "axis") %>%
+  e_y_axis(
+    axisLabel = list(formatter = JS("function(value){ return value + ' B'; }"))
+  ) %>%
+  e_x_axis(axisLabel = list(rotate = 45)) %>%
+  e_grid(left = "10%", right = "10%") 
+```
+
+O gráfico mostra a evolução da captação dos fundos multimercados desde 2010. Até 2020, o setor apresentou trajetória de crescimento constante, com captação líquida positiva na maioria dos trimestres e avanço progressivo da captação líquida acumulada, que ultrapassou R$ 1 trilhão no pico, em 2021.
+
+A partir de 2022, esse movimento se inverteu de forma significativa. Os resgates passaram a superar de forma consistente as aplicações, levando a captação líquida para o campo negativo em diversos períodos. Como resultado, a linha de captação acumulada iniciou uma trajetória de queda acentuada, devolvendo parte relevante do crescimento observado ao longo da década anterior.
+
+O que vemos aqui é que a indústria de fundos multimercados praticamente devolveu tudo o que captou em 14 anos — um movimento impressionante, que evidencia como o cenário econômico atual reduziu drasticamente o interesse por essa classe. Há alguns fatores que ajudam a explicar esse fenômeno.
+
+Como apontado nas tabelas anteriores, os fundos exclusivos representam uma parte significativa dos fundos multimercados. A criação do *come-cotas* para esses fundos — que até então contavam com o benefício de só pagar imposto no resgate — pode ter provocado uma migração de recursos para outros veículos de investimento.
+
+Outro fator relevante é o cenário macroeconômico, marcado por juros elevados. A renda fixa tradicional passou a oferecer retornos bastante atrativos, muitas vezes isentos de taxas de administração, o que aumentou a concorrência direta com os fundos multimercados. 
+
+Tudo indica que a indústria sofreu um baque expressivo, e o ambiente econômico atual não aponta para uma reversão rápida desse quadro. O futuro próximo segue desafiador para os multimercados.
+
+```{r evolução captação líquida}
+fundos_mm %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(
+    ano = strftime(DT_COMPTC, "%Y"),
+    mes = sql("CAST(strftime(DT_COMPTC, '%m') AS INTEGER)"),
+    trimestre = paste0("T", (mes - 1) %/% 3 + 1),
+    Competência = paste(ano, trimestre)
+  ) %>%
+  filter(Competência >= "2010 T1" & Competência <= "2024 T4") %>%
+  summarise(
+    Captação = sum(CAPTC_DIA) / 1e9,
+    Resgates = -sum(RESG_DIA) / 1e9,
+    .by = c("Competência", "Tipo ANBIMA")
+  ) %>%
+  mutate(
+    CAPTC_LIQ = Captação + Resgates
+  ) %>%
+  arrange(Competência) %>%
+  collect() %>% 
+  group_by(`Tipo ANBIMA`) %>%
+  e_charts(Competência) %>%
+  e_bar(CAPTC_LIQ, stack = "total", series = "Tipo ANBIMA") %>%
+  e_tooltip(trigger = "axis") %>%
+  e_title("Captação Líquida por Tipo ANBIMA ao Longo do Tempo") %>%
+  e_x_axis(name = "Competência") %>%
+  e_y_axis(name = "Captação Líquida (em bilhões)") %>%
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(
+    bottom = 120,  
+    top = 60
+  )
+```
+
+A captação líquida por tipo ANBIMA mostra que, ao longo do tempo, os fundos multimercados apresentaram variações significativas entre suas subclasses. Entre 2016 e 2021, houve um crescimento expressivo, puxado principalmente pelos fundos “Multimercados Livre” e “Multimercados Investimento no Exterior”, que lideraram os volumes líquidos positivos nesse período.
+
+A partir de 2022, porém, a tendência se inverte. Praticamente todas as categorias passaram a registrar captação líquida negativa, com destaque para os fundos “Multimercados Livre” e “Multimercados Macro”, que concentraram os maiores volumes de resgates. No primeiro trimestre de 2024, a saída líquida foi particularmente acentuada, refletindo um movimento generalizado de retirada de recursos do setor.
+
+Esse cenário reforça a perda de tração — já comentada anteriormente — dos fundos multimercados como um todo, com destaque negativo justamente nas categorias que antes lideravam os aportes. A mudança de comportamento dos investidores é evidente e amplia os desafios enfrentados por essa classe nos últimos anos.
+
+```{r custodia}
+fundos_mm %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(
+    ano = strftime(DT_COMPTC, "%Y"),
+    mes = sql("CAST(strftime(DT_COMPTC, '%m') AS INTEGER)"),
+    trimestre = paste0("T", (mes - 1) %/% 3 + 1),
+    Competência = paste(ano, trimestre)
+  ) %>%
+  filter(Competência >= "2010 T1" & Competência <= "2024 T4") %>% 
+  summarise(`Custódia` = sum(VL_PATRIM_LIQ),
+            .by = c("Competência","Tipo ANBIMA")) %>% 
+  collect() %>% 
+  arrange(Competência) %>% 
+  mutate(`Custódia` = `Custódia` / 1e9) %>% 
+  group_by(`Tipo ANBIMA`) %>% 
+  e_charts(Competência) %>%
+  e_bar(`Custódia`,stack = "total",series = "Tipo ANBIMA") %>% 
+  e_tooltip(trigger = "axis") %>%
+  e_title("Patrimônio Líquido por Tipo ANBIMA ao Longo do Tempo") %>%
+  e_y_axis(name = "Custódia (em bilhões)") %>%
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(
+    bottom = 120,
+    top = 60
+  )
+```
+
+O gráfico mostra a evolução do patrimônio líquido dos fundos multimercados por tipo ANBIMA desde 2010. Entre 2016 e 2021, observa-se uma trajetória de forte crescimento, impulsionada principalmente pelos fundos “Multimercados Investimento no Exterior” e “Multimercados Livre”, que passaram a responder pela maior parte do patrimônio do setor.
+
+A partir de 2022, esse crescimento estagnou e, em seguida, deu lugar a uma leve retração. Ainda que o volume total permaneça elevado, há uma clara estabilização, com pequenas quedas nos trimestres mais recentes, refletindo os resgates observados anteriormente.
+
+Apesar disso, a composição do patrimônio se manteve relativamente estável, com os fundos de investimento no exterior mantendo a liderança, seguidos pelos fundos livres e pelos macro. As demais categorias seguem com participação marginal, reforçando a concentração do patrimônio nos principais tipos de estratégia.
+
+```{r rentabilidade 1}
+fundos_mm %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(
+    Ano = as.numeric(strftime(DT_COMPTC, "%Y"))
+  ) %>%
+  filter(Ano >= 2010 & Ano <= 2024) %>% 
+  select(Ano, CNPJ_FUNDO, DT_COMPTC,VL_QUOTA) %>% 
+  arrange(Ano, CNPJ_FUNDO, DT_COMPTC) %>% 
+  collect() %>% 
+  summarise(`Rent (%)` = ((last(VL_QUOTA)/first(VL_QUOTA)) - 1)*100,
+            .by = c("Ano", "CNPJ_FUNDO")) -> rentabilidade_fundos_mm
+
+rentabilidade_fundos_mm %>% 
+  left_join(
+    fundos_mm %>% 
+      distinct(CNPJ_FUNDO, `Tipo ANBIMA`) %>% 
+      collect()
+  ) %>% 
+  left_join(
+    rbcb::get_series(4391) %>% 
+      mutate(Ano = lubridate::year(date)) %>% 
+      filter(Ano >= 2010) %>% 
+      summarise(CDI = last((cumprod((`4391`/100)+1)-1)*100),
+                .by = Ano)
+  ) -> rentabilidade_fundos_mm
+
+rentabilidade_fundos_mm %>% 
+  mutate(Outlier = case_when(`Rent (%)` > 50 | `Rent (%)` < -50 ~ "Out",
+                             .default = "In")) %>% 
+  filter(Outlier == "Out") %>% 
+  distinct(CNPJ_FUNDO) -> fundos_out
+
+
+linhas_cdi <- rentabilidade_fundos_mm %>%
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Livre",
+    "Multimercados Macro" ,
+    "Multimercados Investimento no Exterior",
+    "Multimercados Juros e Moedas")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+rentabilidade_fundos_mm %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Livre",
+    "Multimercados Macro" ,
+    "Multimercados Investimento no Exterior",
+    "Multimercados Juros e Moedas")) %>% 
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+Os gráficos a seguir mostram a distribuição anual da rentabilidade dos principais tipos de fundos multimercados desde 2010. Em todos os casos, observa-se uma variação considerável nos resultados entre os diferentes fundos de uma mesma categoria, com anos de forte dispersão e outros em que o desempenho esteve mais concentrado em torno de uma faixa específica.
+
+Os fundos **Multimercados Investimento no Exterior** apresentaram alta volatilidade, com anos de rentabilidades bastante elevadas, mas também períodos de perdas expressivas. A linha vermelha no gráfico representa o CDI de cada ano, e podemos ver que, em muitos períodos, boa parte dos fundos dessa categoria teve desempenho abaixo desse referencial.
+
+Os **Multimercados Juros e Moedas** demonstram comportamento mais estável, com menor dispersão e desempenho mais alinhado ao CDI, refletindo o perfil mais conservador dessa estratégia.
+
+Nos **Multimercados Livre**, há uma variação maior entre os fundos, com alguns anos apresentando perdas relevantes. Ainda assim, uma parcela significativa dos fundos conseguiu entregar retornos próximos ou acima do CDI ao longo do tempo.
+
+Já os **Multimercados Macro** mostram o maior grau de dispersão entre os tipos analisados, com resultados que vão de perdas expressivas a ganhos muito elevados, especialmente entre 2015 e 2020. A comparação com o CDI mostra que, apesar de alguns fundos superarem com folga o referencial, muitos ficaram abaixo da taxa básica.
+
+O gráfico evidencia que, apesar do potencial de retorno elevado, os fundos multimercados — especialmente os das categorias mais livres e macro — estão sujeitos a uma volatilidade significativa e apresentam grande variabilidade de resultados, exigindo maior tolerância ao risco por parte do investidor.
+
+```{r rentabilidade 2}
+linhas_cdi <- rentabilidade_fundos_mm %>%
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Balanceados",
+    "Multimercados Dinâmico",
+    "Multimercados Trading",
+    "Multimercados Capital Protegido")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+
+rentabilidade_fundos_mm %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Balanceados",
+    "Multimercados Dinâmico",
+    "Multimercados Trading",
+    "Multimercados Capital Protegido")) %>% 
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+Os fundos **Multimercados Balanceados** apresentam distribuição de rentabilidade relativamente estável ao longo do tempo, com a maioria dos fundos entregando retornos consistentes em praticamente todos os anos. Apesar de alguma volatilidade, especialmente após 2018, boa parte dos resultados se manteve próxima ou acima do CDI (representado pela linha vermelha nos gráficos).
+
+Nos **Multimercados Capital Protegido**, a dispersão é mais ampla, mas os retornos tendem a se concentrar em uma faixa positiva, geralmente entre 5% e 15%. Essa categoria busca preservar o capital investido, o que se reflete em uma menor incidência de perdas expressivas.
+
+Os **Multimercados Dinâmico** apresentam comportamento mais volátil, com uma dispersão significativa nas rentabilidades ao longo dos anos. Embora muitos fundos tenham entregado retornos positivos, há também períodos com desempenho abaixo do CDI e maior heterogeneidade entre os resultados.
+
+Já os **Multimercados Trading** mostraram performance bastante variável, com anos de destaque — como 2015 e 2016 — seguidos por períodos com maior dispersão e presença de resultados negativos. Trata-se de uma categoria mais tática, que tende a apresentar altos e baixos mais pronunciados conforme o cenário de mercado.
+
+```{r rentabilidade 3}
+linhas_cdi <- rentabilidade_fundos_mm %>%
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Long and Short - Direcional",
+    "Multimercados Long and Short - Neutro",
+    "Multimercados Estratégia Específica")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+
+rentabilidade_fundos_mm %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Multimercados Long and Short - Direcional",
+    "Multimercados Long and Short - Neutro",
+    "Multimercados Estratégia Específica")) %>% 
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+Os **Multimercados Estratégia Específica** apresentam alta dispersão de rentabilidade ao longo dos anos, com forte variação entre os fundos. Isso reflete a natureza heterogênea da categoria, que reúne estratégias distintas e menos padronizadas. Em vários períodos, uma parcela relevante dos fundos teve desempenho abaixo do CDI (linha vermelha), enquanto outros superaram com folga esse referencial.
+
+Nos **Multimercados Long and Short – Direcional**, observa-se uma ampla variação de resultados, com anos em que muitos fundos superaram o CDI, mas também com episódios pontuais de perdas relevantes. A dispersão é acentuada, especialmente em momentos de maior volatilidade de mercado.
+
+Já os **Multimercados Long and Short – Neutro** mostram desempenho historicamente mais consistente até 2018, com boa parte dos fundos rendendo acima ou próximo do CDI e menor dispersão. A partir de 2019, no entanto, os resultados se tornam mais variados e há maior incidência de retornos abaixo do referencial, embora os dados mais recentes indiquem uma leve recuperação.
+
+## Conclusão
+
+Os dados analisados revelam um retrato detalhado e, ao mesmo tempo, desafiador do atual cenário dos fundos multimercados no Brasil. Embora essa classe de fundos tenha se consolidado ao longo da última década como uma alternativa relevante para diversificação e acesso a estratégias sofisticadas — especialmente entre investidores profissionais e de alta renda — o setor enfrenta hoje um momento de forte retração.
+
+A predominância de fundos com política ativa e estrutura em cotas reflete uma organização típica de grandes gestoras, com modelos baseados em fundos master-feeder. No entanto, a introdução do *come-cotas* para fundos exclusivos e o ambiente macroeconômico marcado por juros elevados vêm pressionando o segmento, como evidenciado pelos resgates líquidos expressivos desde 2022 e pela desaceleração no crescimento do patrimônio.
+
+A análise de rentabilidade mostra ainda uma grande heterogeneidade de resultados, reforçando que, embora existam oportunidades, o risco e a volatilidade são elementos centrais dessa categoria. Em um cenário em que a renda fixa tradicional volta a ser protagonista, os fundos multimercados precisarão se reinventar para voltar a atrair o interesse dos investidores.
+
+Non próximo post vamos fazer as mesmas análises para os fundos de ações. Qualquer dúvida ou cometário é só falar comigo nas minhas redes sociais, até a próxima!
+
+
