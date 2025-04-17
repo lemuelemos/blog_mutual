@@ -411,3 +411,84 @@ rentabilidade_fundos_acoes %>%
     panel.spacing = unit(1, "lines")
   )
 
+
+linhas_cdi <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações Investimento no Exterior",
+    "Ações Setoriais" ,
+    "Ações Indexados",
+    "Ações Valor/Crescimento")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+rentabilidade_fundos_acoes %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações Investimento no Exterior",
+    "Ações Setoriais" ,
+    "Ações Indexados",
+    "Ações Valor/Crescimento")) %>%
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+
+linhas_cdi <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações FMP-FGTS",
+    "Ações Índice Ativo" ,
+    "Fechados de Ações",
+    "Fundos de Mono Ação")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+rentabilidade_fundos_acoes %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações FMP-FGTS",
+    "Ações Índice Ativo" ,
+    "Fechados de Ações",
+    "Fundos de Mono Ação")) %>%
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_cdi,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+
