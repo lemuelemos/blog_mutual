@@ -1,9 +1,9 @@
 ---
-title: "Raio X Fundos Multimercados"
+title: "Análise dos Fundos de Ações"
 author: "Lemuel Lemos"
 date: "2025-04-11"
 categories: [fundos de investimentos, desempenho, fondos de ações]
-image: "image.jpg"
+image: "eficiencia-financeira.jpg"
 execute:
   warning: false
   message: false
@@ -70,10 +70,9 @@ informes_diarios %>%
     by = c("CNPJ_FUNDO" = "CNPJ do Fundo")
   ) %>% 
   # Filtra apenas fundos classificados como "Multimercado"
-  filter(`Categoria ANBIMA` == "Multimercados") -> fundos_mm
+  filter(`Categoria ANBIMA` == "Ações") -> fundos_acoes
 
-
-fundos_mm %>% 
+fundos_acoes %>% 
   left_join(
     tbl(con,"extrato_fi") %>% 
       select(CNPJ_FUNDO_CLASSE,PUBLICO_ALVO, DISTRIB, POLIT_INVEST, 
@@ -83,7 +82,7 @@ fundos_mm %>%
              EXISTE_TAXA_INGRESSO, EXISTE_TAXA_SAIDA,
              INVEST_EXTERIOR, ATIVO_CRED_PRIV),
     by = c("CNPJ_FUNDO" = "CNPJ_FUNDO_CLASSE") 
-  ) -> fundos_mm
+  ) -> fundos_acoes
 
 ```
 
@@ -91,7 +90,7 @@ Dessa vez, os códigos estarão todos recolhidos no texto. Como há bastante rep
 
 ```{r quatidade de fundos}
 
-fundos_mm %>%
+fundos_acoes %>%
   distinct(CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
   count(`Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
   collect() %>% 
@@ -143,7 +142,7 @@ Uma possível explicação para esse domínio é que, no passado, o mercado bras
 Outras categorias, como “Multimercados Macro” (6,39%) e “Estratégia Específica” (3,49%), também têm presença relevante, embora bem menor. Já os fundos classificados como “Dinâmico”, “Juros e Moedas”, “Long and Short” (nas versões Direcional e Neutro), “Capital Protegido”, “Balanceados” e “Trading” apresentam participações bastante reduzidas, sugerindo estratégias menos adotadas ou voltadas a nichos específicos dentro do universo multimercado. 
 
 ```{r caracteristica do investidor}
-fundos_mm %>% 
+fundos_acoes %>% 
   distinct(CNPJ_FUNDO,`Tipo de Investidor`,`Característica do Investidor`) %>% 
   count(`Tipo de Investidor`,`Característica do Investidor`) %>% 
   collect() %>% 
@@ -190,7 +189,7 @@ Vale lembrar que os fundos exclusivos já foram um importante mecanismo de plane
 tbl(con,"extrato_fi")  %>% 
   distinct(DT_COMPTC, CNPJ_FUNDO_CLASSE, POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>%
   collect() %>% 
-  filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_mm, CNPJ_FUNDO))$CNPJ_FUNDO) %>% 
+  filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_acoes, CNPJ_FUNDO))$CNPJ_FUNDO) %>% 
   mutate(DT_COMPTC = as.Date(DT_COMPTC)) %>%  # Converte a data para o formato adequado
   arrange(DT_COMPTC) %>%  # Ordena as datas de competência
   group_by(CNPJ_FUNDO_CLASSE) %>% 
@@ -245,7 +244,7 @@ O ponto que chama atenção aqui é a grande predominância de fundos de cotas n
 ```{r taxas}
 tbl(con,"extrato_fi") %>% 
   collect() %>% 
-  filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_mm, CNPJ_FUNDO))$CNPJ_FUNDO) %>%
+  filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_acoes, CNPJ_FUNDO))$CNPJ_FUNDO) %>%
   distinct(DT_COMPTC, 
            CNPJ_FUNDO_CLASSE, 
            POLIT_INVEST, 
@@ -309,7 +308,7 @@ Os fundos com política ativa e referenciada também se destacam por não cobrar
 As políticas passiva e enhanced, menos comuns, seguem padrão semelhante de estrutura mais enxuta em termos de taxas. A maioria desses fundos também evita cobrar taxa de ingresso, e a presença de taxa de performance aparece apenas em uma parcela menor.
 
 ```{r evolução captação}
-fundos_mm %>%
+fundos_acoes %>%
   filter(!is.na(POLIT_INVEST)) %>%
   select(DT_COMPTC,`Categoria ANBIMA`,CAPTC_DIA,RESG_DIA) %>% 
   collect() %>% 
@@ -325,7 +324,7 @@ fundos_mm %>%
     names_from = "Categoria ANBIMA",
     values_from = "CAPTC_LIQ"
   ) %>%
-  rename(`Captação líquida` = Multimercados) %>%
+  rename(`Captação líquida` = Ações) %>%
   arrange(Competência) %>%
   mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`),
          Competência = as.Date(Competência)) %>%
@@ -370,7 +369,7 @@ Outro fator relevante é o cenário macroeconômico, marcado por juros elevados.
 Tudo indica que a indústria sofreu um baque expressivo, e o ambiente econômico atual não aponta para uma reversão rápida desse quadro. O futuro próximo segue desafiador para os multimercados.
 
 ```{r evolução captação líquida}
-fundos_mm %>%
+fundos_acoes %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(
     ano = strftime(DT_COMPTC, "%Y"),
@@ -414,7 +413,7 @@ A partir de 2022, porém, a tendência se inverte. Praticamente todas as categor
 Esse cenário reforça a perda de tração — já comentada anteriormente — dos fundos multimercados como um todo, com destaque negativo justamente nas categorias que antes lideravam os aportes. A mudança de comportamento dos investidores é evidente e amplia os desafios enfrentados por essa classe nos últimos anos.
 
 ```{r custodia}
-fundos_mm %>%
+fundos_acoes %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(
     ano = strftime(DT_COMPTC, "%Y"),
@@ -452,7 +451,7 @@ A partir de 2022, esse crescimento estagnou e, em seguida, deu lugar a uma leve 
 Apesar disso, a composição do patrimônio se manteve relativamente estável, com os fundos de investimento no exterior mantendo a liderança, seguidos pelos fundos livres e pelos macro. As demais categorias seguem com participação marginal, reforçando a concentração do patrimônio nos principais tipos de estratégia.
 
 ```{r rentabilidade 1}
-fundos_mm %>%
+fundos_acoes %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(
     Ano = as.numeric(strftime(DT_COMPTC, "%Y"))
@@ -462,11 +461,11 @@ fundos_mm %>%
   arrange(Ano, CNPJ_FUNDO, DT_COMPTC) %>% 
   collect() %>% 
   summarise(`Rent (%)` = ((last(VL_QUOTA)/first(VL_QUOTA)) - 1)*100,
-            .by = c("Ano", "CNPJ_FUNDO")) -> rentabilidade_fundos_mm
+            .by = c("Ano", "CNPJ_FUNDO")) -> rentabilidade_fundos_acoes
 
-rentabilidade_fundos_mm %>% 
+rentabilidade_fundos_acoes %>% 
   left_join(
-    fundos_mm %>% 
+    fundos_acoes %>% 
       distinct(CNPJ_FUNDO, `Tipo ANBIMA`) %>% 
       collect()
   ) %>% 
@@ -476,34 +475,34 @@ rentabilidade_fundos_mm %>%
       filter(Ano >= 2010) %>% 
       summarise(CDI = last((cumprod((`4391`/100)+1)-1)*100),
                 .by = Ano)
-  ) -> rentabilidade_fundos_mm
+  ) -> rentabilidade_fundos_acoes
 
-rentabilidade_fundos_mm %>% 
-  mutate(Outlier = case_when(`Rent (%)` > 50 | `Rent (%)` < -50 ~ "Out",
+rentabilidade_fundos_acoes %>% 
+  mutate(Outlier = case_when(`Rent (%)` > 500 | `Rent (%)` < -500 ~ "Out",
                              .default = "In")) %>% 
   filter(Outlier == "Out") %>% 
   distinct(CNPJ_FUNDO) -> fundos_out
 
 
-linhas_cdi <- rentabilidade_fundos_mm %>%
+linhas_cdi <- rentabilidade_fundos_acoes %>%
   distinct(`Tipo ANBIMA`, Ano, CDI) %>%
   filter(`Tipo ANBIMA` %in% c(
-    "Multimercados Livre",
-    "Multimercados Macro" ,
-    "Multimercados Investimento no Exterior",
-    "Multimercados Juros e Moedas")) %>% 
+    "Ações Dividendos",
+    "Ações Livre" ,
+    "Ações Indexados",
+    "Ações Small Caps")) %>% 
   mutate(
     x = as.factor(Ano),
     x_num = as.numeric(x)
   )
 
-rentabilidade_fundos_mm %>% 
+rentabilidade_fundos_acoes %>% 
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
   filter(`Tipo ANBIMA` %in% c(
-    "Multimercados Livre",
-    "Multimercados Macro" ,
-    "Multimercados Investimento no Exterior",
-    "Multimercados Juros e Moedas")) %>% 
+    "Ações Dividendos",
+    "Ações Livre" ,
+    "Ações Indexados",
+    "Ações Small Caps")) %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_segment(
@@ -539,26 +538,25 @@ Já os **Multimercados Macro** mostram o maior grau de dispersão entre os tipos
 O gráfico evidencia que, apesar do potencial de retorno elevado, os fundos multimercados — especialmente os das categorias mais livres e macro — estão sujeitos a uma volatilidade significativa e apresentam grande variabilidade de resultados, exigindo maior tolerância ao risco por parte do investidor.
 
 ```{r rentabilidade 2}
-linhas_cdi <- rentabilidade_fundos_mm %>%
+linhas_cdi <- rentabilidade_fundos_acoes %>%
   distinct(`Tipo ANBIMA`, Ano, CDI) %>%
   filter(`Tipo ANBIMA` %in% c(
-    "Multimercados Balanceados",
-    "Multimercados Dinâmico",
-    "Multimercados Trading",
-    "Multimercados Capital Protegido")) %>% 
+    "Ações Investimento no Exterior",
+    "Ações Setoriais" ,
+    "Ações Indexados",
+    "Ações Valor/Crescimento")) %>% 
   mutate(
     x = as.factor(Ano),
     x_num = as.numeric(x)
   )
 
-
-rentabilidade_fundos_mm %>% 
+rentabilidade_fundos_acoes %>% 
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
   filter(`Tipo ANBIMA` %in% c(
-    "Multimercados Balanceados",
-    "Multimercados Dinâmico",
-    "Multimercados Trading",
-    "Multimercados Capital Protegido")) %>% 
+    "Ações Investimento no Exterior",
+    "Ações Setoriais" ,
+    "Ações Indexados",
+    "Ações Valor/Crescimento")) %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_segment(
@@ -590,24 +588,25 @@ Os **Multimercados Dinâmico** apresentam comportamento mais volátil, com uma d
 Já os **Multimercados Trading** mostraram performance bastante variável, com anos de destaque — como 2015 e 2016 — seguidos por períodos com maior dispersão e presença de resultados negativos. Trata-se de uma categoria mais tática, que tende a apresentar altos e baixos mais pronunciados conforme o cenário de mercado.
 
 ```{r rentabilidade 3}
-linhas_cdi <- rentabilidade_fundos_mm %>%
+linhas_cdi <- rentabilidade_fundos_acoes %>%
   distinct(`Tipo ANBIMA`, Ano, CDI) %>%
   filter(`Tipo ANBIMA` %in% c(
-    "Multimercados Long and Short - Direcional",
-    "Multimercados Long and Short - Neutro",
-    "Multimercados Estratégia Específica")) %>% 
+    "Ações FMP-FGTS",
+    "Ações Índice Ativo" ,
+    "Fechados de Ações",
+    "Fundos de Mono Ação")) %>% 
   mutate(
     x = as.factor(Ano),
     x_num = as.numeric(x)
   )
 
-
-rentabilidade_fundos_mm %>% 
+rentabilidade_fundos_acoes %>% 
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
   filter(`Tipo ANBIMA` %in% c(
-    "Multimercados Long and Short - Direcional",
-    "Multimercados Long and Short - Neutro",
-    "Multimercados Estratégia Específica")) %>% 
+    "Ações FMP-FGTS",
+    "Ações Índice Ativo" ,
+    "Fechados de Ações",
+    "Fundos de Mono Ação")) %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_segment(
