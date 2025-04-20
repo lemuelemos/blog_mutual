@@ -2,16 +2,16 @@
   {
     "listing": "/index.html",
     "items": [
-      "/posts/desempenho_multimercado/index.html",
       "/posts/post_acoes/index.html",
+      "/posts/desempenho_multimercado/index.html",
       "/posts/desempenho_fundos_rf/index.html"
     ]
   },
   {
     "listing": "/posts/index.html",
     "items": [
-      "/posts/desempenho_multimercado/index.html",
       "/posts/post_acoes/index.html",
+      "/posts/desempenho_multimercado/index.html",
       "/posts/desempenho_fundos_rf/index.html"
     ]
   }

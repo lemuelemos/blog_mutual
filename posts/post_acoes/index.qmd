@@ -1,7 +1,7 @@
 ---
 title: "Análise dos Fundos de Ações"
 author: "Lemuel Lemos"
-date: "2025-04-11"
+date: "2025-04-19"
 categories: [fundos de investimentos, desempenho, fondos de ações]
 image: "eficiencia-financeira.jpg"
 execute:
@@ -13,20 +13,9 @@ format:
     code-summary: "Mostrar código"  # Texto do botão (padrão: "Code")
 ---
 
-Dando continuidade à nossa série de posts sobre fundos de investimento, vamos agora aplicar aos fundos multimercado a mesma abordagem que utilizamos para os fundos de renda fixa. Esses conteúdos têm como objetivo oferecer uma visão geral de como o mercado está estruturado. Por enquanto, as análises são mais simples, mas vamos aprofundando o nível de complexidade com o tempo.
+Finalizando esta série sobre as três classes de fundos de investimento, vamos realizar as mesmas análises para os fundos de ações. Para não nos alongarmos demais, seremos mais breves desta vez. Nos próximos posts, traremos mais novidades sobre o tema de fundos de investimento.
 
-Para começar, vamos definir o que são os fundos multimercado. No site da <a href="https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/fundo-de-investimento-multimercado-fim-rv.htm" target="_blank">B3</a>, encontramos a seguinte definição:
-
-:::{.callout-tip}
-## Definição B3
-Os Fundos Multimercado, como o próprio nome diz, são fundos que investem em diversos mercados sem a concentração de investimento em um único segmento e/ou setor. São uma alternativa para quem busca diversificar a carteira de forma prática, pois reúnem em um só produto vários tipos de ativos.
-
-Os multimercados podem aplicar em diferentes mercados (renda fixa, renda variável, ações, outros fundos, câmbio e entre outros), além de usar derivativos para alavancagem (técnica que se assemelha a um endividamento, com o objetivo de maximizar a rentabilidade) ou para proteção da carteira. Eles preveem uma maior liberdade de gestão e buscam oferecer aos investidores um rendimento mais alto que em aplicações conservadoras, porém podem ser mais arriscados dado o grau de risco intrínseco ao fundo (sempre consultar o seu perfil de investidor para saber quais os produtos que mais se enquadram nos seus objetivos).
-
-No geral, os Fundos Multimercados são uma categoria de Fundos de Investimentos que podem alocar capital em diferentes tipos de ativos, sejam de Renda Fixa e/ou Variável, sempre buscando a melhor rentabilidade.
-:::
-
-Os fundos multimercados são um importante instrumento de investimento, principalmente por sua flexibilidade em alocar recursos em diferentes classes de ativos. Observamos que os tipos ANBIMA costumam estar bem relacionados às estratégias adotadas por esses fundos — como é o caso dos fundos Long and Short, Macro e Trading. Alguns estão mais expostos a fatores específicos, como juros e moedas, enquanto outros apresentam foco geográfico, como os Multimercados com Investimento no Exterior.
+Os fundos de ações são caracterizados por aplicarem, no mínimo, 67% de seu patrimônio em ações negociadas na bolsa de valores. Eles podem seguir diferentes estratégias, como investir em empresas consolidadas, setores específicos da economia ou companhias com alto potencial de crescimento. A gestão profissional desses fundos permite uma exposição diversificada ao mercado acionário, facilitando o acesso a diferentes oportunidades da renda variável sem a necessidade de o investidor selecionar individualmente cada ação.
 
 ```{r carregamento de pacotes}
 library(dplyr)
@@ -86,7 +75,7 @@ fundos_acoes %>%
 
 ```
 
-Dessa vez, os códigos estarão todos recolhidos no texto. Como há bastante repetição em relação ao post sobre os fundos de renda fixa, não é necessário mostrá-los novamente. O primeiro ponto que vamos analisar é a quantidade de fundos por tipo ANBIMA, conforme descrito na tabela abaixo.
+Repetindo a estratégia utilizada na análise dos fundos multimercado, os códigos estarão todos recolhidos ao longo do texto. Como há bastante sobreposição em relação ao post sobre os fundos de renda fixa, não é necessário exibi-los novamente. O primeiro ponto que vamos analisar é a quantidade de fundos por tipo ANBIMA, conforme mostrado na tabela abaixo.
 
 ```{r quatidade de fundos}
 
@@ -135,11 +124,80 @@ fundos_acoes %>%
 
 ```
 
-Atualmente, existem 14.939 fundos multimercados registrados, distribuídos entre diferentes estratégias conforme a classificação da ANBIMA. A maior parte está concentrada em dois tipos: “Multimercados Investimento no Exterior”, com 7.687 fundos (51,46%), e “Multimercados Livre”, com 5.073 fundos (33,96%). Juntas, essas categorias representam mais de 85% do total, com destaque para a predominância dos fundos com foco em investimentos no exterior.
+A tabela abaixo apresenta a distribuição dos fundos de ações de acordo com a classificação da ANBIMA, totalizando 4.984 fundos. Observa-se claramente uma concentração significativa em alguns tipos específicos, revelando preferências marcantes no mercado brasileiro.
 
-Uma possível explicação para esse domínio é que, no passado, o mercado brasileiro oferecia poucas alternativas para investir fora do país. Nesse contexto, os fundos multimercados se tornaram uma das formas mais acessíveis de obter exposição internacional.
+Em primeiro lugar, destacam-se os fundos classificados como **Ações Livre**, com 2.465 fundos, representando 49,46% do total. Essa predominância evidencia a preferência por estratégias mais flexíveis, onde os gestores possuem maior liberdade para selecionar ações sem seguir critérios rígidos ou benchmarks específicos.
 
-Outras categorias, como “Multimercados Macro” (6,39%) e “Estratégia Específica” (3,49%), também têm presença relevante, embora bem menor. Já os fundos classificados como “Dinâmico”, “Juros e Moedas”, “Long and Short” (nas versões Direcional e Neutro), “Capital Protegido”, “Balanceados” e “Trading” apresentam participações bastante reduzidas, sugerindo estratégias menos adotadas ou voltadas a nichos específicos dentro do universo multimercado. 
+Em seguida, chama atenção a participação expressiva dos fundos classificados como **Ações Investimento no Exterior**, totalizando 1.427 fundos (28,63%). Esse dado demonstra que muitos investidores buscam diversificação internacional por meio de fundos locais especializados, permitindo exposição a mercados externos sem a necessidade de investir diretamente em ativos estrangeiros.
+
+Essas duas categorias principais, **Ações Livre** e **Investimento no Exterior**, juntas, representam aproximadamente 78% do total dos fundos, mostrando que o mercado de fundos de ações ainda é fortemente direcionado para estratégias amplas ou que oferecem exposição a mercados globais.
+
+Entre as demais categorias, merecem menção especial os fundos classificados como **Ações Índice Ativo**, representando 271 fundos (5,44%), que têm o objetivo de superar índices de mercado com gestão ativa, e os fundos **Fechados de Ações**, com 238 fundos (4,78%), que possuem características específicas quanto à liquidez e horizonte de investimento.
+
+Outras categorias, como **Valor/Crescimento** e **Indexados**, aparecem com participações menores, respectivamente, com 2,91% e 2,07% do total. Esses fundos têm estratégias bem definidas, seja focando em empresas consideradas baratas ou com potencial de crescimento, ou replicando índices específicos de ações.
+
+Por fim, fundos ainda mais especializados ou segmentados, como os de **Small Caps** (1,16%), **Setoriais** (0,72%) e **Sustentabilidade/Governança** (0,04%), embora presentes, têm participação pouco expressiva em termos quantitativos. Essas categorias costumam atender investidores com estratégias específicas, nichadas e com critérios bem definidos, refletindo uma demanda ainda pequena, porém crescente, por segmentos ou temas específicos no mercado acionário.
+
+## Descritivos dos Tipos de Fundos de Ações - Classificação ANBIMA
+
+### Primeiro Nível
+
+#### Ações
+Fundos que possuem, no mínimo, 67% da carteira em ações à vista, bônus ou recibos de subscrição, certificados de depósito de ações, cotas de fundos de ações, cotas dos fundos de índice de ações e Brazilian Depositary Receipts, classificados como nível I, II e III. O hedge cambial da parcela de ativos no exterior é facultativo ao gestor.
+
+### Segundo Nível
+
+Neste nível os fundos são classificados conforme o tipo de gestão (indexada ou ativa), específicos para fundos com características diferenciadas ou investimento no exterior. Conheça cada um deles:
+
+#### Indexados
+Fundos que têm como objetivo replicar as variações de indicadores de referência do mercado de renda variável. Os recursos remanescentes em caixa devem estar investidos em cotas de fundos renda fixa – duração baixa – grau de investimento ou em ativos permitidos a estes desde que preservadas as regras que determinam a composição da carteira do tipo ANBIMA.
+
+#### Ativos
+Fundos que têm como objetivo superar um índice de referência ou que não fazem referência a nenhum índice. A seleção dos ativos para compor a carteira deve ser suportada por um processo de investimento que busca atingir os objetivos e executar a política de investimentos definida para o fundo. Os recursos remanescentes em caixa devem estar investidos em cotas de fundos renda fixa – duração baixa – grau de investimento ou em ativos permitidos a estes desde que preservadas as regras que determinam a composição da carteira do Tipo ANBIMA, exceção feita aos fundos classificados como Livre (nível 3).
+
+#### Específicos
+Fundos que adotam estratégias de investimento ou possuam características específicas tais como condomínio fechado, não regulamentados pela Instrução nº 555 da CVM, fundos que investem apenas em ações de uma única empresa ou outros que venham a surgir.
+
+#### Investimento no Exterior
+Fundos que investem em ativos financeiros no exterior em parcela superior a 40% do patrimônio líquido. Estes fundos seguem o disposto no art. 101 Instrução nº 555 da CVM.
+
+### Terceiro Nível
+
+Neste nível os fundos são classificados conforme a estratégia. Ao optar pelos fundos indexados, as opções no terceiro nível são os fundos atrelados a índices de referência.
+
+Os fundos ativos, por sua vez, se dividem no terceiro nível em:
+
+#### Valor / Crescimento
+Fundos que buscam retorno por meio da seleção de empresas cujo valor das ações negociadas esteja abaixo do "preço justo" estimado (estratégia valor) e/ou aquelas com histórico e/ou perspectiva de continuar com forte crescimento de lucros, receitas e fluxos de caixa em relação ao mercado (estratégia de crescimento).
+
+#### Setoriais
+Fundos que investem em empresas pertencentes a um mesmo setor ou conjunto de setores afins da economia. Estes fundos devem explicitar em suas políticas de investimento os critérios utilizados para definição dos setores, subsetores ou segmentos elegíveis para aplicação.
+
+#### Dividendos
+Fundos que investem em ações de empresas com histórico de dividend yield (renda gerada por dividendos) consistente ou que, na visão do gestor, apresentem essas perspectivas.
+
+#### Small Caps
+Fundos cuja carteira é composta por, no mínimo, 85% em ações de empresas que não estejam incluídas entre as 25 maiores participações do IBrX - Índice Brasil, ou seja, ações de empresas com relativamente baixa capitalização de mercado. Os 15% remanescentes podem ser investidos em ações de maior liquidez ou capitalização de mercado, desde que não estejam incluídas entre as dez maiores participações do IBrX – Índice Brasil.
+
+#### Sustentabilidade / Governança
+Fundos que investem em empresas que apresentam bons níveis de governança corporativa, ou que se destacam em responsabilidade social e sustentabilidade empresarial no longo prazo, conforme critérios estabelecidos por entidades amplamente reconhecidas pelo mercado ou supervisionados por conselho não vinculado à gestão do fundo. Estes fundos devem explicitar em suas políticas de investimento os critérios utilizados para definição das ações elegíveis.
+
+#### Índice Ativo (Indexed Enhanced)
+Fundos que têm como objetivo superar o índice de referência do mercado acionário. Estes fundos se utilizam de deslocamentos táticos em relação à carteira de referência para atingir seu objetivo.
+
+#### Livre
+Fundos sem o compromisso de concentração em uma estratégia específica. A parcela em caixa pode ser investida em quaisquer ativos, desde que especificados em regulamento.
+
+No nível 3, os fundos específicos se dividem em:
+
+#### Fundos Fechados de Ações
+Fundos de condomínio fechado regulamentados pela Instrução nº 555 da CVM.
+
+###$ Fundos de Ações FMP-FGTS
+De acordo com a regulamentação vigente.
+
+#### Fundos de Mono Ação
+Fundos com estratégia de investimento em ações de apenas uma empresa.
 
 ```{r caracteristica do investidor}
 fundos_acoes %>% 
@@ -164,25 +222,21 @@ fundos_acoes %>%
   )
 ```
 
-A maioria dos fundos multimercados é voltada para investidores profissionais, com destaque para os fundos “Exclusivos” (4.060) e “Reservados” (3.407) destinados a esse público. Além disso, há 2.595 fundos classificados como “Não Há Restrição” também voltados para profissionais, totalizando 10.062 fundos (cerca de 67% do total) acessíveis apenas a esse perfil.
+Pelo descritivo da distribuição dos fundos de ações de acordo com o tipo e a característica do investidor ao qual são destinados, totalizando também 4.984 fundos.
 
-Os fundos para investidores qualificados aparecem em seguida, com destaque para aqueles sem restrição formal (1.920) e os do tipo reservado (278). Já os fundos destinados ao público geral são menos numerosos, com 2.190 classificados como “Não Há Restrição” e apenas 61 como “Reservado”.
+É possível observar que a maioria absoluta dos fundos está aberta ao público geral e sem restrição específica, com 1.533 fundos. Logo em seguida aparecem os fundos destinados a investidores qualificados, também sem restrição, somando 1.415 fundos. Esses dois grupos representam uma parte considerável do mercado, indicando que a maior parte dos fundos de ações é acessível ao público em geral ou ao público qualificado, sem grandes limitações de acesso.
 
-Vemos aqui outra característica muito relevante: por que os fundos destinados a investidores profissionais representam a maioria entre os fundos multimercados? Fiz uma breve pesquisa, analisando uma amostra de fundos diretamente no site da ANBIMA, e os dados se confirmam. Essa predominância sugere um tema que merece investigação mais aprofundada, especialmente considerando a forte presença dos fundos exclusivos nesse grupo.
+Além disso, fundos exclusivos voltados para investidores profissionais também têm relevância, somando 760 fundos, o que reflete o interesse por produtos com características diferenciadas e personalizadas, direcionados a investidores com maior volume de recursos ou necessidades específicas.
 
-Ao buscar a definição do que são esses fundos exclusivos, encontrei a seguinte descrição no **Código ANBIMA de Regulação e Melhores Práticas para a Atividade de Gestão de Patrimônio Financeiro no Mercado Doméstico:**
+Os fundos reservados para investidores profissionais aparecem na sequência, com 565 fundos, indicando também uma procura significativa por produtos personalizados ou com estratégias mais sofisticadas destinadas a esse público.
 
+Para investidores profissionais, porém sem restrições adicionais, existem ainda 411 fundos disponíveis, demonstrando que esse perfil específico encontra opções variadas no mercado.
 
-:::{.callout-tip}
-## Definição ANBIMA
-“Fundo Exclusivo” significa, nos termos das normas da CVM, o fundo de investimento ou fundo de
-investimento em cotas de fundos de investimento destinado a investidores qualificados e constituído
-para receber aplicações de um único cotista.
-:::
+Outros grupos, como os fundos reservados para investidores qualificados (145 fundos), fundos sem restrição para investidores qualificados em menor número (46 fundos), e fundos gerais com números menores (40 fundos), revelam segmentações específicas de mercado, mas com menor participação relativa.
 
-O documento se encontra <a href="https://www.anbima.com.br/circulares/arqs/cir2010000088_C%C3%B3digo%20de%20Gest%C3%A3o%20de%20Patrim%C3%B4nio%20Financeiro.pdf" target="_blank">aqui.</a> O que esse dado nos mostra é que os fundos multimercados também se destacam como um dos principais instrumentos utilizados pelo mercado de *wealth*, voltado para atender investidores de alta renda que buscam criar fundos exclusivos para facilitar a gestão de seus recursos.
+Finalmente, grupos extremamente nichados, como fundos reservados ou exclusivos para o público geral, aparecem em quantidades muito reduzidas (21 e 1 fundo, respectivamente), representando casos bem pontuais ou experimentais no mercado.
 
-Vale lembrar que os fundos exclusivos já foram um importante mecanismo de planejamento tributário, pois o imposto de renda só era devido no momento do resgate. Essa característica, no entanto, foi alterada com a publicação da <a href="https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/mpv/mpv1184.htm" target="_blank">Medida Provisória (MP) 1.184, de agosto de 2023,</a> que passou a exigir a cobrança periódica de IR via sistema de *come-cotas*, alinhando esses fundos às demais estruturas de investimento.
+Em resumo, a tabela evidencia que o mercado de fundos de ações é predominantemente voltado para investidores gerais ou qualificados, sendo bastante aberto e acessível. Ainda assim, existe espaço relevante para fundos exclusivos ou reservados, principalmente destinados ao público profissional, reforçando uma segmentação clara conforme o perfil e as necessidades dos investidores.
 
 
 ```{r tipos de fundos}
@@ -233,13 +287,15 @@ tbl(con,"extrato_fi")  %>%
 
 ```
 
-A maioria dos fundos multimercados adota uma política de investimento ativa e não-referenciada, com 5.623 fundos operando de forma direta (sem serem fundos de cotas ou espelho) e outros 3.088 estruturados como fundos de cotas. Além disso, 590 fundos seguem essa mesma política atuando como espelhos.
+A análise da política de investimento e da estrutura operacional dos fundos de ações revela uma predominância clara de estratégias ativas e não-referenciadas, com mais de 1.900 fundos atuando de forma autônoma, sem utilizar outra carteira como base e sem seguir um índice específico como referência. Esse modelo sugere uma forte preferência por abordagens de gestão mais livres, onde o gestor tem maior flexibilidade para montar a carteira.
 
-Em seguida, aparecem os fundos com política ativa e referenciada, totalizando 2.685 registros — sendo 1.456 operando diretamente, 1.017 como fundos de cotas e 212 como espelhos.
+Dentro da mesma categoria, observa-se também um número significativo de fundos de cotas, com ou sem característica de espelho, indicando que mesmo estratégias ativas têm sido utilizadas em estruturas que permitem maior escalabilidade e distribuição. Ainda nesse universo, há mais de 1.000 fundos que replicam outras carteiras, seja como cotistas ou como espelhos, reforçando o papel dessas estruturas na indústria.
 
-As políticas “Enhanced” e “Passiva” são bem menos representativas. Os fundos passivos somam 735, sendo a maioria fundos de cotas (428) ou espelhos (147). Já os fundos com política “Enhanced” totalizam apenas 87 registros, o que indica uma adoção ainda bastante limitada dessa abordagem dentro da classe de multimercados.
+Já entre os fundos com política ativa e referenciada, o padrão se mantém, ainda que em menor escala. Há uma presença consistente de fundos operando diretamente, bem como fundos de cotas e espelho, mostrando que mesmo estratégias com algum vínculo a índices de mercado também se beneficiam da flexibilidade oferecida por essas estruturas operacionais.
 
-O ponto que chama atenção aqui é a grande predominância de fundos de cotas na estrutura dos multimercados — aspecto que também merece uma análise mais aprofundada. Esse modelo pode estar ligado à forma como algumas gestoras estruturam suas operações, criando um fundo “master” que concentra a estratégia principal, enquanto os demais fundos da casa alocam seus recursos nesse veículo central. Novamente, igual aos fundos de renda fixa, temos predominância de estratégias não referenciadas. 
+As abordagens enhanced e passivas aparecem com menor representatividade em termos de quantidade, mas trazem um dado interessante: a maioria dos fundos passivos opera como fundo de cotas, com um número reduzido atuando de forma direta. Isso sugere que a replicação de índices, especialmente em estratégias passivas, tem se apoiado fortemente em modelos operacionais otimizados, centralizando a gestão em um fundo principal e distribuindo o acesso via cotas.
+
+Essa composição revela não apenas a diversidade de estratégias adotadas pelos fundos de ações, mas também como a escolha da estrutura — fundo espelho, fundo de cotas ou fundo direto — é amplamente utilizada para atender objetivos operacionais, de distribuição e eficiência na gestão.
 
 ```{r taxas}
 tbl(con,"extrato_fi") %>% 
@@ -299,13 +355,21 @@ tbl(con,"extrato_fi") %>%
   )
 ```
 
-A maioria dos fundos multimercados segue uma política ativa e não-referenciada e não cobra taxas de ingresso, performance ou saída — são 7.504 fundos com esse perfil, o que representa a estrutura mais comum da indústria.
+A estrutura de taxas praticada nos fundos de ações varia de acordo com a política de investimento adotada, e os dados mostram uma tendência clara quanto à cobrança ou não desses encargos.
 
-Entre os que cobram taxa de performance, a variação mais frequente é a ausência de taxa de ingresso e saída, com 1.531 fundos adotando esse modelo. Já a combinação completa de todas as taxas (ingresso, performance e saída) é rara, com apenas 2 fundos nessa condição.
+Grande parte dos fundos, independentemente da política, **não cobra taxa de ingresso**. Essa prática, cada vez mais rara no mercado, é praticamente inexistente entre os fundos analisados, sugerindo uma estratégia de captação mais acessível e menos onerosa ao investidor no momento da aplicação inicial.
 
-Os fundos com política ativa e referenciada também se destacam por não cobrar taxas na maior parte dos casos (1.791 fundos). No entanto, há uma quantidade relevante que combina taxa de performance com taxa de saída (151 fundos) ou que cobra apenas uma das duas.
+A **taxa de performance**, por outro lado, aparece com bastante frequência, especialmente nos fundos de gestão ativa. Entre os fundos com política ativa e não-referenciada, por exemplo, há mais de 800 casos em que essa taxa é aplicada, tanto isoladamente quanto em conjunto com a taxa de saída. Isso reforça a lógica de alinhar os interesses do gestor com os resultados obtidos, premiando o desempenho acima de um benchmark acordado.
 
-As políticas passiva e enhanced, menos comuns, seguem padrão semelhante de estrutura mais enxuta em termos de taxas. A maioria desses fundos também evita cobrar taxa de ingresso, e a presença de taxa de performance aparece apenas em uma parcela menor.
+No grupo dos fundos ativos e referenciados, a presença da taxa de performance também é significativa, com mais de 300 fundos cobrando essa taxa em diferentes combinações. Esse padrão mostra que, mesmo com uma referência explícita, os gestores mantêm o incentivo por desempenho superior ao índice de base.
+
+Já os fundos classificados como **enhanced**, embora em menor número, também adotam a taxa de performance em boa parte dos casos, o que condiz com sua proposta híbrida entre gestão passiva e ativa.
+
+No caso dos fundos **passivos**, a aplicação da taxa de performance é mais restrita, mas ainda presente. Aproximadamente 320 fundos desse grupo adotam essa cobrança, o que pode indicar estratégias passivas com algum grau de gestão diferenciada, justificando a remuneração variável ao gestor.
+
+Quanto à **taxa de saída**, seu uso é mais disperso, sendo observada em várias políticas de investimento, mas com menos uniformidade. Ela aparece tanto isoladamente quanto em combinação com a taxa de performance, geralmente como uma forma de desincentivar o resgate precoce ou de proteger a carteira dos impactos de saídas abruptas.
+
+De forma geral, o desenho de taxas nos fundos de ações mostra uma preferência clara por estruturas sem taxa de ingresso, com forte presença da taxa de performance nos fundos de gestão ativa e uso seletivo da taxa de saída conforme a estratégia e o perfil do fundo.
 
 ```{r evolução captação}
 fundos_acoes %>%
@@ -356,17 +420,13 @@ fundos_acoes %>%
   e_grid(left = "10%", right = "10%") 
 ```
 
-O gráfico mostra a evolução da captação dos fundos multimercados desde 2010. Até 2020, o setor apresentou trajetória de crescimento constante, com captação líquida positiva na maioria dos trimestres e avanço progressivo da captação líquida acumulada, que ultrapassou R$ 1 trilhão no pico, em 2021.
+Após um longo período de relativa estabilidade até meados de 2016, os volumes de entrada nos fundos de ações começaram a crescer de forma mais consistente, com destaque para o forte ciclo de expansão iniciado em 2019. Ao longo desse período, os aportes superaram amplamente os resgates, resultando em um expressivo avanço dos fluxos líquidos positivos. Esse movimento sustentou uma trajetória acelerada de crescimento no acumulado da indústria, que atingiu seu pico em 2021.
 
-A partir de 2022, esse movimento se inverteu de forma significativa. Os resgates passaram a superar de forma consistente as aplicações, levando a captação líquida para o campo negativo em diversos períodos. Como resultado, a linha de captação acumulada iniciou uma trajetória de queda acentuada, devolvendo parte relevante do crescimento observado ao longo da década anterior.
+A partir de então, o cenário se inverteu. Os resgates passaram a se intensificar e superaram as captações em diversos trimestres consecutivos, configurando um ciclo prolongado de saídas líquidas. A reversão do fluxo afetou diretamente a trajetória acumulada, que passou a exibir uma tendência de queda, refletindo a menor atratividade ou confiança nos fundos de ações durante esse período.
 
-O que vemos aqui é que a indústria de fundos multimercados praticamente devolveu tudo o que captou em 14 anos — um movimento impressionante, que evidencia como o cenário econômico atual reduziu drasticamente o interesse por essa classe. Há alguns fatores que ajudam a explicar esse fenômeno.
+No entanto, o início de 2024 marca uma virada brusca nesse comportamento. O volume de captação registrado foi o maior de toda a série, superando com folga os trimestres anteriores. A diferença positiva entre entradas e saídas nesse momento foi suficiente para interromper a trajetória negativa e impulsionar novamente o saldo acumulado para cima.
 
-Como apontado nas tabelas anteriores, os fundos exclusivos representam uma parte significativa dos fundos multimercados. A criação do *come-cotas* para esses fundos — que até então contavam com o benefício de só pagar imposto no resgate — pode ter provocado uma migração de recursos para outros veículos de investimento.
-
-Outro fator relevante é o cenário macroeconômico, marcado por juros elevados. A renda fixa tradicional passou a oferecer retornos bastante atrativos, muitas vezes isentos de taxas de administração, o que aumentou a concorrência direta com os fundos multimercados. 
-
-Tudo indica que a indústria sofreu um baque expressivo, e o ambiente econômico atual não aponta para uma reversão rápida desse quadro. O futuro próximo segue desafiador para os multimercados.
+Esse movimento mais recente pode sinalizar o início de um novo ciclo ou, alternativamente, representar uma movimentação pontual e atípica. A continuidade desse fluxo nos próximos trimestres será determinante para entender se estamos diante de uma retomada consistente na indústria de fundos de ações.
 
 ```{r evolução captação líquida}
 fundos_acoes %>%
@@ -406,11 +466,15 @@ fundos_acoes %>%
   )
 ```
 
-A captação líquida por tipo ANBIMA mostra que, ao longo do tempo, os fundos multimercados apresentaram variações significativas entre suas subclasses. Entre 2016 e 2021, houve um crescimento expressivo, puxado principalmente pelos fundos “Multimercados Livre” e “Multimercados Investimento no Exterior”, que lideraram os volumes líquidos positivos nesse período.
+A análise da captação líquida ao longo do tempo por tipo ANBIMA revela a forte dominância dos fundos classificados como Ações Livre, especialmente durante os ciclos de expansão mais intensos. Entre 2019 e 2021, esses fundos responderam pela maior parte dos fluxos positivos, com volumes expressivos que superaram com folga os demais tipos. A combinação entre maior flexibilidade de gestão e amplo reconhecimento no mercado pode explicar esse protagonismo.
 
-A partir de 2022, porém, a tendência se inverte. Praticamente todas as categorias passaram a registrar captação líquida negativa, com destaque para os fundos “Multimercados Livre” e “Multimercados Macro”, que concentraram os maiores volumes de resgates. No primeiro trimestre de 2024, a saída líquida foi particularmente acentuada, refletindo um movimento generalizado de retirada de recursos do setor.
+Outros tipos também apresentaram captação relevante em determinados momentos, com destaque para os fundos de Ações Investimento no Exterior, que acompanharam a tendência de diversificação geográfica dos portfólios. Já os fundos de Small Caps, Valor/Crescimento e Índice Ativo também tiveram participação visível em alguns trimestres, embora em escala menor.
 
-Esse cenário reforça a perda de tração — já comentada anteriormente — dos fundos multimercados como um todo, com destaque negativo justamente nas categorias que antes lideravam os aportes. A mudança de comportamento dos investidores é evidente e amplia os desafios enfrentados por essa classe nos últimos anos.
+A partir de 2022, a dinâmica muda de forma consistente. A maioria dos tipos passa a registrar saldos líquidos negativos, refletindo um movimento de retirada generalizada. Essa reversão afeta especialmente os fundos mais representativos — como os de Ações Livre e Investimento no Exterior —, que lideram também os resgates no período.
+
+No início de 2024, observa-se uma recuperação pontual com fluxos positivos em diversas categorias, sugerindo uma reativação parcial do interesse por fundos de ações. A retomada, no entanto, ainda não atinge a intensidade dos anos anteriores e parece mais distribuída entre os tipos, sem concentração clara em uma única categoria.
+
+O comportamento por tipo ANBIMA ao longo do tempo evidencia não só os ciclos da indústria, mas também como as preferências dos investidores vão se ajustando diante do cenário econômico, político e das condições do mercado de capitais.
 
 ```{r custodia}
 fundos_acoes %>%
@@ -444,11 +508,17 @@ fundos_acoes %>%
   )
 ```
 
-O gráfico mostra a evolução do patrimônio líquido dos fundos multimercados por tipo ANBIMA desde 2010. Entre 2016 e 2021, observa-se uma trajetória de forte crescimento, impulsionada principalmente pelos fundos “Multimercados Investimento no Exterior” e “Multimercados Livre”, que passaram a responder pela maior parte do patrimônio do setor.
+A evolução do patrimônio líquido dos fundos de ações por tipo ANBIMA mostra um crescimento contínuo e consistente a partir de 2016, com destaque para a aceleração mais intensa observada entre 2019 e 2021. Durante esse período, o volume de recursos sob gestão mais do que dobrou, impulsionado pela combinação de forte captação líquida, valorização dos ativos e maior interesse dos investidores por renda variável.
 
-A partir de 2022, esse crescimento estagnou e, em seguida, deu lugar a uma leve retração. Ainda que o volume total permaneça elevado, há uma clara estabilização, com pequenas quedas nos trimestres mais recentes, refletindo os resgates observados anteriormente.
+Os fundos classificados como Ações Livre foram, de longe, os principais responsáveis por esse avanço, mantendo a maior fatia da indústria ao longo de toda a série. Esse domínio reflete sua flexibilidade operacional e ampla aceitação entre os gestores e investidores.
 
-Apesar disso, a composição do patrimônio se manteve relativamente estável, com os fundos de investimento no exterior mantendo a liderança, seguidos pelos fundos livres e pelos macro. As demais categorias seguem com participação marginal, reforçando a concentração do patrimônio nos principais tipos de estratégia.
+Outro grupo que ganhou relevância nesse intervalo foi o dos fundos de Ações Investimento no Exterior. A expansão dessa categoria é notável a partir de 2020, acompanhando o movimento global de diversificação e o acesso facilitado a ativos internacionais, o que proporcionou maior participação dessa classe no patrimônio total.
+
+A partir de 2022, o volume sob gestão começou a recuar, refletindo tanto os efeitos das saídas líquidas como a possível desvalorização dos ativos durante esse período. Ainda assim, o montante total permaneceu elevado em relação aos níveis pré-2019, indicando uma base de capital consolidada na indústria.
+
+Mais recentemente, observa-se uma retomada da trajetória de crescimento. O patrimônio líquido volta a subir de forma consistente, puxado por novos aportes e, possivelmente, por uma valorização dos ativos. O avanço parece relativamente equilibrado entre os principais tipos, com destaque novamente para os fundos Ações Livre e Investimento no Exterior.
+
+Esse comportamento evidencia a resiliência da indústria de fundos de ações, que mesmo após períodos de forte resgate, demonstra capacidade de recuperação e manutenção de uma base sólida de recursos ao longo do tempo.
 
 ```{r rentabilidade 1}
 fundos_acoes %>%
