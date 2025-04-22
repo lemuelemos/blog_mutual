@@ -1,0 +1,756 @@
+---
+title: "Análise dos Fundos de Ações"
+author: "Lemuel Lemos"
+date: "2025-04-22"
+categories: [fundos de investimentos, desempenho, fondos de ações]
+image: "eficiencia-financeira.jpg"
+execute:
+  warning: false
+  message: false
+format:
+  html:
+    code-fold: true         # Mostra botão para esconder/exibir o código
+    code-summary: "Mostrar código"  # Texto do botão (padrão: "Code")
+---
+
+Finalizando esta série sobre as três classes de fundos de investimento, vamos realizar as mesmas análises para os fundos de ações. Para não nos alongarmos demais, seremos mais breves desta vez. Nos próximos posts, traremos mais novidades sobre o tema de fundos de investimento.
+
+Os fundos de ações são caracterizados por aplicarem, no mínimo, 67% de seu patrimônio em ações negociadas na bolsa de valores. Eles podem seguir diferentes estratégias, como investir em empresas consolidadas, setores específicos da economia ou companhias com alto potencial de crescimento. A gestão profissional desses fundos permite uma exposição diversificada ao mercado acionário, facilitando o acesso a diferentes oportunidades da renda variável sem a necessidade de o investidor selecionar individualmente cada ação.
+
+```{r carregamento de pacotes}
+library(dplyr)
+library(dbplyr)
+library(tidyr)
+library(furrr)
+library(reactable)
+library(htmltools)
+library(ggplot2)
+library(scales)
+library(ggimprensa)
+library(zoo)
+library(echarts4r)
+
+# Conectando a base de dados
+con <- DBI::dbConnect(duckdb::duckdb(), 
+                      dbdir = "fundos_db.duckdb",
+                      read_only = FALSE)
+
+informes_diarios <- tbl(con,"informes_diarios") 
+
+informes_diarios %>% 
+  mutate(
+    CNPJ_FUNDO = case_when(is.na(CNPJ_FUNDO) ~ CNPJ_FUNDO_CLASSE,
+                           .default = CNPJ_FUNDO),
+    TP_FUNDO = case_when(is.na(TP_FUNDO) ~ TP_FUNDO_CLASSE,
+                         .default = TP_FUNDO)
+  ) %>% 
+  mutate(CNPJ_FUNDO = sql("regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')")) %>% 
+  left_join(
+    tbl(con, "fundos_175_anbima") %>% 
+      filter(`CNPJ do Fundo` != "58137699000116") %>%  # Esse fundo em especifico possuia valores duplicados
+      select(
+        `Código ANBIMA`, Estrutura, `CNPJ do Fundo`, `Nome Comercial`, Status,
+        `Categoria ANBIMA`, `Tipo ANBIMA`, `Composição do Fundo`,
+        `Aberto Estatutariamente`, `Tributação Alvo`, `Primeiro Aporte`,
+        `Tipo de Investidor`, `Característica do Investidor`,
+        `Cota de Abertura`, `Aplicação Inicial Mínima`, 
+        `Prazo Pagamento Resgate em dias`
+      ),
+    by = c("CNPJ_FUNDO" = "CNPJ do Fundo")
+  ) %>% 
+  # Filtra apenas fundos classificados como "Multimercado"
+  filter(`Categoria ANBIMA` == "Ações") -> fundos_acoes
+
+fundos_acoes %>% 
+  left_join(
+    tbl(con,"extrato_fi") %>% 
+      select(CNPJ_FUNDO_CLASSE,PUBLICO_ALVO, DISTRIB, POLIT_INVEST, 
+             FUNDO_COTAS,FUNDO_ESPELHO, APLIC_MIN, ATUALIZ_DIARIA_COTA,
+             TAXA_SAIDA_PAGTO_RESGATE, TAXA_ADM, EXISTE_TAXA_PERFM,
+             TAXA_PERFM, PARAM_TAXA_PERFM, CALC_TAXA_PERFM,
+             EXISTE_TAXA_INGRESSO, EXISTE_TAXA_SAIDA,
+             INVEST_EXTERIOR, ATIVO_CRED_PRIV),
+    by = c("CNPJ_FUNDO" = "CNPJ_FUNDO_CLASSE") 
+  ) -> fundos_acoes
+
+```
+
+Repetindo a estratégia utilizada na análise dos fundos multimercado, os códigos estarão todos recolhidos ao longo do texto. Como há bastante sobreposição em relação ao post sobre os fundos de renda fixa, não é necessário exibi-los novamente. O primeiro ponto que vamos analisar é a quantidade de fundos por tipo ANBIMA, conforme mostrado na tabela abaixo.
+
+```{r quatidade de fundos}
+
+fundos_acoes %>%
+  distinct(CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
+  count(`Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
+  collect() %>% 
+  arrange(-n) %>%  
+  rename(Quantidade = n) %>%  
+  mutate(`Part (%)` = Quantidade / sum(Quantidade) * 100) %>%  
+  mutate(`Part Acum (%)` = cumsum(`Part (%)`)) %>%  
+  reactable::reactable(
+    pagination = FALSE,  
+    defaultColDef = colDef(minWidth = 120),  
+    resizable = TRUE,  
+    columns = list(
+      `Categoria ANBIMA` = colDef(width = 130),  
+      `Tipo ANBIMA` = colDef(width = 340),  
+      Quantidade = colDef(
+        width = 120,
+        align = "right",  
+        format = colFormat(separators = TRUE),  
+        footer = function(values) {  
+          htmltools::tags$b("Total: ") %>%  
+            htmltools::tagAppendChildren(htmltools::tags$span(sum(values)))  
+        }
+      ),
+      `Part (%)` = colDef(
+        width = 80,
+        align = "right",  
+        format = colFormat(suffix = "%", digits = 2),  
+        footer = function(values) {  
+          htmltools::tags$b("100%")  
+        }
+      ),
+      `Part Acum (%)` = colDef(
+        width = 120,
+        align = "right",  
+        format = colFormat(suffix = "%", digits = 2),  
+        footer = function(values) {  
+          htmltools::tags$b("100%")  
+        }
+      )
+    )
+  )
+
+```
+
+O mercado brasileiro de fundos de ações é marcado por uma forte concentração em algumas categorias específicas, refletindo preferências claras entre os gestores e investidores. Dentre os quase cinco mil fundos existentes, observa-se que grande parte se distribui em torno de poucas estratégias dominantes, enquanto outras permanecem como nichos mais especializados.
+
+Em primeiro lugar, destacam-se os fundos classificados como **Ações Livre**, com 2.465 fundos, representando 49,46% do total. Essa predominância evidencia a preferência por estratégias mais flexíveis, onde os gestores possuem maior liberdade para selecionar ações sem seguir critérios rígidos ou benchmarks específicos.
+
+Em seguida, chama atenção a participação expressiva dos fundos classificados como **Ações Investimento no Exterior**, totalizando 1.427 fundos (28,63%). Esse dado demonstra que muitos investidores buscam diversificação internacional por meio de fundos locais especializados, permitindo exposição a mercados externos sem a necessidade de investir diretamente em ativos estrangeiros.
+
+Essas duas categorias principais, **Ações Livre** e **Investimento no Exterior**, juntas, representam aproximadamente 78% do total dos fundos, mostrando que o mercado de fundos de ações ainda é fortemente direcionado para estratégias amplas ou que oferecem exposição a mercados globais.
+
+Entre as demais categorias, merecem menção especial os fundos classificados como **Ações Índice Ativo**, representando 271 fundos (5,44%), que têm o objetivo de superar índices de mercado com gestão ativa, e os fundos **Fechados de Ações**, com 238 fundos (4,78%), que possuem características específicas quanto à liquidez e horizonte de investimento.
+
+Outras categorias, como **Valor/Crescimento** e **Indexados**, aparecem com participações menores, respectivamente, com 2,91% e 2,07% do total. Esses fundos têm estratégias bem definidas, seja focando em empresas consideradas baratas ou com potencial de crescimento, ou replicando índices específicos de ações.
+
+Por fim, fundos ainda mais especializados ou segmentados, como os de **Small Caps** (1,16%), **Setoriais** (0,72%) e **Sustentabilidade/Governança** (0,04%), embora presentes, têm participação pouco expressiva em termos quantitativos. Essas categorias costumam atender investidores com estratégias específicas, nichadas e com critérios bem definidos, refletindo uma demanda ainda pequena, porém crescente, por segmentos ou temas específicos no mercado acionário.
+
+---
+
+## 📌 Descritivo dos Tipos de Fundos de Ações - Classificação ANBIMA
+
+### 🏛️ **Nível 1 – Definição Geral**
+
+> 💡 **O que são Fundos de Ações?**  
+> Fundos classificados como **Ações** devem manter, no mínimo, **67% da carteira** alocada em:
+> - Ações à vista;
+> - Bônus ou recibos de subscrição;
+> - Certificados de depósito de ações;
+> - Cotas de fundos de ações;
+> - Cotas de ETFs de ações;
+> - Brazilian Depositary Receipts (BDRs) nível I, II ou III.
+> 
+> 🔹 O **hedge cambial** da parcela de ativos no exterior é facultativo ao gestor.
+
+---
+
+### 🧭 **Nível 2 – Tipo de Gestão e Estratégia Geral**
+
+#### 📌 **Indexados**
+- 🎯 Objetivo: Replicar as variações de um **índice de referência** do mercado de ações.
+- 💰 Recursos em caixa: Investidos em **fundos de renda fixa – duração baixa – grau de investimento** ou ativos permitidos para esse tipo de fundo.
+
+#### 🚀 **Ativos**
+- 🎯 Objetivo: Superar um índice de referência ou atuar **sem referência a um benchmark**.
+- 💰 Recursos em caixa: Aplicados em ativos permitidos pela classificação, exceto para fundos classificados como **Livre**.
+
+#### 🎯 **Específicos**
+- Estratégias ou características diferenciadas, incluindo:
+  - Condomínio fechado;
+  - Investimento concentrado em **uma única empresa**;
+  - Fundos **não regulamentados** pela Instrução CVM nº 555.
+
+#### 🌎 **Investimento no Exterior**
+- Fundos que investem mais de **40% do patrimônio líquido** em ativos financeiros no exterior.
+- Seguem as regras estabelecidas no **Art. 101 da Instrução CVM nº 555**.
+
+> 📌 **O que diz o Art. 101?**  
+> Define os critérios e limites para que fundos brasileiros possam investir no exterior, estabelecendo segurança jurídica e limites regulatórios.
+
+---
+
+### 🧩 **Nível 3 – Estratégias de Seleção de Ativos**
+
+#### 🟢 **Fundos Ativos – Subcategorias:**
+
+##### 🏷️ **Valor / Crescimento**
+- **Valor:** Foco em ações de empresas negociadas **abaixo do preço justo** estimado.
+- **Crescimento:** Empresas com histórico ou potencial de **forte expansão** em lucros, receitas ou fluxos de caixa.
+
+##### 🏭 **Setoriais**
+- Investem em empresas de um mesmo **setor** ou de setores relacionados.
+- A política de investimento deve explicitar os **critérios de definição** dos setores ou segmentos elegíveis.
+
+##### 💰 **Dividendos**
+- Seleção de empresas com histórico consistente ou boa perspectiva de pagamento de **dividend yield** elevado.
+
+##### 📉 **Small Caps**
+- Pelo menos **85% da carteira** em ações fora das 25 maiores participações do **IBrX – Índice Brasil**.
+- Até **15% podem ser alocados em ações de maior capitalização**, desde que fora das 10 maiores do índice.
+
+##### 🌿 **Sustentabilidade / Governança**
+- Investem em empresas com práticas reconhecidas de **governança corporativa**, **responsabilidade social** e **sustentabilidade ambiental**.
+- Critérios definidos por entidades reconhecidas ou por conselhos independentes.
+
+##### 📊 **Índice Ativo (Indexed Enhanced)**
+- Objetivo de **superar o índice de referência**, utilizando estratégias táticas para se desviar pontualmente da carteira de benchmark.
+
+##### 🆓 **Livre**
+- Não possuem compromisso com uma estratégia ou benchmark específico.
+- Maior flexibilidade na composição da carteira, respeitando as regras estabelecidas no regulamento do fundo.
+
+---
+
+#### 🟣 **Fundos Específicos – Subcategorias:**
+
+##### 🔒 **Fechados de Ações**
+- Condomínio fechado, regulamentado pela **Instrução CVM nº 555**.
+- Horizonte de investimento geralmente mais longo, com **restrição de liquidez**.
+
+##### 📑 **FMP-FGTS**
+- Fundos destinados à aplicação de recursos do **FGTS**, respeitando a regulamentação vigente.
+
+##### 🎯 **Mono Ação**
+- Estratégia concentrada em ações de **uma única empresa**.
+- Exposição total a um único ativo, aumentando o risco e a possibilidade de retornos atípicos.
+
+---
+
+```{r caracteristica do investidor}
+fundos_acoes %>% 
+  distinct(CNPJ_FUNDO,`Tipo de Investidor`,`Característica do Investidor`) %>% 
+  count(`Tipo de Investidor`,`Característica do Investidor`) %>% 
+  collect() %>% 
+  arrange(-n) %>% 
+  rename(Quantidade = n) %>% 
+  reactable::reactable(
+    pagination = FALSE,  # Desativa a paginação da tabela
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Coloca a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Adiciona a soma total ao lado
+        }
+      )
+    )
+  )
+```
+
+Pelo descritivo da distribuição dos fundos de ações de acordo com o tipo e a característica do investidor ao qual são destinados, totalizando também 4.984 fundos.
+
+É possível observar que a maioria absoluta dos fundos está aberta ao público geral e sem restrição específica, com 1.533 fundos. Logo em seguida aparecem os fundos destinados a investidores qualificados, também sem restrição, somando 1.415 fundos. Esses dois grupos representam uma parte considerável do mercado, indicando que a maior parte dos fundos de ações é acessível ao público em geral ou ao público qualificado, sem grandes limitações de acesso.
+
+Além disso, fundos exclusivos voltados para investidores profissionais também têm relevância, somando 760 fundos, o que reflete o interesse por produtos com características diferenciadas e personalizadas, direcionados a investidores com maior volume de recursos ou necessidades específicas.
+
+Os fundos reservados para investidores profissionais aparecem na sequência, com 565 fundos, indicando também uma procura significativa por produtos personalizados ou com estratégias mais sofisticadas destinadas a esse público.
+
+Para investidores profissionais, porém sem restrições adicionais, existem ainda 411 fundos disponíveis, demonstrando que esse perfil específico encontra opções variadas no mercado.
+
+Outros grupos, como os fundos reservados para investidores qualificados (145 fundos), fundos sem restrição para investidores qualificados em menor número (46 fundos), e fundos gerais com números menores (40 fundos), revelam segmentações específicas de mercado, mas com menor participação relativa.
+
+Finalmente, grupos extremamente nichados, como fundos reservados ou exclusivos para o público geral, aparecem em quantidades muito reduzidas (21 e 1 fundo, respectivamente), representando casos bem pontuais ou experimentais no mercado.
+
+Em resumo, a tabela evidencia que o mercado de fundos de ações é predominantemente voltado para investidores gerais ou qualificados, sendo bastante aberto e acessível. Ainda assim, existe espaço relevante para fundos exclusivos ou reservados, principalmente destinados ao público profissional, reforçando uma segmentação clara conforme o perfil e as necessidades dos investidores.
+
+
+```{r tipos de fundos}
+tbl(con,"extrato_fi")  %>% 
+  distinct(DT_COMPTC, CNPJ_FUNDO_CLASSE, POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>%
+  collect() %>% 
+  filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_acoes, CNPJ_FUNDO))$CNPJ_FUNDO) %>% 
+  mutate(DT_COMPTC = as.Date(DT_COMPTC)) %>%  # Converte a data para o formato adequado
+  arrange(DT_COMPTC) %>%  # Ordena as datas de competência
+  group_by(CNPJ_FUNDO_CLASSE) %>% 
+  summarise_all(last) %>%  # Mantém apenas a última entrada por fundo
+  ungroup() %>% 
+  mutate(
+    FUNDO_ESPELHO = case_when(
+      is.na(FUNDO_ESPELHO) ~ "Não",
+      FUNDO_ESPELHO == "N" ~ "Não",
+      .default = "Sim"
+    ),
+    FUNDO_COTAS = case_when(
+      FUNDO_COTAS == "N" ~ "Não",
+      .default = "Sim"
+    )
+  ) %>% 
+  count(POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>% 
+  rename(
+    `Política de Investimento` = POLIT_INVEST,
+    `Fundo Espelho` = FUNDO_ESPELHO,
+    `Fundo de Cotas` = FUNDO_COTAS,
+    Quantidade = n
+  ) %>%
+  reactable(
+    pagination = FALSE,  # Desativa a paginação
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      `Política de Investimento` = colDef(width = 250),  # Define largura da coluna
+      `Fundo Espelho` = colDef(width = 150),  # Define largura da coluna
+      `Fundo de Cotas` = colDef(width = 150),  # Define largura da coluna
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Exibe a soma total ao lado
+        }
+      )
+    )
+  )
+
+```
+
+A análise da política de investimento e da estrutura operacional dos fundos de ações revela uma predominância clara de estratégias ativas e não-referenciadas, com mais de 1.900 fundos atuando de forma autônoma, sem utilizar outra carteira como base e sem seguir um índice específico como referência. Esse modelo sugere uma forte preferência por abordagens de gestão mais livres, onde o gestor tem maior flexibilidade para montar a carteira.
+
+Dentro da mesma categoria, observa-se também um número significativo de fundos de cotas, com ou sem característica de espelho, indicando que mesmo estratégias ativas têm sido utilizadas em estruturas que permitem maior escalabilidade e distribuição. Ainda nesse universo, há mais de 1.000 fundos que replicam outras carteiras, seja como cotistas ou como espelhos, reforçando o papel dessas estruturas na indústria.
+
+Já entre os fundos com política ativa e referenciada, o padrão se mantém, ainda que em menor escala. Há uma presença consistente de fundos operando diretamente, bem como fundos de cotas e espelho, mostrando que mesmo estratégias com algum vínculo a índices de mercado também se beneficiam da flexibilidade oferecida por essas estruturas operacionais.
+
+As abordagens enhanced e passivas aparecem com menor representatividade em termos de quantidade, mas trazem um dado interessante: a maioria dos fundos passivos opera como fundo de cotas, com um número reduzido atuando de forma direta. Isso sugere que a replicação de índices, especialmente em estratégias passivas, tem se apoiado fortemente em modelos operacionais otimizados, centralizando a gestão em um fundo principal e distribuindo o acesso via cotas.
+
+Essa composição revela não apenas a diversidade de estratégias adotadas pelos fundos de ações, mas também como a escolha da estrutura — fundo espelho, fundo de cotas ou fundo direto — é amplamente utilizada para atender objetivos operacionais, de distribuição e eficiência na gestão.
+
+```{r taxas}
+tbl(con,"extrato_fi") %>% 
+  collect() %>% 
+  filter(CNPJ_FUNDO_CLASSE %in% collect(distinct(fundos_acoes, CNPJ_FUNDO))$CNPJ_FUNDO) %>%
+  distinct(DT_COMPTC, 
+           CNPJ_FUNDO_CLASSE, 
+           POLIT_INVEST, 
+           EXISTE_TAXA_INGRESSO, 
+           EXISTE_TAXA_PERFM, 
+           EXISTE_TAXA_SAIDA) %>% 
+  count(POLIT_INVEST, 
+        EXISTE_TAXA_INGRESSO, 
+        EXISTE_TAXA_PERFM, 
+        EXISTE_TAXA_SAIDA) %>%
+  mutate(
+    EXISTE_TAXA_INGRESSO = case_match(
+      EXISTE_TAXA_INGRESSO, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_INGRESSO),
+    EXISTE_TAXA_PERFM = case_match(
+      EXISTE_TAXA_PERFM, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_PERFM),
+    EXISTE_TAXA_SAIDA = case_match(
+      EXISTE_TAXA_SAIDA, 
+      "S" ~ "Sim", 
+      "N" ~ "Não", 
+      .default = EXISTE_TAXA_SAIDA)
+  ) %>% 
+  rename(
+    `Política de Investimento` = POLIT_INVEST,
+    `Taxa de Ingresso` = EXISTE_TAXA_INGRESSO,
+    `Taxa de Performance` = EXISTE_TAXA_PERFM,
+    `Taxa de Saída` = EXISTE_TAXA_SAIDA,
+    Quantidade = n
+  ) %>%
+  reactable(
+    pagination = FALSE,  # Desativa a paginação
+    resizable = TRUE,  # Permite redimensionamento das colunas
+    columns = list(
+      `Política de Investimento` = colDef(width = 300),  # Define largura da coluna
+      `Taxa de Ingresso` = colDef(width = 120),  # Define largura da coluna
+      `Taxa de Performance` = colDef(width = 120),  # Define largura da coluna
+      `Taxa de Saída` = colDef(width = 120),  # Define largura da coluna
+      Quantidade = colDef(
+        align = "right",  # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
+        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values)))  # Exibe a soma total ao lado
+        }
+      )
+    )
+  )
+```
+
+A estrutura de taxas praticada nos **fundos de ações** varia de acordo com a **política de investimento** adotada, e os dados mostram padrões bem definidos quanto à presença ou ausência desses encargos.
+
+A **taxa de ingresso** — que incidiria no momento da aplicação inicial — **não é uma prática comum entre os fundos de ações**. Por isso, sua relevância nesse segmento é bastante limitada e não representa um elemento significativo na composição dos custos para o investidor.
+
+A **taxa de performance**, por outro lado, aparece com bastante frequência, especialmente nos **fundos de gestão ativa**. Entre os fundos com **política ativa e não-referenciada**, por exemplo, há mais de 800 casos em que essa taxa é aplicada, tanto isoladamente quanto em conjunto com a **taxa de saída**. Isso reforça a lógica de alinhar os interesses do gestor com os resultados obtidos, premiando o desempenho acima de um **benchmark** acordado.
+
+No grupo dos **fundos ativos e referenciados**, a presença da **taxa de performance** também é significativa, com mais de 300 fundos adotando esse tipo de cobrança em diferentes combinações. Esse padrão indica que, mesmo nos fundos com uma **referência explícita**, os gestores mantêm o incentivo adicional por performance superior ao índice de base.
+
+Já os fundos classificados como **enhanced**, embora em menor número, também aplicam a **taxa de performance** em boa parte dos casos, o que é consistente com sua proposta de atuar de forma híbrida entre **gestão passiva e ativa**.
+
+No caso dos **fundos passivos**, a cobrança de **taxa de performance** é mais restrita, mas ainda presente. Aproximadamente 320 fundos dessa categoria adotam essa estrutura, o que pode indicar o uso de **estratégias passivas com algum grau de gestão diferenciada**, justificando a remuneração variável.
+
+Quanto à **taxa de saída**, seu uso é mais disperso e aparece em diferentes **políticas de investimento**, geralmente combinada com a **taxa de performance** ou utilizada isoladamente como forma de desincentivar o **resgate precoce** e proteger a carteira dos impactos de **saídas abruptas**.
+
+De forma geral, o desenho de taxas nos **fundos de ações** revela uma preferência por estruturas **sem taxa de ingresso**, com forte presença da **taxa de performance** nos fundos de **gestão ativa** e uso seletivo da **taxa de saída**, ajustado à **estratégia** e ao **perfil de cada fundo**.
+
+```{r evolução captação}
+fundos_acoes %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  select(DT_COMPTC,`Categoria ANBIMA`,CAPTC_DIA,RESG_DIA) %>% 
+  collect() %>% 
+  mutate(Competência = as.yearqtr(DT_COMPTC)) %>%
+  filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
+  summarise(
+    Captação = sum(CAPTC_DIA) / 1e9,
+    Resgates = -sum(RESG_DIA) / 1e9,
+    .by = c("Competência", "Categoria ANBIMA")
+  ) %>%
+  mutate(CAPTC_LIQ = Captação + Resgates) %>%
+  pivot_wider(
+    names_from = "Categoria ANBIMA",
+    values_from = "CAPTC_LIQ"
+  ) %>%
+  rename(`Captação líquida` = Ações) %>%
+  arrange(Competência) %>%
+  mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`),
+         Competência = as.Date(Competência)) %>%
+  arrange(Competência) %>% 
+  e_charts(Competência) %>%
+  e_bar(Captação, name = "Captação", 
+        color = "steelblue", 
+        stack = "total") %>%
+  e_bar(Resgates, 
+        name = "Resgates", 
+        color = "tomato", 
+        stack = "total") %>%
+  e_line(`Captação líquida`, 
+         name = "Captação líquida", 
+         color = "darkgreen") %>%
+  e_line(`Captação líquida acumulada`, 
+         name = "Captação líquida acumulada", 
+         color = "purple") %>%
+  e_title(
+    text = "Histórico de Captação",
+    subtext = "Captação e Resgates com sua evolução trimestral desde o início de 2010"
+  ) %>%
+  e_legend(right = TRUE) %>%
+  e_tooltip(trigger = "axis") %>%
+  e_y_axis(
+    axisLabel = list(formatter = JS("function(value){ return value + ' B'; }"))
+  ) %>%
+  e_x_axis(axisLabel = list(rotate = 45)) %>%
+  e_grid(left = "10%", right = "10%") 
+```
+
+Após um longo período de relativa estabilidade até meados de 2016, os volumes de entrada nos fundos de ações começaram a crescer de forma mais consistente, com destaque para o forte ciclo de expansão iniciado em 2019. Ao longo desse período, os aportes superaram amplamente os resgates, resultando em um expressivo avanço dos fluxos líquidos positivos. Esse movimento sustentou uma trajetória acelerada de crescimento no acumulado da indústria, que atingiu seu pico em 2021.
+
+A partir de então, o cenário se inverteu. Os resgates passaram a se intensificar e superaram as captações em diversos trimestres consecutivos, configurando um ciclo prolongado de saídas líquidas. A reversão do fluxo afetou diretamente a trajetória acumulada, que passou a exibir uma tendência de queda, refletindo a menor atratividade ou confiança nos fundos de ações durante esse período.
+
+No entanto, o início de 2024 marca uma virada brusca nesse comportamento. O volume de captação registrado foi o maior de toda a série, superando com folga os trimestres anteriores. A diferença positiva entre entradas e saídas nesse momento foi suficiente para interromper a trajetória negativa e impulsionar novamente o saldo acumulado para cima.
+
+Esse movimento mais recente pode sinalizar o início de um novo ciclo ou, alternativamente, representar uma movimentação pontual e atípica. A continuidade desse fluxo nos próximos trimestres será determinante para entender se estamos diante de uma retomada consistente na indústria de fundos de ações.
+
+```{r evolução captação líquida}
+fundos_acoes %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(
+    ano = strftime(DT_COMPTC, "%Y"),
+    mes = sql("CAST(strftime(DT_COMPTC, '%m') AS INTEGER)"),
+    trimestre = paste0("T", (mes - 1) %/% 3 + 1),
+    Competência = paste(ano, trimestre)
+  ) %>%
+  filter(Competência >= "2010 T1" & Competência <= "2024 T4") %>%
+  summarise(
+    Captação = sum(CAPTC_DIA) / 1e9,
+    Resgates = -sum(RESG_DIA) / 1e9,
+    .by = c("Competência", "Tipo ANBIMA")
+  ) %>%
+  mutate(
+    CAPTC_LIQ = Captação + Resgates
+  ) %>%
+  arrange(Competência) %>%
+  collect() %>% 
+  group_by(`Tipo ANBIMA`) %>%
+  e_charts(Competência) %>%
+  e_bar(CAPTC_LIQ, stack = "total", series = "Tipo ANBIMA") %>%
+  e_tooltip(trigger = "axis") %>%
+  e_title("Captação Líquida por Tipo ANBIMA ao Longo do Tempo") %>%
+  e_x_axis(name = "Competência") %>%
+  e_y_axis(name = "Captação Líquida (em bilhões)") %>%
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(
+    bottom = 120,  
+    top = 60
+  )
+```
+
+A análise da captação líquida ao longo do tempo por tipo ANBIMA revela a forte dominância dos fundos classificados como Ações Livre, especialmente durante os ciclos de expansão mais intensos. Entre 2019 e 2021, esses fundos responderam pela maior parte dos fluxos positivos, com volumes expressivos que superaram com folga os demais tipos. A combinação entre maior flexibilidade de gestão e amplo reconhecimento no mercado pode explicar esse protagonismo.
+
+Outros tipos também apresentaram captação relevante em determinados momentos, com destaque para os fundos de Ações Investimento no Exterior, que acompanharam a tendência de diversificação geográfica dos portfólios. Já os fundos de Small Caps, Valor/Crescimento e Índice Ativo também tiveram participação visível em alguns trimestres, embora em escala menor.
+
+A partir de 2022, a dinâmica muda de forma consistente. A maioria dos tipos passa a registrar saldos líquidos negativos, refletindo um movimento de retirada generalizada. Essa reversão afeta especialmente os fundos mais representativos — como os de Ações Livre e Investimento no Exterior —, que lideram também os resgates no período.
+
+No início de 2024, observa-se uma recuperação pontual com fluxos positivos em diversas categorias, sugerindo uma reativação parcial do interesse por fundos de ações. A retomada, no entanto, ainda não atinge a intensidade dos anos anteriores e parece mais distribuída entre os tipos, sem concentração clara em uma única categoria.
+
+O comportamento por tipo ANBIMA ao longo do tempo evidencia não só os ciclos da indústria, mas também como as preferências dos investidores vão se ajustando diante do cenário econômico, político e das condições do mercado de capitais.
+
+```{r custodia}
+fundos_acoes %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(
+    ano = strftime(DT_COMPTC, "%Y"),
+    mes = sql("CAST(strftime(DT_COMPTC, '%m') AS INTEGER)"),
+    trimestre = paste0("T", (mes - 1) %/% 3 + 1),
+    Competência = paste(ano, trimestre)
+  ) %>%
+  filter(Competência >= "2010 T1" & Competência <= "2024 T4") %>% 
+  summarise(`Custódia` = sum(VL_PATRIM_LIQ),
+            .by = c("Competência","Tipo ANBIMA")) %>% 
+  collect() %>% 
+  arrange(Competência) %>% 
+  mutate(`Custódia` = `Custódia` / 1e9) %>% 
+  group_by(`Tipo ANBIMA`) %>% 
+  e_charts(Competência) %>%
+  e_bar(`Custódia`,stack = "total",series = "Tipo ANBIMA") %>% 
+  e_tooltip(trigger = "axis") %>%
+  e_title("Patrimônio Líquido por Tipo ANBIMA ao Longo do Tempo") %>%
+  e_y_axis(name = "Custódia (em bilhões)") %>%
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(
+    bottom = 120,
+    top = 60
+  )
+```
+
+A evolução do patrimônio líquido dos fundos de ações por tipo ANBIMA mostra um crescimento contínuo e consistente a partir de 2016, com destaque para a aceleração mais intensa observada entre 2019 e 2021. Durante esse período, o volume de recursos sob gestão mais do que dobrou, impulsionado pela combinação de forte captação líquida, valorização dos ativos e maior interesse dos investidores por renda variável.
+
+Os fundos classificados como Ações Livre foram, de longe, os principais responsáveis por esse avanço, mantendo a maior fatia da indústria ao longo de toda a série. Esse domínio reflete sua flexibilidade operacional e ampla aceitação entre os gestores e investidores.
+
+Outro grupo que ganhou relevância nesse intervalo foi o dos fundos de Ações Investimento no Exterior. A expansão dessa categoria é notável a partir de 2020, acompanhando o movimento global de diversificação e o acesso facilitado a ativos internacionais, o que proporcionou maior participação dessa classe no patrimônio total.
+
+A partir de 2022, o volume sob gestão começou a recuar, refletindo tanto os efeitos das saídas líquidas como a possível desvalorização dos ativos durante esse período. Ainda assim, o montante total permaneceu elevado em relação aos níveis pré-2019, indicando uma base de capital consolidada na indústria.
+
+Mais recentemente, observa-se uma retomada da trajetória de crescimento. O patrimônio líquido volta a subir de forma consistente, puxado por novos aportes e, possivelmente, por uma valorização dos ativos. O avanço parece relativamente equilibrado entre os principais tipos, com destaque novamente para os fundos Ações Livre e Investimento no Exterior.
+
+Esse comportamento evidencia a resiliência da indústria de fundos de ações, que mesmo após períodos de forte resgate, demonstra capacidade de recuperação e manutenção de uma base sólida de recursos ao longo do tempo.
+
+```{r rentabilidade 1}
+fundos_acoes %>%
+  filter(!is.na(POLIT_INVEST)) %>%
+  mutate(
+    Ano = as.numeric(strftime(DT_COMPTC, "%Y"))
+  ) %>%
+  filter(Ano >= 2010 & Ano <= 2024) %>% 
+  select(Ano, CNPJ_FUNDO, DT_COMPTC,VL_QUOTA) %>% 
+  arrange(Ano, CNPJ_FUNDO, DT_COMPTC) %>% 
+  collect() %>% 
+  summarise(`Rent (%)` = ((last(VL_QUOTA)/first(VL_QUOTA)) - 1)*100,
+            .by = c("Ano", "CNPJ_FUNDO")) -> rentabilidade_fundos_acoes
+
+rentabilidade_fundos_acoes %>% 
+  left_join(
+    fundos_acoes %>% 
+      distinct(CNPJ_FUNDO, `Tipo ANBIMA`) %>% 
+      collect()
+  ) %>% 
+  left_join(
+    quantmod::getSymbols("^BVSP", 
+                         from = "2010-01-01", 
+                         to = "2024-12-31", 
+                         src = "yahoo",
+                         auto.assign = F) %>% 
+      timetk::tk_tbl() %>% 
+      mutate(Ano = lubridate::year(index)) %>% 
+      filter(index != "2012-01-02") %>% 
+      filter(Ano >= 2010) %>% 
+      arrange(index) %>% 
+      summarise(`IBOV` = ((last(BVSP.Close)/first(BVSP.Close)) - 1)*100,
+                .by = Ano)
+  ) -> rentabilidade_fundos_acoes
+
+rentabilidade_fundos_acoes %>% 
+  mutate(Outlier = case_when(`Rent (%)` > 500 | `Rent (%)` < -500 ~ "Out",
+                             .default = "In")) %>% 
+  filter(Outlier == "Out") %>% 
+  distinct(CNPJ_FUNDO) -> fundos_out
+
+
+linhas_ibov <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, IBOV) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações Dividendos",
+    "Ações Livre" ,
+    "Ações Indexados",
+    "Ações Small Caps")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+rentabilidade_fundos_acoes %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações Dividendos",
+    "Ações Livre" ,
+    "Ações Indexados",
+    "Ações Small Caps")) %>%
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_ibov,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = IBOV, yend = IBOV),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+A análise da rentabilidade anual dos fundos de ações, segmentados pelas categorias ANBIMA, revela diferenças marcantes no comportamento de cada estratégia ao longo dos últimos anos. Os fundos de **Ações Indexados** se destacam pela consistência: os retornos se mantêm próximos da linha vermelha do gráfico, que representa o desempenho anual do Ibovespa, especialmente a partir de 2016. Isso confirma a proposta desses fundos de replicar os principais índices de mercado, com menor variação entre as gestões dessa categoria.
+
+Já nos fundos de **Ações Dividendos**, observa-se uma rentabilidade mais moderada, com oscilações entre anos positivos e negativos. Em 2015, por exemplo, boa parte dos fundos da categoria registrou perdas, acompanhando o cenário difícil da bolsa naquele ano, embora a dispersão entre os resultados tenha sido mais controlada em relação a outras categorias — um sinal de que, mesmo em momentos adversos, a busca por empresas pagadoras de dividendos pode suavizar os extremos de retorno.
+
+Os fundos de **Ações Livre** apresentam o comportamento mais diverso entre todas as categorias. O gráfico evidencia anos como 2016 e 2019, em que a faixa de rentabilidade foi extremamente ampla, com alguns fundos entregando retornos muito acima do Ibovespa, enquanto outros ficaram abaixo. Isso reforça que a liberdade estratégica pode tanto gerar desempenhos excepcionais quanto resultados muito aquém do mercado, dependendo da habilidade e das escolhas do gestor.
+
+No caso dos fundos de **Ações Small Caps**, a volatilidade é uma marca registrada. O gráfico mostra claramente anos como 2016 e 2019, quando muitos fundos da categoria superaram com folga o Ibovespa, mas também períodos de forte queda, como 2020 e 2022, com grande dispersão entre os resultados e médias próximas ou abaixo do índice. Essa categoria, focada em empresas de menor capitalização, evidencia ciclos de altos e baixos muito mais acentuados do que as demais.
+
+Essa leitura dos dados destaca a importância de compreender o comportamento histórico de cada estratégia antes de investir. Nem todas as categorias de fundos de ações enfrentam o mercado da mesma forma, e o gráfico ajuda a visualizar de forma clara o tamanho do risco e a amplitude de resultados possíveis em cada uma delas.
+
+```{r rentabilidade 2}
+linhas_ibov <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, IBOV) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações Investimento no Exterior",
+    "Ações Setoriais" ,
+    "Ações Índice Ativo",
+    "Ações Valor/Crescimento")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+rentabilidade_fundos_acoes %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações Investimento no Exterior",
+    "Ações Setoriais" ,
+    "Ações Índice Ativo",
+    "Ações Valor/Crescimento")) %>%
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_ibov,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = IBOV, yend = IBOV),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+Dando sequência à análise das diferentes estratégias de fundos de ações, o gráfico acima aprofunda a leitura sobre o comportamento das categorias **Índice Ativo**, **Investimento no Exterior**, **Setoriais** e **Valor/Crescimento**, destacando suas particularidades em termos de rentabilidade e dispersão ao longo dos anos.
+
+Nos fundos de **Ações Índice Ativo**, observa-se um padrão de rentabilidade que orbita em torno da linha do Ibovespa, mas com dispersão consideravelmente maior do que nos fundos puramente indexados. Esse comportamento é coerente com a proposta da estratégia: buscar superar o índice de referência a partir de ajustes táticos na carteira. Em anos como 2016 e 2019, muitos fundos da categoria conseguiram resultados superiores ao benchmark, enquanto em outros períodos, como 2020 e 2022, a performance foi mais heterogênea, refletindo diferentes graus de sucesso na gestão ativa.
+
+Os fundos de **Ações Investimento no Exterior** apresentam uma das maiores dispersões de resultados entre as categorias. O gráfico sugere retornos extremamente elevados em alguns casos, especialmente em 2020, com fundos marcando rentabilidades acima de 300%. No entanto, esses valores provavelmente refletem **erros ou inconsistências nos dados**, e não resultados efetivos alcançados pelo mercado. Mesmo desconsiderando esses outliers, a categoria mostra forte variabilidade, influenciada por ciclos de alta nos mercados globais e pela oscilação cambial, fatores que ampliam tanto o potencial de retorno quanto o risco de perdas expressivas, como observado em 2022 e 2023.
+
+A categoria de **Ações Setoriais** mantém o padrão de volatilidade característico das estratégias concentradas. O gráfico mostra anos como 2016, 2018 e 2019 com uma faixa ampla de resultados, onde alguns fundos obtiveram ganhos expressivos, enquanto outros apresentaram perdas relevantes. Isso reflete diretamente a dinâmica cíclica e a sensibilidade setorial, que podem amplificar os efeitos tanto positivos quanto negativos dependendo do cenário econômico.
+
+Por fim, os fundos de **Ações Valor/Crescimento** apresentam uma dispersão intermediária entre as estratégias analisadas. Em anos como 2016 e 2019, muitos fundos dessa categoria conseguiram superar o Ibovespa, enquanto em períodos mais desafiadores, como 2020 e 2022, os resultados foram mais variados, com parte dos fundos ficando abaixo do índice. Essa oscilação reforça o papel central da seleção de ativos e das premissas utilizadas na análise fundamentalista para o desempenho final da estratégia.
+
+
+```{r rentabilidade 3}
+linhas_ibov <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, IBOV) %>%
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações FMP-FGTS",
+    "Fechados de Ações",
+    "Fundos de Mono Ação")) %>% 
+  mutate(
+    x = as.factor(Ano),
+    x_num = as.numeric(x)
+  )
+
+rentabilidade_fundos_acoes %>% 
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
+  filter(`Tipo ANBIMA` %in% c(
+    "Ações FMP-FGTS",
+    "Fechados de Ações",
+    "Fundos de Mono Ação")) %>%
+  ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
+  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_segment(
+    data = linhas_ibov,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = IBOV, yend = IBOV),
+    color = "red", linewidth = 0.6,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
+    x = "Ano",
+    y = "Rentabilidade (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+
+Finalizando a leitura das diferentes categorias de fundos de ações, o gráfico acima traz as estratégias **FMP-FGTS**, **Fechados de Ações** e **Fundos de Mono Ação**, que compartilham entre si características de maior concentração, seja por limitações regulatórias, por estrutura de funcionamento ou pela própria proposta de investimento.
+
+Nos fundos de **Ações FMP-FGTS**, observa-se uma dispersão de resultados relativamente mais controlada nos primeiros anos da série, com aumento da variabilidade a partir de 2016. Esse comportamento está diretamente relacionado à natureza da carteira, fortemente concentrada em poucas empresas ligadas ao programa de utilização do FGTS, como **Petrobras** e **Vale**. Em anos de recuperação dessas ações, como 2016 e 2019, a categoria apresentou retornos bem acima do Ibovespa, enquanto em períodos de crise, como 2020, acompanhou a deterioração desses ativos. A faixa de resultados, embora ampla em alguns anos, tende a refletir de forma fiel os ciclos das companhias específicas que compõem a carteira.
+
+Na categoria de **Fechados de Ações**, a dispersão é uma das mais elevadas entre todas as estratégias analisadas, com destaque para alguns fundos registrando valores muito acima da média, especialmente em anos como 2016, 2017 e 2019. Esses extremos, no entanto, podem refletir tanto o perfil concentrado dessas carteiras quanto eventuais inconsistências nos dados reportados. Esse tipo de fundo, por ser estruturado em condomínio fechado, costuma operar com menor liquidez e pode assumir posições mais específicas, o que amplifica a variação entre os fundos e aumenta a sensibilidade a eventos pontuais.
+
+Os **Fundos de Mono Ação**, por sua vez, exibem um comportamento de retorno altamente volátil, o que é esperado para uma estratégia que concentra 100% dos investimentos em uma única empresa. O gráfico evidencia anos com ganhos expressivos em alguns fundos, como 2016 e 2019, mas também períodos de fortes perdas, como 2013 e 2020. A dispersão é naturalmente muito ampla, pois a rentabilidade de cada fundo está totalmente atrelada ao desempenho da ação escolhida, o que torna esse tipo de produto um dos mais arriscados dentro da categoria de fundos de ações.
+
+De maneira geral, essas três estratégias ilustram bem como **concentração de ativos**, **liquidez restrita** ou **posições direcionais** podem impactar o comportamento de rentabilidade dos fundos, resultando em uma faixa muito ampla de possíveis resultados. Para o investidor, isso reforça a importância de compreender o modelo de gestão e os riscos associados antes de optar por esses tipos de produtos.
+
+## Conclusão
+
+Concluímos assim esta etapa da nossa série, na qual exploramos algumas das principais características dos fundos de ações, analisando desde a estrutura da indústria e a distribuição por categorias ANBIMA até o comportamento das rentabilidades ao longo dos anos. O foco foi oferecer uma visão ampla, mas fundamentada, combinando análise descritiva com a apresentação dos códigos e métodos utilizados para manipular as bases de dados e construir as visualizações e interpretações que compartilhamos.
+
+Nos próximos posts, daremos um passo adiante e mudaremos o foco da rentabilidade para a dinâmica de **abertura e fechamento de fundos**. A ideia é avançar de uma análise descritiva para uma abordagem mais técnica, onde buscaremos modelar o risco de um fundo encerrar suas atividades a partir de características observáveis na nossa base. O objetivo será entender quais fatores ajudam a explicar a sobrevivência ou o encerramento dos fundos ao longo do tempo.
+
+Nos encontramos no próximo post — espero que o conteúdo até aqui tenha sido útil e que siga contribuindo para uma análise mais informada e crítica sobre o mercado de fundos de investimento.
+
