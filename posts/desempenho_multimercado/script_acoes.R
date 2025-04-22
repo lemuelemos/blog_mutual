@@ -9,6 +9,7 @@ library(scales)
 library(ggimprensa)
 library(zoo)
 library(echarts4r)
+library(quantmod)
 
 # Conectando a base de dados
 con <- DBI::dbConnect(duckdb::duckdb(), 
@@ -338,6 +339,7 @@ fundos_acoes %>%
     top = 60
   )
 
+
 fundos_acoes %>%
   filter(!is.na(POLIT_INVEST)) %>%
   mutate(
@@ -357,10 +359,13 @@ rentabilidade_fundos_acoes %>%
       collect()
   ) %>% 
   left_join(
-    rbcb::get_series(4391) %>% 
-      mutate(Ano = lubridate::year(date)) %>% 
+    getSymbols("^BVSP", from = "2010-01-01", to = "2024-12-31", src = "yahoo",auto.assign = F) %>% 
+      tk_tbl() %>% 
+      mutate(Ano = lubridate::year(index)) %>% 
+      filter(index != "2012-01-02") %>% 
       filter(Ano >= 2010) %>% 
-      summarise(CDI = last((cumprod((`4391`/100)+1)-1)*100),
+      arrange(index) %>% 
+      summarise(`IBOV` = ((last(BVSP.Close)/first(BVSP.Close)) - 1)*100,
                 .by = Ano)
   ) -> rentabilidade_fundos_acoes
 
@@ -371,8 +376,8 @@ rentabilidade_fundos_acoes %>%
   distinct(CNPJ_FUNDO) -> fundos_out
 
 
-linhas_cdi <- rentabilidade_fundos_acoes %>%
-  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+linhas_ibov <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, IBOV) %>%
   filter(`Tipo ANBIMA` %in% c(
     "Ações Dividendos",
     "Ações Livre" ,
@@ -393,8 +398,8 @@ rentabilidade_fundos_acoes %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_segment(
-    data = linhas_cdi,
-    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    data = linhas_ibov,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = IBOV, yend = IBOV),
     color = "red", linewidth = 0.6,
     inherit.aes = FALSE
   ) +
@@ -412,7 +417,7 @@ rentabilidade_fundos_acoes %>%
   )
 
 
-linhas_cdi <- rentabilidade_fundos_acoes %>%
+linhas_ibov <- rentabilidade_fundos_acoes %>%
   distinct(`Tipo ANBIMA`, Ano, CDI) %>%
   filter(`Tipo ANBIMA` %in% c(
     "Ações Investimento no Exterior",
@@ -434,8 +439,8 @@ rentabilidade_fundos_acoes %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_segment(
-    data = linhas_cdi,
-    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    data = linhas_ibov,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = IBOV, yend = IBOV),
     color = "red", linewidth = 0.6,
     inherit.aes = FALSE
   ) +

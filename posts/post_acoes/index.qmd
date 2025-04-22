@@ -1,7 +1,7 @@
 ---
 title: "Análise dos Fundos de Ações"
 author: "Lemuel Lemos"
-date: "2025-04-19"
+date: "2025-04-22"
 categories: [fundos de investimentos, desempenho, fondos de ações]
 image: "eficiencia-financeira.jpg"
 execute:
@@ -124,7 +124,7 @@ fundos_acoes %>%
 
 ```
 
-A tabela abaixo apresenta a distribuição dos fundos de ações de acordo com a classificação da ANBIMA, totalizando 4.984 fundos. Observa-se claramente uma concentração significativa em alguns tipos específicos, revelando preferências marcantes no mercado brasileiro.
+O mercado brasileiro de fundos de ações é marcado por uma forte concentração em algumas categorias específicas, refletindo preferências claras entre os gestores e investidores. Dentre os quase cinco mil fundos existentes, observa-se que grande parte se distribui em torno de poucas estratégias dominantes, enquanto outras permanecem como nichos mais especializados.
 
 Em primeiro lugar, destacam-se os fundos classificados como **Ações Livre**, com 2.465 fundos, representando 49,46% do total. Essa predominância evidencia a preferência por estratégias mais flexíveis, onde os gestores possuem maior liberdade para selecionar ações sem seguir critérios rígidos ou benchmarks específicos.
 
@@ -138,66 +138,96 @@ Outras categorias, como **Valor/Crescimento** e **Indexados**, aparecem com part
 
 Por fim, fundos ainda mais especializados ou segmentados, como os de **Small Caps** (1,16%), **Setoriais** (0,72%) e **Sustentabilidade/Governança** (0,04%), embora presentes, têm participação pouco expressiva em termos quantitativos. Essas categorias costumam atender investidores com estratégias específicas, nichadas e com critérios bem definidos, refletindo uma demanda ainda pequena, porém crescente, por segmentos ou temas específicos no mercado acionário.
 
-## Descritivos dos Tipos de Fundos de Ações - Classificação ANBIMA
+---
 
-### Primeiro Nível
+## 📌 Descritivo dos Tipos de Fundos de Ações - Classificação ANBIMA
 
-#### Ações
-Fundos que possuem, no mínimo, 67% da carteira em ações à vista, bônus ou recibos de subscrição, certificados de depósito de ações, cotas de fundos de ações, cotas dos fundos de índice de ações e Brazilian Depositary Receipts, classificados como nível I, II e III. O hedge cambial da parcela de ativos no exterior é facultativo ao gestor.
+### 🏛️ **Nível 1 – Definição Geral**
 
-### Segundo Nível
+> 💡 **O que são Fundos de Ações?**  
+> Fundos classificados como **Ações** devem manter, no mínimo, **67% da carteira** alocada em:
+> - Ações à vista;
+> - Bônus ou recibos de subscrição;
+> - Certificados de depósito de ações;
+> - Cotas de fundos de ações;
+> - Cotas de ETFs de ações;
+> - Brazilian Depositary Receipts (BDRs) nível I, II ou III.
+> 
+> 🔹 O **hedge cambial** da parcela de ativos no exterior é facultativo ao gestor.
 
-Neste nível os fundos são classificados conforme o tipo de gestão (indexada ou ativa), específicos para fundos com características diferenciadas ou investimento no exterior. Conheça cada um deles:
+---
 
-#### Indexados
-Fundos que têm como objetivo replicar as variações de indicadores de referência do mercado de renda variável. Os recursos remanescentes em caixa devem estar investidos em cotas de fundos renda fixa – duração baixa – grau de investimento ou em ativos permitidos a estes desde que preservadas as regras que determinam a composição da carteira do tipo ANBIMA.
+### 🧭 **Nível 2 – Tipo de Gestão e Estratégia Geral**
 
-#### Ativos
-Fundos que têm como objetivo superar um índice de referência ou que não fazem referência a nenhum índice. A seleção dos ativos para compor a carteira deve ser suportada por um processo de investimento que busca atingir os objetivos e executar a política de investimentos definida para o fundo. Os recursos remanescentes em caixa devem estar investidos em cotas de fundos renda fixa – duração baixa – grau de investimento ou em ativos permitidos a estes desde que preservadas as regras que determinam a composição da carteira do Tipo ANBIMA, exceção feita aos fundos classificados como Livre (nível 3).
+#### 📌 **Indexados**
+- 🎯 Objetivo: Replicar as variações de um **índice de referência** do mercado de ações.
+- 💰 Recursos em caixa: Investidos em **fundos de renda fixa – duração baixa – grau de investimento** ou ativos permitidos para esse tipo de fundo.
 
-#### Específicos
-Fundos que adotam estratégias de investimento ou possuam características específicas tais como condomínio fechado, não regulamentados pela Instrução nº 555 da CVM, fundos que investem apenas em ações de uma única empresa ou outros que venham a surgir.
+#### 🚀 **Ativos**
+- 🎯 Objetivo: Superar um índice de referência ou atuar **sem referência a um benchmark**.
+- 💰 Recursos em caixa: Aplicados em ativos permitidos pela classificação, exceto para fundos classificados como **Livre**.
 
-#### Investimento no Exterior
-Fundos que investem em ativos financeiros no exterior em parcela superior a 40% do patrimônio líquido. Estes fundos seguem o disposto no art. 101 Instrução nº 555 da CVM.
+#### 🎯 **Específicos**
+- Estratégias ou características diferenciadas, incluindo:
+  - Condomínio fechado;
+  - Investimento concentrado em **uma única empresa**;
+  - Fundos **não regulamentados** pela Instrução CVM nº 555.
 
-### Terceiro Nível
+#### 🌎 **Investimento no Exterior**
+- Fundos que investem mais de **40% do patrimônio líquido** em ativos financeiros no exterior.
+- Seguem as regras estabelecidas no **Art. 101 da Instrução CVM nº 555**.
 
-Neste nível os fundos são classificados conforme a estratégia. Ao optar pelos fundos indexados, as opções no terceiro nível são os fundos atrelados a índices de referência.
+> 📌 **O que diz o Art. 101?**  
+> Define os critérios e limites para que fundos brasileiros possam investir no exterior, estabelecendo segurança jurídica e limites regulatórios.
 
-Os fundos ativos, por sua vez, se dividem no terceiro nível em:
+---
 
-#### Valor / Crescimento
-Fundos que buscam retorno por meio da seleção de empresas cujo valor das ações negociadas esteja abaixo do "preço justo" estimado (estratégia valor) e/ou aquelas com histórico e/ou perspectiva de continuar com forte crescimento de lucros, receitas e fluxos de caixa em relação ao mercado (estratégia de crescimento).
+### 🧩 **Nível 3 – Estratégias de Seleção de Ativos**
 
-#### Setoriais
-Fundos que investem em empresas pertencentes a um mesmo setor ou conjunto de setores afins da economia. Estes fundos devem explicitar em suas políticas de investimento os critérios utilizados para definição dos setores, subsetores ou segmentos elegíveis para aplicação.
+#### 🟢 **Fundos Ativos – Subcategorias:**
 
-#### Dividendos
-Fundos que investem em ações de empresas com histórico de dividend yield (renda gerada por dividendos) consistente ou que, na visão do gestor, apresentem essas perspectivas.
+##### 🏷️ **Valor / Crescimento**
+- **Valor:** Foco em ações de empresas negociadas **abaixo do preço justo** estimado.
+- **Crescimento:** Empresas com histórico ou potencial de **forte expansão** em lucros, receitas ou fluxos de caixa.
 
-#### Small Caps
-Fundos cuja carteira é composta por, no mínimo, 85% em ações de empresas que não estejam incluídas entre as 25 maiores participações do IBrX - Índice Brasil, ou seja, ações de empresas com relativamente baixa capitalização de mercado. Os 15% remanescentes podem ser investidos em ações de maior liquidez ou capitalização de mercado, desde que não estejam incluídas entre as dez maiores participações do IBrX – Índice Brasil.
+##### 🏭 **Setoriais**
+- Investem em empresas de um mesmo **setor** ou de setores relacionados.
+- A política de investimento deve explicitar os **critérios de definição** dos setores ou segmentos elegíveis.
 
-#### Sustentabilidade / Governança
-Fundos que investem em empresas que apresentam bons níveis de governança corporativa, ou que se destacam em responsabilidade social e sustentabilidade empresarial no longo prazo, conforme critérios estabelecidos por entidades amplamente reconhecidas pelo mercado ou supervisionados por conselho não vinculado à gestão do fundo. Estes fundos devem explicitar em suas políticas de investimento os critérios utilizados para definição das ações elegíveis.
+##### 💰 **Dividendos**
+- Seleção de empresas com histórico consistente ou boa perspectiva de pagamento de **dividend yield** elevado.
 
-#### Índice Ativo (Indexed Enhanced)
-Fundos que têm como objetivo superar o índice de referência do mercado acionário. Estes fundos se utilizam de deslocamentos táticos em relação à carteira de referência para atingir seu objetivo.
+##### 📉 **Small Caps**
+- Pelo menos **85% da carteira** em ações fora das 25 maiores participações do **IBrX – Índice Brasil**.
+- Até **15% podem ser alocados em ações de maior capitalização**, desde que fora das 10 maiores do índice.
 
-#### Livre
-Fundos sem o compromisso de concentração em uma estratégia específica. A parcela em caixa pode ser investida em quaisquer ativos, desde que especificados em regulamento.
+##### 🌿 **Sustentabilidade / Governança**
+- Investem em empresas com práticas reconhecidas de **governança corporativa**, **responsabilidade social** e **sustentabilidade ambiental**.
+- Critérios definidos por entidades reconhecidas ou por conselhos independentes.
 
-No nível 3, os fundos específicos se dividem em:
+##### 📊 **Índice Ativo (Indexed Enhanced)**
+- Objetivo de **superar o índice de referência**, utilizando estratégias táticas para se desviar pontualmente da carteira de benchmark.
 
-#### Fundos Fechados de Ações
-Fundos de condomínio fechado regulamentados pela Instrução nº 555 da CVM.
+##### 🆓 **Livre**
+- Não possuem compromisso com uma estratégia ou benchmark específico.
+- Maior flexibilidade na composição da carteira, respeitando as regras estabelecidas no regulamento do fundo.
 
-###$ Fundos de Ações FMP-FGTS
-De acordo com a regulamentação vigente.
+---
 
-#### Fundos de Mono Ação
-Fundos com estratégia de investimento em ações de apenas uma empresa.
+#### 🟣 **Fundos Específicos – Subcategorias:**
+
+##### 🔒 **Fechados de Ações**
+- Condomínio fechado, regulamentado pela **Instrução CVM nº 555**.
+- Horizonte de investimento geralmente mais longo, com **restrição de liquidez**.
+
+##### 📑 **FMP-FGTS**
+- Fundos destinados à aplicação de recursos do **FGTS**, respeitando a regulamentação vigente.
+
+##### 🎯 **Mono Ação**
+- Estratégia concentrada em ações de **uma única empresa**.
+- Exposição total a um único ativo, aumentando o risco e a possibilidade de retornos atípicos.
+
+---
 
 ```{r caracteristica do investidor}
 fundos_acoes %>% 
@@ -355,21 +385,21 @@ tbl(con,"extrato_fi") %>%
   )
 ```
 
-A estrutura de taxas praticada nos fundos de ações varia de acordo com a política de investimento adotada, e os dados mostram uma tendência clara quanto à cobrança ou não desses encargos.
+A estrutura de taxas praticada nos **fundos de ações** varia de acordo com a **política de investimento** adotada, e os dados mostram padrões bem definidos quanto à presença ou ausência desses encargos.
 
-Grande parte dos fundos, independentemente da política, **não cobra taxa de ingresso**. Essa prática, cada vez mais rara no mercado, é praticamente inexistente entre os fundos analisados, sugerindo uma estratégia de captação mais acessível e menos onerosa ao investidor no momento da aplicação inicial.
+A **taxa de ingresso** — que incidiria no momento da aplicação inicial — **não é uma prática comum entre os fundos de ações**. Por isso, sua relevância nesse segmento é bastante limitada e não representa um elemento significativo na composição dos custos para o investidor.
 
-A **taxa de performance**, por outro lado, aparece com bastante frequência, especialmente nos fundos de gestão ativa. Entre os fundos com política ativa e não-referenciada, por exemplo, há mais de 800 casos em que essa taxa é aplicada, tanto isoladamente quanto em conjunto com a taxa de saída. Isso reforça a lógica de alinhar os interesses do gestor com os resultados obtidos, premiando o desempenho acima de um benchmark acordado.
+A **taxa de performance**, por outro lado, aparece com bastante frequência, especialmente nos **fundos de gestão ativa**. Entre os fundos com **política ativa e não-referenciada**, por exemplo, há mais de 800 casos em que essa taxa é aplicada, tanto isoladamente quanto em conjunto com a **taxa de saída**. Isso reforça a lógica de alinhar os interesses do gestor com os resultados obtidos, premiando o desempenho acima de um **benchmark** acordado.
 
-No grupo dos fundos ativos e referenciados, a presença da taxa de performance também é significativa, com mais de 300 fundos cobrando essa taxa em diferentes combinações. Esse padrão mostra que, mesmo com uma referência explícita, os gestores mantêm o incentivo por desempenho superior ao índice de base.
+No grupo dos **fundos ativos e referenciados**, a presença da **taxa de performance** também é significativa, com mais de 300 fundos adotando esse tipo de cobrança em diferentes combinações. Esse padrão indica que, mesmo nos fundos com uma **referência explícita**, os gestores mantêm o incentivo adicional por performance superior ao índice de base.
 
-Já os fundos classificados como **enhanced**, embora em menor número, também adotam a taxa de performance em boa parte dos casos, o que condiz com sua proposta híbrida entre gestão passiva e ativa.
+Já os fundos classificados como **enhanced**, embora em menor número, também aplicam a **taxa de performance** em boa parte dos casos, o que é consistente com sua proposta de atuar de forma híbrida entre **gestão passiva e ativa**.
 
-No caso dos fundos **passivos**, a aplicação da taxa de performance é mais restrita, mas ainda presente. Aproximadamente 320 fundos desse grupo adotam essa cobrança, o que pode indicar estratégias passivas com algum grau de gestão diferenciada, justificando a remuneração variável ao gestor.
+No caso dos **fundos passivos**, a cobrança de **taxa de performance** é mais restrita, mas ainda presente. Aproximadamente 320 fundos dessa categoria adotam essa estrutura, o que pode indicar o uso de **estratégias passivas com algum grau de gestão diferenciada**, justificando a remuneração variável.
 
-Quanto à **taxa de saída**, seu uso é mais disperso, sendo observada em várias políticas de investimento, mas com menos uniformidade. Ela aparece tanto isoladamente quanto em combinação com a taxa de performance, geralmente como uma forma de desincentivar o resgate precoce ou de proteger a carteira dos impactos de saídas abruptas.
+Quanto à **taxa de saída**, seu uso é mais disperso e aparece em diferentes **políticas de investimento**, geralmente combinada com a **taxa de performance** ou utilizada isoladamente como forma de desincentivar o **resgate precoce** e proteger a carteira dos impactos de **saídas abruptas**.
 
-De forma geral, o desenho de taxas nos fundos de ações mostra uma preferência clara por estruturas sem taxa de ingresso, com forte presença da taxa de performance nos fundos de gestão ativa e uso seletivo da taxa de saída conforme a estratégia e o perfil do fundo.
+De forma geral, o desenho de taxas nos **fundos de ações** revela uma preferência por estruturas **sem taxa de ingresso**, com forte presença da **taxa de performance** nos fundos de **gestão ativa** e uso seletivo da **taxa de saída**, ajustado à **estratégia** e ao **perfil de cada fundo**.
 
 ```{r evolução captação}
 fundos_acoes %>%
@@ -540,10 +570,17 @@ rentabilidade_fundos_acoes %>%
       collect()
   ) %>% 
   left_join(
-    rbcb::get_series(4391) %>% 
-      mutate(Ano = lubridate::year(date)) %>% 
+    quantmod::getSymbols("^BVSP", 
+                         from = "2010-01-01", 
+                         to = "2024-12-31", 
+                         src = "yahoo",
+                         auto.assign = F) %>% 
+      timetk::tk_tbl() %>% 
+      mutate(Ano = lubridate::year(index)) %>% 
+      filter(index != "2012-01-02") %>% 
       filter(Ano >= 2010) %>% 
-      summarise(CDI = last((cumprod((`4391`/100)+1)-1)*100),
+      arrange(index) %>% 
+      summarise(`IBOV` = ((last(BVSP.Close)/first(BVSP.Close)) - 1)*100,
                 .by = Ano)
   ) -> rentabilidade_fundos_acoes
 
@@ -554,8 +591,8 @@ rentabilidade_fundos_acoes %>%
   distinct(CNPJ_FUNDO) -> fundos_out
 
 
-linhas_cdi <- rentabilidade_fundos_acoes %>%
-  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+linhas_ibov <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, IBOV) %>%
   filter(`Tipo ANBIMA` %in% c(
     "Ações Dividendos",
     "Ações Livre" ,
@@ -576,8 +613,8 @@ rentabilidade_fundos_acoes %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_segment(
-    data = linhas_cdi,
-    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    data = linhas_ibov,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = IBOV, yend = IBOV),
     color = "red", linewidth = 0.6,
     inherit.aes = FALSE
   ) +
@@ -595,25 +632,23 @@ rentabilidade_fundos_acoes %>%
   )
 ```
 
-Os gráficos a seguir mostram a distribuição anual da rentabilidade dos principais tipos de fundos multimercados desde 2010. Em todos os casos, observa-se uma variação considerável nos resultados entre os diferentes fundos de uma mesma categoria, com anos de forte dispersão e outros em que o desempenho esteve mais concentrado em torno de uma faixa específica.
+A análise da rentabilidade anual dos fundos de ações, segmentados pelas categorias ANBIMA, revela diferenças marcantes no comportamento de cada estratégia ao longo dos últimos anos. Os fundos de **Ações Indexados** se destacam pela consistência: os retornos se mantêm próximos da linha vermelha do gráfico, que representa o desempenho anual do Ibovespa, especialmente a partir de 2016. Isso confirma a proposta desses fundos de replicar os principais índices de mercado, com menor variação entre as gestões dessa categoria.
 
-Os fundos **Multimercados Investimento no Exterior** apresentaram alta volatilidade, com anos de rentabilidades bastante elevadas, mas também períodos de perdas expressivas. A linha vermelha no gráfico representa o CDI de cada ano, e podemos ver que, em muitos períodos, boa parte dos fundos dessa categoria teve desempenho abaixo desse referencial.
+Já nos fundos de **Ações Dividendos**, observa-se uma rentabilidade mais moderada, com oscilações entre anos positivos e negativos. Em 2015, por exemplo, boa parte dos fundos da categoria registrou perdas, acompanhando o cenário difícil da bolsa naquele ano, embora a dispersão entre os resultados tenha sido mais controlada em relação a outras categorias — um sinal de que, mesmo em momentos adversos, a busca por empresas pagadoras de dividendos pode suavizar os extremos de retorno.
 
-Os **Multimercados Juros e Moedas** demonstram comportamento mais estável, com menor dispersão e desempenho mais alinhado ao CDI, refletindo o perfil mais conservador dessa estratégia.
+Os fundos de **Ações Livre** apresentam o comportamento mais diverso entre todas as categorias. O gráfico evidencia anos como 2016 e 2019, em que a faixa de rentabilidade foi extremamente ampla, com alguns fundos entregando retornos muito acima do Ibovespa, enquanto outros ficaram abaixo. Isso reforça que a liberdade estratégica pode tanto gerar desempenhos excepcionais quanto resultados muito aquém do mercado, dependendo da habilidade e das escolhas do gestor.
 
-Nos **Multimercados Livre**, há uma variação maior entre os fundos, com alguns anos apresentando perdas relevantes. Ainda assim, uma parcela significativa dos fundos conseguiu entregar retornos próximos ou acima do CDI ao longo do tempo.
+No caso dos fundos de **Ações Small Caps**, a volatilidade é uma marca registrada. O gráfico mostra claramente anos como 2016 e 2019, quando muitos fundos da categoria superaram com folga o Ibovespa, mas também períodos de forte queda, como 2020 e 2022, com grande dispersão entre os resultados e médias próximas ou abaixo do índice. Essa categoria, focada em empresas de menor capitalização, evidencia ciclos de altos e baixos muito mais acentuados do que as demais.
 
-Já os **Multimercados Macro** mostram o maior grau de dispersão entre os tipos analisados, com resultados que vão de perdas expressivas a ganhos muito elevados, especialmente entre 2015 e 2020. A comparação com o CDI mostra que, apesar de alguns fundos superarem com folga o referencial, muitos ficaram abaixo da taxa básica.
-
-O gráfico evidencia que, apesar do potencial de retorno elevado, os fundos multimercados — especialmente os das categorias mais livres e macro — estão sujeitos a uma volatilidade significativa e apresentam grande variabilidade de resultados, exigindo maior tolerância ao risco por parte do investidor.
+Essa leitura dos dados destaca a importância de compreender o comportamento histórico de cada estratégia antes de investir. Nem todas as categorias de fundos de ações enfrentam o mercado da mesma forma, e o gráfico ajuda a visualizar de forma clara o tamanho do risco e a amplitude de resultados possíveis em cada uma delas.
 
 ```{r rentabilidade 2}
-linhas_cdi <- rentabilidade_fundos_acoes %>%
-  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+linhas_ibov <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, IBOV) %>%
   filter(`Tipo ANBIMA` %in% c(
     "Ações Investimento no Exterior",
     "Ações Setoriais" ,
-    "Ações Indexados",
+    "Ações Índice Ativo",
     "Ações Valor/Crescimento")) %>% 
   mutate(
     x = as.factor(Ano),
@@ -625,13 +660,13 @@ rentabilidade_fundos_acoes %>%
   filter(`Tipo ANBIMA` %in% c(
     "Ações Investimento no Exterior",
     "Ações Setoriais" ,
-    "Ações Indexados",
+    "Ações Índice Ativo",
     "Ações Valor/Crescimento")) %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_segment(
-    data = linhas_cdi,
-    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    data = linhas_ibov,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = IBOV, yend = IBOV),
     color = "red", linewidth = 0.6,
     inherit.aes = FALSE
   ) +
@@ -649,20 +684,22 @@ rentabilidade_fundos_acoes %>%
   )
 ```
 
-Os fundos **Multimercados Balanceados** apresentam distribuição de rentabilidade relativamente estável ao longo do tempo, com a maioria dos fundos entregando retornos consistentes em praticamente todos os anos. Apesar de alguma volatilidade, especialmente após 2018, boa parte dos resultados se manteve próxima ou acima do CDI (representado pela linha vermelha nos gráficos).
+Dando sequência à análise das diferentes estratégias de fundos de ações, o gráfico acima aprofunda a leitura sobre o comportamento das categorias **Índice Ativo**, **Investimento no Exterior**, **Setoriais** e **Valor/Crescimento**, destacando suas particularidades em termos de rentabilidade e dispersão ao longo dos anos.
 
-Nos **Multimercados Capital Protegido**, a dispersão é mais ampla, mas os retornos tendem a se concentrar em uma faixa positiva, geralmente entre 5% e 15%. Essa categoria busca preservar o capital investido, o que se reflete em uma menor incidência de perdas expressivas.
+Nos fundos de **Ações Índice Ativo**, observa-se um padrão de rentabilidade que orbita em torno da linha do Ibovespa, mas com dispersão consideravelmente maior do que nos fundos puramente indexados. Esse comportamento é coerente com a proposta da estratégia: buscar superar o índice de referência a partir de ajustes táticos na carteira. Em anos como 2016 e 2019, muitos fundos da categoria conseguiram resultados superiores ao benchmark, enquanto em outros períodos, como 2020 e 2022, a performance foi mais heterogênea, refletindo diferentes graus de sucesso na gestão ativa.
 
-Os **Multimercados Dinâmico** apresentam comportamento mais volátil, com uma dispersão significativa nas rentabilidades ao longo dos anos. Embora muitos fundos tenham entregado retornos positivos, há também períodos com desempenho abaixo do CDI e maior heterogeneidade entre os resultados.
+Os fundos de **Ações Investimento no Exterior** apresentam uma das maiores dispersões de resultados entre as categorias. O gráfico sugere retornos extremamente elevados em alguns casos, especialmente em 2020, com fundos marcando rentabilidades acima de 300%. No entanto, esses valores provavelmente refletem **erros ou inconsistências nos dados**, e não resultados efetivos alcançados pelo mercado. Mesmo desconsiderando esses outliers, a categoria mostra forte variabilidade, influenciada por ciclos de alta nos mercados globais e pela oscilação cambial, fatores que ampliam tanto o potencial de retorno quanto o risco de perdas expressivas, como observado em 2022 e 2023.
 
-Já os **Multimercados Trading** mostraram performance bastante variável, com anos de destaque — como 2015 e 2016 — seguidos por períodos com maior dispersão e presença de resultados negativos. Trata-se de uma categoria mais tática, que tende a apresentar altos e baixos mais pronunciados conforme o cenário de mercado.
+A categoria de **Ações Setoriais** mantém o padrão de volatilidade característico das estratégias concentradas. O gráfico mostra anos como 2016, 2018 e 2019 com uma faixa ampla de resultados, onde alguns fundos obtiveram ganhos expressivos, enquanto outros apresentaram perdas relevantes. Isso reflete diretamente a dinâmica cíclica e a sensibilidade setorial, que podem amplificar os efeitos tanto positivos quanto negativos dependendo do cenário econômico.
+
+Por fim, os fundos de **Ações Valor/Crescimento** apresentam uma dispersão intermediária entre as estratégias analisadas. Em anos como 2016 e 2019, muitos fundos dessa categoria conseguiram superar o Ibovespa, enquanto em períodos mais desafiadores, como 2020 e 2022, os resultados foram mais variados, com parte dos fundos ficando abaixo do índice. Essa oscilação reforça o papel central da seleção de ativos e das premissas utilizadas na análise fundamentalista para o desempenho final da estratégia.
+
 
 ```{r rentabilidade 3}
-linhas_cdi <- rentabilidade_fundos_acoes %>%
-  distinct(`Tipo ANBIMA`, Ano, CDI) %>%
+linhas_ibov <- rentabilidade_fundos_acoes %>%
+  distinct(`Tipo ANBIMA`, Ano, IBOV) %>%
   filter(`Tipo ANBIMA` %in% c(
     "Ações FMP-FGTS",
-    "Ações Índice Ativo" ,
     "Fechados de Ações",
     "Fundos de Mono Ação")) %>% 
   mutate(
@@ -674,14 +711,13 @@ rentabilidade_fundos_acoes %>%
   filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
   filter(`Tipo ANBIMA` %in% c(
     "Ações FMP-FGTS",
-    "Ações Índice Ativo" ,
     "Fechados de Ações",
     "Fundos de Mono Ação")) %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
   geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_segment(
-    data = linhas_cdi,
-    aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
+    data = linhas_ibov,
+    aes(x = x_num - 0.6, xend = x_num + 0.6, y = IBOV, yend = IBOV),
     color = "red", linewidth = 0.6,
     inherit.aes = FALSE
   ) +
@@ -699,20 +735,22 @@ rentabilidade_fundos_acoes %>%
   )
 ```
 
-Os **Multimercados Estratégia Específica** apresentam alta dispersão de rentabilidade ao longo dos anos, com forte variação entre os fundos. Isso reflete a natureza heterogênea da categoria, que reúne estratégias distintas e menos padronizadas. Em vários períodos, uma parcela relevante dos fundos teve desempenho abaixo do CDI (linha vermelha), enquanto outros superaram com folga esse referencial.
 
-Nos **Multimercados Long and Short – Direcional**, observa-se uma ampla variação de resultados, com anos em que muitos fundos superaram o CDI, mas também com episódios pontuais de perdas relevantes. A dispersão é acentuada, especialmente em momentos de maior volatilidade de mercado.
+Finalizando a leitura das diferentes categorias de fundos de ações, o gráfico acima traz as estratégias **FMP-FGTS**, **Fechados de Ações** e **Fundos de Mono Ação**, que compartilham entre si características de maior concentração, seja por limitações regulatórias, por estrutura de funcionamento ou pela própria proposta de investimento.
 
-Já os **Multimercados Long and Short – Neutro** mostram desempenho historicamente mais consistente até 2018, com boa parte dos fundos rendendo acima ou próximo do CDI e menor dispersão. A partir de 2019, no entanto, os resultados se tornam mais variados e há maior incidência de retornos abaixo do referencial, embora os dados mais recentes indiquem uma leve recuperação.
+Nos fundos de **Ações FMP-FGTS**, observa-se uma dispersão de resultados relativamente mais controlada nos primeiros anos da série, com aumento da variabilidade a partir de 2016. Esse comportamento está diretamente relacionado à natureza da carteira, fortemente concentrada em poucas empresas ligadas ao programa de utilização do FGTS, como **Petrobras** e **Vale**. Em anos de recuperação dessas ações, como 2016 e 2019, a categoria apresentou retornos bem acima do Ibovespa, enquanto em períodos de crise, como 2020, acompanhou a deterioração desses ativos. A faixa de resultados, embora ampla em alguns anos, tende a refletir de forma fiel os ciclos das companhias específicas que compõem a carteira.
+
+Na categoria de **Fechados de Ações**, a dispersão é uma das mais elevadas entre todas as estratégias analisadas, com destaque para alguns fundos registrando valores muito acima da média, especialmente em anos como 2016, 2017 e 2019. Esses extremos, no entanto, podem refletir tanto o perfil concentrado dessas carteiras quanto eventuais inconsistências nos dados reportados. Esse tipo de fundo, por ser estruturado em condomínio fechado, costuma operar com menor liquidez e pode assumir posições mais específicas, o que amplifica a variação entre os fundos e aumenta a sensibilidade a eventos pontuais.
+
+Os **Fundos de Mono Ação**, por sua vez, exibem um comportamento de retorno altamente volátil, o que é esperado para uma estratégia que concentra 100% dos investimentos em uma única empresa. O gráfico evidencia anos com ganhos expressivos em alguns fundos, como 2016 e 2019, mas também períodos de fortes perdas, como 2013 e 2020. A dispersão é naturalmente muito ampla, pois a rentabilidade de cada fundo está totalmente atrelada ao desempenho da ação escolhida, o que torna esse tipo de produto um dos mais arriscados dentro da categoria de fundos de ações.
+
+De maneira geral, essas três estratégias ilustram bem como **concentração de ativos**, **liquidez restrita** ou **posições direcionais** podem impactar o comportamento de rentabilidade dos fundos, resultando em uma faixa muito ampla de possíveis resultados. Para o investidor, isso reforça a importância de compreender o modelo de gestão e os riscos associados antes de optar por esses tipos de produtos.
 
 ## Conclusão
 
-Os dados analisados revelam um retrato detalhado e, ao mesmo tempo, desafiador do atual cenário dos fundos multimercados no Brasil. Embora essa classe de fundos tenha se consolidado ao longo da última década como uma alternativa relevante para diversificação e acesso a estratégias sofisticadas — especialmente entre investidores profissionais e de alta renda — o setor enfrenta hoje um momento de forte retração.
+Concluímos assim esta etapa da nossa série, na qual exploramos algumas das principais características dos fundos de ações, analisando desde a estrutura da indústria e a distribuição por categorias ANBIMA até o comportamento das rentabilidades ao longo dos anos. O foco foi oferecer uma visão ampla, mas fundamentada, combinando análise descritiva com a apresentação dos códigos e métodos utilizados para manipular as bases de dados e construir as visualizações e interpretações que compartilhamos.
 
-A predominância de fundos com política ativa e estrutura em cotas reflete uma organização típica de grandes gestoras, com modelos baseados em fundos master-feeder. No entanto, a introdução do *come-cotas* para fundos exclusivos e o ambiente macroeconômico marcado por juros elevados vêm pressionando o segmento, como evidenciado pelos resgates líquidos expressivos desde 2022 e pela desaceleração no crescimento do patrimônio.
+Nos próximos posts, daremos um passo adiante e mudaremos o foco da rentabilidade para a dinâmica de **abertura e fechamento de fundos**. A ideia é avançar de uma análise descritiva para uma abordagem mais técnica, onde buscaremos modelar o risco de um fundo encerrar suas atividades a partir de características observáveis na nossa base. O objetivo será entender quais fatores ajudam a explicar a sobrevivência ou o encerramento dos fundos ao longo do tempo.
 
-A análise de rentabilidade mostra ainda uma grande heterogeneidade de resultados, reforçando que, embora existam oportunidades, o risco e a volatilidade são elementos centrais dessa categoria. Em um cenário em que a renda fixa tradicional volta a ser protagonista, os fundos multimercados precisarão se reinventar para voltar a atrair o interesse dos investidores.
-
-Non próximo post vamos fazer as mesmas análises para os fundos de ações. Qualquer dúvida ou cometário é só falar comigo nas minhas redes sociais, até a próxima!
-
+Nos encontramos no próximo post — espero que o conteúdo até aqui tenha sido útil e que siga contribuindo para uma análise mais informada e crítica sobre o mercado de fundos de investimento.
 
