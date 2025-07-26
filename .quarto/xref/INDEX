@@ -25,5 +25,8 @@
   },
   "posts/post_acoes/index.qmd": {
     "index.html": "f4c9940a"
+  },
+  "posts/desempenho_fundos_rf/index.rmarkdown": {
+    "index.html": "55ba6ad3"
   }
 }

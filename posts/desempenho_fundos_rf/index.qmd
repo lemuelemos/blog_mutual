@@ -31,7 +31,6 @@ Os primeiros dados que iremos baixar são aqueles referentes às cotas, ao PL e 
 
 A CVM nos alerta que esses dados podem ser reapresentados em até M-11, além de dividi-los em dois repositórios: um contendo dados históricos desde 2000 até 2020, e outro com dados de 2021 até os dias atuais. Vamos baixar ambos. Faremos o download de arquivos compactados, que serão descompactados e carregados em nossa base de dados. Após a descompactação, uniremos todos os arquivos em uma única base.
 
-
 Para lidar com o grande volume de dados, vamos paralelizar nossa execução utilizando o pacote `furrr`. Esse pacote permite baixar vários meses de uma só vez, reduzindo consideravelmente o tempo de download. Após obter os dados da CVM, vamos unir todas as bases e, em seguida, salvar os dados em um banco de dados conhecido como **DuckDB**.
 
 Depois de consolidar os dados, teremos aproximadamente 70 milhões de linhas, o que dificulta o tratamento diretamente no R. O **DuckDB** nos permite manipular esses dados com mais agilidade, pois é um banco otimizado para lidar com grandes volumes de informação.
@@ -53,66 +52,92 @@ library(zoo)
 library(echarts4r)
 
 # Conectando a base de dados
-con <- DBI::dbConnect(duckdb::duckdb(), 
-                 dbdir = "fundos_db.duckdb",
-                 read_only = FALSE)
+con <- DBI::dbConnect(
+  duckdb::duckdb(),
+  dbdir = "dados_informes/fundos_db.duckdb",
+  read_only = FALSE
+)
 
 ```
 
 Para obter o conjunto completo de dados, vamos acessar os endereços [HIST](https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/) e [DADOS](https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/) para baixar todos os arquivos disponíveis. Para otimizar essa etapa, utilizaremos as funções de paralelização do pacote `furrr`, configurando quatro clusters para realizar as requisições simultaneamente e, assim, agilizar o processo de download.
-
 
 ```{r download de arquivos, cache=T, eval = FALSE}
 #| code-fold: false
 
 # Criando a sequência de datas para criar as urls de download
 
-anos_download <- seq(2000,2020,1)
-meses_download <- format(seq(as.Date("2021-01-01"),
-                             as.Date("2025-01-01"),
-                             by = "month"),
-                         "%Y%m")
+anos_download <- seq(2000, 2020, 1)
+meses_download <- format(
+  seq(as.Date("2021-01-01"), as.Date("2025-01-01"), by = "month"),
+  "%Y%m"
+)
 
 # Definindo o número de workers
-future::plan(future::multisession, 
-             workers = 6)
+future::plan(future::multisession, workers = 6)
 
 # Fazendo donwload dos arquivos de 2000 a 2020
 
-furrr::future_walk(anos_download, function(ano){
-  options(timeout = 600)
-  url <- paste0("https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/inf_diario_fi_",
-                ano,
-                ".zip")
-  destfile <- paste0("./informe_diario/",ano,".zip")
-  utils::download.file(url,destfile,mode = "wb")
-},.progress = T)
+furrr::future_walk(
+  anos_download,
+  function(ano) {
+    options(timeout = 600)
+    url <- paste0(
+      "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/HIST/inf_diario_fi_",
+      ano,
+      ".zip"
+    )
+    destfile <- paste0(
+      "./posts/desempenho_fundos_rf/dados_informes/",
+      ano,
+      ".zip"
+    )
+    utils::download.file(url, destfile, mode = "wb")
+  },
+  .progress = T
+)
 
 
-# Fazendo donwload dos arquivos de 2021 a janeiro de 2025 
+# Fazendo donwload dos arquivos de 2021 a janeiro de 2025
 
-furrr::future_walk(meses_download, function(mes){
-  options(timeout = 600)
-  url <- paste0("https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_",
-                mes,
-                ".zip")
-  destfile <- paste0("./informe_diario/",mes,".zip")
-  download.file(url,destfile)
-},
-.progress = T)
+furrr::future_walk(
+  meses_download,
+  function(mes) {
+    options(timeout = 600)
+    url <- paste0(
+      "https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/inf_diario_fi_",
+      mes,
+      ".zip"
+    )
+    destfile <- paste0(
+      "./posts/desempenho_fundos_rf/dados_informes/",
+      mes,
+      ".zip"
+    )
+    download.file(url, destfile)
+  },
+  .progress = T
+)
 
-# Dezipando arquivos 
+# Dezipando arquivos
 
-zipfiles <- list.files("./informe_diario/",full.names = T,pattern = ".zip")
+zipfiles <- list.files(
+  "./posts/desempenho_fundos_rf/dados_informes/",
+  full.names = T,
+  pattern = ".zip"
+)
 
-furrr::future_walk(zipfiles,function(path){
-  unzip(path,exdir = "./informe_diario/")
+furrr::future_walk(zipfiles, function(path) {
+  unzip(path, exdir = "./posts/desempenho_fundos_rf/dados_informes/")
 })
 
 # Deletando arquivos baixados
 
-invisible(file.remove(list.files("./posts/desempenho_fundos_rf/informe_diario/",
-                                 full.names = T)))
+invisible(file.remove(list.files(
+  "./posts/desempenho_fundos_rf/dados_informes/",
+  full.names = T,
+  pattern = ".zip"
+)))
 
 # Excluindo os workers da paralelização
 future::plan(future::sequential)
@@ -124,25 +149,45 @@ Depois de baixar todos os arquivos, precisamos ler cada um dos CSVs e unificá-l
 
 ```{r leitura dos csvs,cache=T, eval = FALSE}
 #| code-fold: false
-#| 
+#|
 # Lista todos os arquivos CSV da pasta "informe_diario"
-arquivos_csv <- list.files("./informe_diario/", full.names = TRUE, pattern = ".csv")
+arquivos_csv <- list.files(
+  "./posts/desempenho_fundos_rf/dados_informes/",
+  full.names = TRUE,
+  pattern = ".csv"
+)
 
 # Configura o plano de execução paralela com 6 núcleos (multisession é compatível com Windows)
 future::plan(future::multisession, workers = 6)
 
 # Lê todos os arquivos CSV em paralelo e armazena os resultados como uma lista de dataframes
-furrr::future_map(arquivos_csv, function(arquivo) {
-  readr::read_delim(arquivo, 
-                    delim = ";", escape_double = FALSE, trim_ws = TRUE)
-}, .progress = TRUE) -> informes_diarios
+furrr::future_map(
+  arquivos_csv,
+  function(arquivo) {
+    readr::read_delim(
+      arquivo,
+      delim = ";",
+      escape_double = FALSE,
+      trim_ws = TRUE
+    )
+  },
+  .progress = TRUE
+) -> informes_diarios
 
 # Restaura o plano de execução para modo sequencial após a paralelização
 future::plan(future::sequential)
 
 # Junta todos os dataframes da lista em um único dataframe consolidado
-informes_diarios %>% 
+informes_diarios %>%
   bind_rows() -> informes_diarios
+
+# Deletando arquivos baixados
+
+invisible(file.remove(list.files(
+  "./posts/desempenho_fundos_rf/dados_informes/",
+  full.names = T,
+  pattern = ".csv"
+)))
 
 ```
 
@@ -151,7 +196,7 @@ Deletando o objeto com todos os CSVs lidos.
 ```{r linkando base, eval = FALSE}
 #| code-fold: false
 
-DBI::dbWriteTable(con,"informes_diarios",informes_diarios)
+DBI::dbWriteTable(con, "informes_diarios", informes_diarios)
 rm(informes_diarios)
 ```
 
@@ -163,55 +208,66 @@ Os arquivos que baixamos contêm todos os tipos de fundos. Aqui, vamos nos conce
 
 ```{r carregamento de base}
 #| code-fold: false
-#| 
-informes_diarios <- tbl(con,"informes_diarios") 
+#|
+informes_diarios <- tbl(con, "informes_diarios")
 ```
 
 Vamos começar integrando a base de dados fornecida pela ANBIMA. Primeiro, leremos o arquivo e o salvaremos em nossa base do DuckDB. Em seguida, faremos a união das duas fontes de dados, o que nos permitirá filtrar apenas as classes de fundos desejadas para este primeiro momento, com foco nos fundos de renda fixa.
 
 ```{r carregando dados anbima, eval=F}
 #| code-fold: false
-#| 
-fundos_175_anbima <- readxl::read_excel("fundos-175-caracteristicas-publico-22-02-2025-12-01-14.xlsx")
-DBI::dbWriteTable(con,"fundos_175_anbima",fundos_175_anbima)
+#|
+fundos_175_anbima <- readxl::read_excel(
+  "fundos-175-caracteristicas-publico-21-07-2025-00-06-47.xlsx"
+)
+DBI::dbWriteTable(con, "fundos_175_anbima", fundos_175_anbima)
 rm(fundos_175_anbima)
 ```
 
-
 Aqui, como os dados filtrados resultaram em uma quantidade menor, o tamanho da base nos permite trabalhar tudo dentro do R sem problemas de desempenho. O `DuckDB` é fundamental para filtrar e unir as bases, pois o tempo de execução é bastante reduzido devido à sua maior eficiência ao lidar com grandes volumes de dados. Apenas a base de FI, por exemplo, possui cerca de 20 milhões de linhas, o que tornaria a análise diretamente no R muito lenta. Ao reduzir o tamanho da base, passamos a poder trabalhar tudo dentro do próprio R, sem precisar utilizar o `DuckDB`. É isso que fazemos a seguir.
-
 
 ```{r filtragem dos fundos de rf, cache=FALSE}
 #| code-fold: false
 
-informes_diarios %>% 
+informes_diarios %>%
   # Substitui valores ausentes em CNPJ_FUNDO e TP_FUNDO pelos valores da classe correspondente
   mutate(
-    CNPJ_FUNDO = case_when(is.na(CNPJ_FUNDO) ~ CNPJ_FUNDO_CLASSE,
-                           .default = CNPJ_FUNDO),
-    TP_FUNDO = case_when(is.na(TP_FUNDO) ~ TP_FUNDO_CLASSE,
-                         .default = TP_FUNDO)
-  ) %>% 
+    CNPJ_FUNDO = case_when(
+      is.na(CNPJ_FUNDO) ~ CNPJ_FUNDO_CLASSE,
+      .default = CNPJ_FUNDO
+    ),
+    TP_FUNDO = case_when(is.na(TP_FUNDO) ~ TP_FUNDO_CLASSE, .default = TP_FUNDO)
+  ) %>%
   # Remove qualquer caractere que não seja número do CNPJ_FUNDO usando expressão regular SQL
-  mutate(CNPJ_FUNDO = sql("regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')")) %>% 
+  mutate(CNPJ_FUNDO = sql("regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')")) %>%
 
   # Junta com a tabela fundos_175_anbima para enriquecer os dados com metainformações dos fundos
   left_join(
-    tbl(con, "fundos_175_anbima") %>% 
-      filter(`CNPJ do Fundo` != "58137699000116") %>%  # Esse fundo em especifico possuia valores duplicados
+    tbl(con, "fundos_175_anbima") %>%
+      filter(`CNPJ do Fundo` != "58137699000116") %>% # Esse fundo em especifico possuia valores duplicados
       select(
-        `Código ANBIMA`, Estrutura, `CNPJ do Fundo`, `Nome Comercial`, Status,
-        `Categoria ANBIMA`, `Tipo ANBIMA`, `Composição do Fundo`,
-        `Aberto Estatutariamente`, `Tributação Alvo`, `Primeiro Aporte`,
-        `Tipo de Investidor`, `Característica do Investidor`,
-        `Cota de Abertura`, `Aplicação Inicial Mínima`, 
+        `Código ANBIMA`,
+        Estrutura,
+        `CNPJ do Fundo`,
+        `Nome Comercial`,
+        Status,
+        `Categoria ANBIMA`,
+        `Tipo ANBIMA`,
+        `Composição do Fundo`,
+        `Aberto Estatutariamente`,
+        `Tributação Alvo`,
+        `Primeiro Aporte`,
+        `Tipo de Investidor`,
+        `Característica do Investidor`,
+        `Cota de Abertura`,
+        `Aplicação Inicial Mínima`,
         `Prazo Pagamento Resgate em dias`
       ),
     by = c("CNPJ_FUNDO" = "CNPJ do Fundo")
-  ) %>% 
+  ) %>%
 
   # Filtra apenas fundos classificados como "Renda Fixa"
-  filter(`Categoria ANBIMA` == "Renda Fixa") %>% 
+  filter(`Categoria ANBIMA` == "Renda Fixa") %>%
 
   # Coleta os dados do banco (conversão para tibble local)
   collect() -> fundos_rf
@@ -223,42 +279,42 @@ Depois de realizar esses processamentos, vamos conferir a quantidade de fundos c
 ```{r tabela de fundos por classe e tipo}
 
 fundos_rf %>%
-  distinct(CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
-  count(`Categoria ANBIMA`, `Tipo ANBIMA`) %>%  
-  arrange(-n) %>%  
-  rename(Quantidade = n) %>%  
-  mutate(`Part (%)` = Quantidade / sum(Quantidade) * 100) %>%  
-  mutate(`Part Acum (%)` = cumsum(`Part (%)`)) %>%  
+  distinct(CNPJ_FUNDO, `Categoria ANBIMA`, `Tipo ANBIMA`) %>%
+  count(`Categoria ANBIMA`, `Tipo ANBIMA`) %>%
+  arrange(-n) %>%
+  rename(Quantidade = n) %>%
+  mutate(`Part (%)` = Quantidade / sum(Quantidade) * 100) %>%
+  mutate(`Part Acum (%)` = cumsum(`Part (%)`)) %>%
   reactable::reactable(
-    pagination = FALSE,  
-    defaultColDef = colDef(minWidth = 120),  
-    resizable = TRUE,  
+    pagination = FALSE,
+    defaultColDef = colDef(minWidth = 120),
+    resizable = TRUE,
     columns = list(
-      `Categoria ANBIMA` = colDef(width = 120),  
-      `Tipo ANBIMA` = colDef(width = 360),  
+      `Categoria ANBIMA` = colDef(width = 120),
+      `Tipo ANBIMA` = colDef(width = 360),
       Quantidade = colDef(
         width = 120,
-        align = "right",  
-        format = colFormat(separators = TRUE),  
-        footer = function(values) {  
-          htmltools::tags$b("Total: ") %>%  
-            htmltools::tagAppendChildren(htmltools::tags$span(sum(values)))  
+        align = "right",
+        format = colFormat(separators = TRUE),
+        footer = function(values) {
+          htmltools::tags$b("Total: ") %>%
+            htmltools::tagAppendChildren(htmltools::tags$span(sum(values)))
         }
       ),
       `Part (%)` = colDef(
         width = 80,
-        align = "right",  
-        format = colFormat(suffix = "%", digits = 2),  
-        footer = function(values) {  
-          htmltools::tags$b("100%")  
+        align = "right",
+        format = colFormat(suffix = "%", digits = 2),
+        footer = function(values) {
+          htmltools::tags$b("100%")
         }
       ),
       `Part Acum (%)` = colDef(
         width = 120,
-        align = "right",  
-        format = colFormat(suffix = "%", digits = 2),  
-        footer = function(values) {  
-          htmltools::tags$b("100%")  
+        align = "right",
+        format = colFormat(suffix = "%", digits = 2),
+        footer = function(values) {
+          htmltools::tags$b("100%")
         }
       )
     )
@@ -305,14 +361,19 @@ Creio que com essas variáveis vamos conseguir ter um bom raio x dos fundos de r
 ```{r extrato de informações, eval=T}
 #| code-fold: false
 
-extrato_fi <- readr::read_delim("./extrato_fi.csv", 
-                                delim = ";", 
-                                escape_double = FALSE, 
-                                locale = readr::locale(encoding = "WINDOWS-1252"), 
-                                trim_ws = TRUE,
-                                quote = "") %>% 
-  mutate(CNPJ_FUNDO_CLASSE = stringr::str_remove_all(CNPJ_FUNDO_CLASSE,"\\.|/|-")) 
+extrato_fi <- readr::read_delim(
+  "extrato_fi.csv",
+  delim = ";",
+  escape_double = FALSE,
+  locale = readr::locale(encoding = "WINDOWS-1252"),
+  trim_ws = TRUE,
+  quote = ""
+) %>%
+  mutate(
+    CNPJ_FUNDO_CLASSE = stringr::str_remove_all(CNPJ_FUNDO_CLASSE, "\\.|/|-")
+  )
 
+DBI::dbWriteTable(con, "extrato_fi", extrato_fi)
 ```
 
 Após baixar os dados, vamos unir com nossa base de fundos para que possamos ver qualitativamente os fundos de renda fixa.
@@ -320,16 +381,30 @@ Após baixar os dados, vamos unir com nossa base de fundos para que possamos ver
 ```{r juntando as bases,cache=F}
 #| code-fold: false
 
-fundos_rf %>% 
+fundos_rf %>%
   left_join(
-    extrato_fi %>% 
-      select(CNPJ_FUNDO_CLASSE,PUBLICO_ALVO, DISTRIB, POLIT_INVEST, 
-         FUNDO_COTAS,FUNDO_ESPELHO, APLIC_MIN, ATUALIZ_DIARIA_COTA,
-         TAXA_SAIDA_PAGTO_RESGATE, TAXA_ADM, EXISTE_TAXA_PERFM,
-         TAXA_PERFM, PARAM_TAXA_PERFM, CALC_TAXA_PERFM,
-         EXISTE_TAXA_INGRESSO, EXISTE_TAXA_SAIDA,
-         INVEST_EXTERIOR, ATIVO_CRED_PRIV),
-    by = c("CNPJ_FUNDO" = "CNPJ_FUNDO_CLASSE") 
+    extrato_fi %>%
+      select(
+        CNPJ_FUNDO_CLASSE,
+        PUBLICO_ALVO,
+        DISTRIB,
+        POLIT_INVEST,
+        FUNDO_COTAS,
+        FUNDO_ESPELHO,
+        APLIC_MIN,
+        ATUALIZ_DIARIA_COTA,
+        TAXA_SAIDA_PAGTO_RESGATE,
+        TAXA_ADM,
+        EXISTE_TAXA_PERFM,
+        TAXA_PERFM,
+        PARAM_TAXA_PERFM,
+        CALC_TAXA_PERFM,
+        EXISTE_TAXA_INGRESSO,
+        EXISTE_TAXA_SAIDA,
+        INVEST_EXTERIOR,
+        ATIVO_CRED_PRIV
+      ),
+    by = c("CNPJ_FUNDO" = "CNPJ_FUNDO_CLASSE")
   ) -> fundos_rf
 ```
 
@@ -352,45 +427,52 @@ No geral, a explicação fornecida pela descrição das variáveis já permite u
 Com essas informações em mãos, podemos agora analisar de forma quantitativa o perfil desses fundos de investimento. O primeiro ponto que quero abordar consiste na distribuição entre público-alvo e políticas de investimento. Isso nos permitirá entender melhor se há uma tendência de política de investimentos a depender do público-alvo do fundo. O código a seguir vai selecionar somente as colunas de interesse. Como nossa base é grande, principalmente devido às informações diárias dos fundos de investimento, precisamos selecionar as colunas relevantes e, assim, obter apenas os valores únicos para cada fundo de investimento.
 
 ```{r tipos de investidor}
-fundos_rf %>% 
-  distinct(CNPJ_FUNDO,`Tipo de Investidor`,`Característica do Investidor`) %>% 
-  count(`Tipo de Investidor`,`Característica do Investidor`) %>% 
-  arrange(-n) %>% 
-  rename(Quantidade = n) %>% 
+fundos_rf %>%
+  distinct(CNPJ_FUNDO, `Tipo de Investidor`, `Característica do Investidor`) %>%
+  count(`Tipo de Investidor`, `Característica do Investidor`) %>%
+  arrange(-n) %>%
+  rename(Quantidade = n) %>%
   reactable::reactable(
-    pagination = FALSE,  # Desativa a paginação da tabela
-    resizable = TRUE,  # Permite redimensionamento das colunas
+    pagination = FALSE, # Desativa a paginação da tabela
+    resizable = TRUE, # Permite redimensionamento das colunas
     columns = list(
       Quantidade = colDef(
-        align = "right",  # Alinha os valores numéricos à direita
-        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
-        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
-          tags$b("Total: ") %>%  # Coloca a palavra "Total" em negrito
-            tagAppendChildren(tags$span(sum(values)))  # Adiciona a soma total ao lado
+        align = "right", # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE), # Formata os números com separadores de milhar
+        footer = function(values) {
+          # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>% # Coloca a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values))) # Adiciona a soma total ao lado
         }
       )
     )
   )
-  
+
 ```
 
 Os dados da tabela que nos apresenta o **Tipo e a Característica do Investidor** revela uma forte concentração dos fundos abertos ao público geral, especialmente na combinação **"Não Há Restrição - Geral"**, que conta com um total de **2.137 fundos** (2.002 + 135). Outra parcela significativa é formada pelos fundos destinados ao investidor profissional, com destaque para as categorias **"Exclusivo - Profissional"** com **1.110 fundos** e **"Reservado - Profissional"**, que possui **570 fundos**.
 
-Destaca-se também o número expressivo de fundos destinados a investidores qualificados na categoria **"Não Há Restrição - Qualificado"**, que soma **410 fundos**, além dos fundos reservados e exclusivos para investidores profissionais (**Reservado - Profissional** com **570 fundos** e **Exclusivo - Profissional** com **1.110 fundos**). 
+Destaca-se também o número expressivo de fundos destinados a investidores qualificados na categoria **"Não Há Restrição - Qualificado"**, que soma **410 fundos**, além dos fundos reservados e exclusivos para investidores profissionais (**Reservado - Profissional** com **570 fundos** e **Exclusivo - Profissional** com **1.110 fundos**).
 
 Por outro lado, fundos voltados especificamente para investidores qualificados nas modalidades reservada (**Reservado - Qualificado**) e exclusiva (**Exclusivo - Qualificado**) possuem representação relativamente baixa, com **110** e **42 fundos**, respectivamente. Também aparece com pouca representatividade a combinação **"Reservado - Geral"**, com apenas **14 fundos**.
 
 Não é nenhuma surpresa que os fundos destinados ao público em geral sejam predominantes entre os fundos de investimento. Chama a atenção a grande quantidade de fundos **Exclusivos** voltados para investidores profissionais, representando quase metade dos fundos destinados ao público em geral. Dada a característica desses fundos, aparentemente este é um mecanismo utilizado por classes profissionais e que pode ser objeto de um estudo mais aprofundado no futuro, com o objetivo de compreender melhor as razões por trás desse fenômeno.
 
 ```{r classes de fundos}
-extrato_fi %>% 
-  distinct(DT_COMPTC, CNPJ_FUNDO_CLASSE, POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>%
-  filter(CNPJ_FUNDO_CLASSE %in% distinct(fundos_rf, CNPJ_FUNDO)$CNPJ_FUNDO) %>% 
-  mutate(DT_COMPTC = as.Date(DT_COMPTC)) %>%  # Converte a data para o formato adequado
-  arrange(DT_COMPTC) %>%  # Ordena as datas de competência
-  group_by(CNPJ_FUNDO_CLASSE) %>% 
-  summarise_all(last) %>%  # Mantém apenas a última entrada por fundo
-  ungroup() %>% 
+extrato_fi %>%
+  distinct(
+    DT_COMPTC,
+    CNPJ_FUNDO_CLASSE,
+    POLIT_INVEST,
+    FUNDO_ESPELHO,
+    FUNDO_COTAS
+  ) %>%
+  filter(CNPJ_FUNDO_CLASSE %in% distinct(fundos_rf, CNPJ_FUNDO)$CNPJ_FUNDO) %>%
+  mutate(DT_COMPTC = as.Date(DT_COMPTC)) %>% # Converte a data para o formato adequado
+  arrange(DT_COMPTC) %>% # Ordena as datas de competência
+  group_by(CNPJ_FUNDO_CLASSE) %>%
+  summarise_all(last) %>% # Mantém apenas a última entrada por fundo
+  ungroup() %>%
   mutate(
     FUNDO_ESPELHO = case_when(
       is.na(FUNDO_ESPELHO) ~ "Não",
@@ -401,8 +483,8 @@ extrato_fi %>%
       FUNDO_COTAS == "N" ~ "Não",
       .default = "Sim"
     )
-  ) %>% 
-  count(POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>% 
+  ) %>%
+  count(POLIT_INVEST, FUNDO_ESPELHO, FUNDO_COTAS) %>%
   rename(
     `Política de Investimento` = POLIT_INVEST,
     `Fundo Espelho` = FUNDO_ESPELHO,
@@ -410,18 +492,19 @@ extrato_fi %>%
     Quantidade = n
   ) %>%
   reactable(
-    pagination = FALSE,  # Desativa a paginação
-    resizable = TRUE,  # Permite redimensionamento das colunas
+    pagination = FALSE, # Desativa a paginação
+    resizable = TRUE, # Permite redimensionamento das colunas
     columns = list(
-      `Política de Investimento` = colDef(width = 250),  # Define largura da coluna
-      `Fundo Espelho` = colDef(width = 150),  # Define largura da coluna
-      `Fundo de Cotas` = colDef(width = 150),  # Define largura da coluna
+      `Política de Investimento` = colDef(width = 250), # Define largura da coluna
+      `Fundo Espelho` = colDef(width = 150), # Define largura da coluna
+      `Fundo de Cotas` = colDef(width = 150), # Define largura da coluna
       Quantidade = colDef(
-        align = "right",  # Alinha os valores numéricos à direita
-        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
-        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
-          tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
-            tagAppendChildren(tags$span(sum(values)))  # Exibe a soma total ao lado
+        align = "right", # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE), # Formata os números com separadores de milhar
+        footer = function(values) {
+          # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>% # Deixa a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values))) # Exibe a soma total ao lado
         }
       )
     )
@@ -438,37 +521,43 @@ Como podemos ver, o número de fundos foi reduzido em cerca de 800. Isso se deve
 
 No geral, fica clara a preferência dos gestores e investidores pela política de gestão ativa, sobretudo não referenciada, enquanto estratégias mais específicas e menos convencionais, como a gestão “Enhanced” ou fundos espelho com cotas, mantêm representatividade bastante limitada. Esses dados indicam que o mercado brasileiro de fundos ainda prioriza estratégias tradicionais e ativas de investimento. Ainda mais surpreendente é o fato de priorizarem a característica de fundos não referenciados, considerando a própria natureza do mercado de renda fixa, no qual os juros são a principal referência.
 
-
 ```{r detalhe qualitativos }
-extrato_fi %>% 
+extrato_fi %>%
   filter(CNPJ_FUNDO_CLASSE %in% distinct(fundos_rf, CNPJ_FUNDO)$CNPJ_FUNDO) %>%
-  distinct(DT_COMPTC, 
-           CNPJ_FUNDO_CLASSE, 
-           POLIT_INVEST, 
-           EXISTE_TAXA_INGRESSO, 
-           EXISTE_TAXA_PERFM, 
-           EXISTE_TAXA_SAIDA) %>% 
-  count(POLIT_INVEST, 
-        EXISTE_TAXA_INGRESSO, 
-        EXISTE_TAXA_PERFM, 
-        EXISTE_TAXA_SAIDA) %>%
+  distinct(
+    DT_COMPTC,
+    CNPJ_FUNDO_CLASSE,
+    POLIT_INVEST,
+    EXISTE_TAXA_INGRESSO,
+    EXISTE_TAXA_PERFM,
+    EXISTE_TAXA_SAIDA
+  ) %>%
+  count(
+    POLIT_INVEST,
+    EXISTE_TAXA_INGRESSO,
+    EXISTE_TAXA_PERFM,
+    EXISTE_TAXA_SAIDA
+  ) %>%
   mutate(
     EXISTE_TAXA_INGRESSO = case_match(
-      EXISTE_TAXA_INGRESSO, 
-      "S" ~ "Sim", 
-      "N" ~ "Não", 
-      .default = EXISTE_TAXA_INGRESSO),
+      EXISTE_TAXA_INGRESSO,
+      "S" ~ "Sim",
+      "N" ~ "Não",
+      .default = EXISTE_TAXA_INGRESSO
+    ),
     EXISTE_TAXA_PERFM = case_match(
-      EXISTE_TAXA_PERFM, 
-      "S" ~ "Sim", 
-      "N" ~ "Não", 
-      .default = EXISTE_TAXA_PERFM),
+      EXISTE_TAXA_PERFM,
+      "S" ~ "Sim",
+      "N" ~ "Não",
+      .default = EXISTE_TAXA_PERFM
+    ),
     EXISTE_TAXA_SAIDA = case_match(
-      EXISTE_TAXA_SAIDA, 
-      "S" ~ "Sim", 
-      "N" ~ "Não", 
-      .default = EXISTE_TAXA_SAIDA)
-  ) %>% 
+      EXISTE_TAXA_SAIDA,
+      "S" ~ "Sim",
+      "N" ~ "Não",
+      .default = EXISTE_TAXA_SAIDA
+    )
+  ) %>%
   rename(
     `Política de Investimento` = POLIT_INVEST,
     `Taxa de Ingresso` = EXISTE_TAXA_INGRESSO,
@@ -477,19 +566,20 @@ extrato_fi %>%
     Quantidade = n
   ) %>%
   reactable(
-    pagination = FALSE,  # Desativa a paginação
-    resizable = TRUE,  # Permite redimensionamento das colunas
+    pagination = FALSE, # Desativa a paginação
+    resizable = TRUE, # Permite redimensionamento das colunas
     columns = list(
-      `Política de Investimento` = colDef(width = 300),  # Define largura da coluna
-      `Taxa de Ingresso` = colDef(width = 120),  # Define largura da coluna
-      `Taxa de Performance` = colDef(width = 120),  # Define largura da coluna
-      `Taxa de Saída` = colDef(width = 120),  # Define largura da coluna
+      `Política de Investimento` = colDef(width = 300), # Define largura da coluna
+      `Taxa de Ingresso` = colDef(width = 120), # Define largura da coluna
+      `Taxa de Performance` = colDef(width = 120), # Define largura da coluna
+      `Taxa de Saída` = colDef(width = 120), # Define largura da coluna
       Quantidade = colDef(
-        align = "right",  # Alinha os valores numéricos à direita
-        format = colFormat(separators = TRUE),  # Formata os números com separadores de milhar
-        footer = function(values) {  # Adiciona um rodapé à coluna Quantidade
-          tags$b("Total: ") %>%  # Deixa a palavra "Total" em negrito
-            tagAppendChildren(tags$span(sum(values)))  # Exibe a soma total ao lado
+        align = "right", # Alinha os valores numéricos à direita
+        format = colFormat(separators = TRUE), # Formata os números com separadores de milhar
+        footer = function(values) {
+          # Adiciona um rodapé à coluna Quantidade
+          tags$b("Total: ") %>% # Deixa a palavra "Total" em negrito
+            tagAppendChildren(tags$span(sum(values))) # Exibe a soma total ao lado
         }
       )
     )
@@ -523,23 +613,20 @@ fundos_rf %>%
   ) %>%
   rename(`Captação líquida` = `Renda Fixa`) %>%
   arrange(Competência) %>%
-  mutate(`Captação líquida acumulada` = cumsum(`Captação líquida`),
-         Competência = as.Date(Competência)) %>%
-  arrange(Competência) %>% 
+  mutate(
+    `Captação líquida acumulada` = cumsum(`Captação líquida`),
+    Competência = as.Date(Competência)
+  ) %>%
+  arrange(Competência) %>%
   e_charts(Competência) %>%
-  e_bar(Captação, name = "Captação", 
-        color = "steelblue", 
-        stack = "total") %>%
-  e_bar(Resgates, 
-        name = "Resgates", 
-        color = "tomato", 
-        stack = "total") %>%
-  e_line(`Captação líquida`, 
-         name = "Captação líquida", 
-         color = "darkgreen") %>%
-  e_line(`Captação líquida acumulada`, 
-         name = "Captação líquida acumulada", 
-         color = "purple") %>%
+  e_bar(Captação, name = "Captação", color = "steelblue", stack = "total") %>%
+  e_bar(Resgates, name = "Resgates", color = "tomato", stack = "total") %>%
+  e_line(`Captação líquida`, name = "Captação líquida", color = "darkgreen") %>%
+  e_line(
+    `Captação líquida acumulada`,
+    name = "Captação líquida acumulada",
+    color = "purple"
+  ) %>%
   e_title(
     text = "Histórico de Captação",
     subtext = "Captação e Resgates com sua evolução trimestral desde o início de 2010"
@@ -550,7 +637,7 @@ fundos_rf %>%
     axisLabel = list(formatter = JS("function(value){ return value + ' B'; }"))
   ) %>%
   e_x_axis(axisLabel = list(rotate = 45)) %>%
-  e_grid(left = "10%", right = "10%") 
+  e_grid(left = "10%", right = "10%")
 ```
 
 Desde o início de 2010, o mercado de fundos de investimento tem apresentado um crescimento expressivo, evidenciado pelo aumento contínuo dos volumes de captação e resgates. Esse comportamento reflete a crescente participação dos investidores nesse segmento, com um aumento da movimentação financeira ao longo dos anos.
@@ -572,15 +659,17 @@ fundos_rf %>%
   filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
   mutate(
     `Tipo ANBIMA` = case_when(
-      `Tipo ANBIMA` %in% c(
-        "Renda Fixa Duração Livre Crédito Livre",
-        "Renda Fixa Duração Livre Grau de Investimento",
-        "Renda Fixa Duração Baixa Grau de Investimento",
-        "Renda Fixa Duração Livre Soberano",
-        "Renda Fixa Duração Baixa Soberano",
-        "Renda Fixa Indexados",
-        "Renda Fixa Simples"
-      ) ~ `Tipo ANBIMA`,
+      `Tipo ANBIMA` %in%
+        c(
+          "Renda Fixa Duração Livre Crédito Livre",
+          "Renda Fixa Duração Livre Grau de Investimento",
+          "Renda Fixa Duração Baixa Grau de Investimento",
+          "Renda Fixa Duração Livre Soberano",
+          "Renda Fixa Duração Baixa Soberano",
+          "Renda Fixa Indexados",
+          "Renda Fixa Simples"
+        ) ~
+        `Tipo ANBIMA`,
       TRUE ~ "Outros"
     )
   ) %>%
@@ -607,7 +696,7 @@ fundos_rf %>%
     left = "center"
   ) %>%
   e_grid(
-    bottom = 120,  
+    bottom = 120,
     top = 60
   )
 
@@ -617,7 +706,7 @@ Nos primeiros anos do gráfico (2010 até cerca de 2016), a captação líquida 
 
 Durante os anos de 2020 e 2021, destacam-se movimentos de captação extremamente positivos, especialmente nos fundos de **Renda Fixa Duração Baixa Soberano** e **Renda Fixa Simples**, que aparecem com barras altas e frequentes nesse período. No entanto, a partir de 2022, há uma mudança significativa, com diversos episódios de captação negativa, indicando grandes volumes de resgates — particularmente visíveis nas categorias de **Renda Fixa Duração Baixa Soberano**, **Duração Livre Grau de Investimento** e **Renda Fixa Simples**.
 
-Outra informação importante a ser analisada consiste no **PL** por tipo ANBIMA, onde podemos ver como o PL dos fundos de renda fixa por tipo evoluiu ao longo dos anos.  
+Outra informação importante a ser analisada consiste no **PL** por tipo ANBIMA, onde podemos ver como o PL dos fundos de renda fixa por tipo evoluiu ao longo dos anos.
 
 ```{r custodia por tipo anbima}
 fundos_rf %>%
@@ -626,29 +715,32 @@ fundos_rf %>%
   filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
   mutate(
     `Tipo ANBIMA` = case_when(
-      `Tipo ANBIMA` %in% c(
-        "Renda Fixa Duração Livre Crédito Livre",
-        "Renda Fixa Duração Livre Grau de Investimento",
-        "Renda Fixa Duração Baixa Grau de Investimento",
-        "Renda Fixa Duração Livre Soberano",
-        "Renda Fixa Duração Baixa Soberano",
-        "Renda Fixa Indexados",
-        "Renda Fixa Simples"
-      ) ~ `Tipo ANBIMA`,
+      `Tipo ANBIMA` %in%
+        c(
+          "Renda Fixa Duração Livre Crédito Livre",
+          "Renda Fixa Duração Livre Grau de Investimento",
+          "Renda Fixa Duração Baixa Grau de Investimento",
+          "Renda Fixa Duração Livre Soberano",
+          "Renda Fixa Duração Baixa Soberano",
+          "Renda Fixa Indexados",
+          "Renda Fixa Simples"
+        ) ~
+        `Tipo ANBIMA`,
       TRUE ~ "Outros"
     )
-  ) %>% 
-  summarise(`Custódia` = sum(VL_PATRIM_LIQ),
-            .by = c("Competência","Tipo ANBIMA")) %>% 
-  arrange(Competência) %>% 
-  mutate(Competência = as.Date(Competência),
-         `Custódia` = `Custódia` / 1e9) %>% 
-  group_by(`Tipo ANBIMA`) %>% 
+  ) %>%
+  summarise(
+    `Custódia` = sum(VL_PATRIM_LIQ),
+    .by = c("Competência", "Tipo ANBIMA")
+  ) %>%
+  arrange(Competência) %>%
+  mutate(Competência = as.Date(Competência), `Custódia` = `Custódia` / 1e9) %>%
+  group_by(`Tipo ANBIMA`) %>%
   e_charts(Competência) %>%
-  e_bar(`Custódia`,stack = "total",series = "Tipo ANBIMA") %>% 
+  e_bar(`Custódia`, stack = "total", series = "Tipo ANBIMA") %>%
   e_tooltip(trigger = "axis") %>%
   e_title("Patrimônio Líquido por Tipo ANBIMA ao Longo do Tempo") %>%
-  e_x_axis(name = "Competência",type = "time") %>%
+  e_x_axis(name = "Competência", type = "time") %>%
   e_y_axis(name = "Custódia (em bilhões)") %>%
   e_legend(
     orient = "horizontal",
@@ -674,52 +766,63 @@ Por último, vamos analisar as rentabilidades anuais em comparação com o CDI, 
 #| fig-height: 8
 #| fig-align: "center"
 
-fundos_rf %>% 
+fundos_rf %>%
   mutate(Competência = as.yearqtr(DT_COMPTC)) %>%
   filter(Competência >= "2010 Q1" & Competência <= "2024 Q4") %>%
-  select(DT_COMPTC, CNPJ_FUNDO, VL_QUOTA) %>% 
-  mutate(Ano = lubridate::year(DT_COMPTC)) %>% 
-  arrange(Ano, CNPJ_FUNDO, DT_COMPTC) %>% 
-  summarise(`Rent (%)` = ((last(VL_QUOTA)/first(VL_QUOTA)) - 1)*100,
-            .by = c("Ano", "CNPJ_FUNDO")) %>% 
+  select(DT_COMPTC, CNPJ_FUNDO, VL_QUOTA) %>%
+  mutate(Ano = lubridate::year(DT_COMPTC)) %>%
+  arrange(Ano, CNPJ_FUNDO, DT_COMPTC) %>%
+  summarise(
+    `Rent (%)` = ((last(VL_QUOTA) / first(VL_QUOTA)) - 1) * 100,
+    .by = c("Ano", "CNPJ_FUNDO")
+  ) %>%
   left_join(
-    fundos_rf %>% 
-      distinct(CNPJ_FUNDO, `Tipo ANBIMA`) %>% 
+    fundos_rf %>%
+      distinct(CNPJ_FUNDO, `Tipo ANBIMA`) %>%
       mutate(
         `Tipo ANBIMA` = case_when(
-          `Tipo ANBIMA` %in% c(
-            "Renda Fixa Duração Livre Crédito Livre",
-            "Renda Fixa Duração Livre Grau de Investimento",
-            "Renda Fixa Duração Baixa Grau de Investimento",
-            "Renda Fixa Duração Livre Soberano",
-            "Renda Fixa Duração Baixa Soberano",
-            "Renda Fixa Indexados",
-            "Renda Fixa Simples"
-          ) ~ `Tipo ANBIMA`,
+          `Tipo ANBIMA` %in%
+            c(
+              "Renda Fixa Duração Livre Crédito Livre",
+              "Renda Fixa Duração Livre Grau de Investimento",
+              "Renda Fixa Duração Baixa Grau de Investimento",
+              "Renda Fixa Duração Livre Soberano",
+              "Renda Fixa Duração Baixa Soberano",
+              "Renda Fixa Indexados",
+              "Renda Fixa Simples"
+            ) ~
+            `Tipo ANBIMA`,
           TRUE ~ "Outros"
-        ))
-  ) %>% 
+        )
+      )
+  ) %>%
   left_join(
-    rbcb::get_series(4391) %>% 
-      mutate(Ano = lubridate::year(date)) %>% 
-      filter(Ano >= 2010) %>% 
-      summarise(CDI = last((cumprod((`4391`/100)+1)-1)*100),
-                .by = Ano)
+    rbcb::get_series(4391) %>%
+      mutate(Ano = lubridate::year(date)) %>%
+      filter(Ano >= 2010) %>%
+      summarise(CDI = last((cumprod((`4391` / 100) + 1) - 1) * 100), .by = Ano)
   ) -> rentabilidade_anual_fundos_rf
 
-rentabilidade_anual_fundos_rf %>% 
-  mutate(Outlier = case_when(`Rent (%)` > 50 | `Rent (%)` < -50 ~ "Out",
-                             .default = "In")) %>% 
-  filter(Outlier == "Out") %>% 
+rentabilidade_anual_fundos_rf %>%
+  mutate(
+    Outlier = case_when(
+      `Rent (%)` > 50 | `Rent (%)` < -50 ~ "Out",
+      .default = "In"
+    )
+  ) %>%
+  filter(Outlier == "Out") %>%
   distinct(CNPJ_FUNDO) -> fundos_out
 
 linhas_cdi <- rentabilidade_anual_fundos_rf %>%
-  filter(`Tipo ANBIMA` %in% c(
-    "Renda Fixa Duração Livre Crédito Livre",
-    "Renda Fixa Duração Livre Grau de Investimento",
-    "Renda Fixa Duração Baixa Grau de Investimento",
-    "Renda Fixa Duração Livre Soberano"
-  )) %>% 
+  filter(
+    `Tipo ANBIMA` %in%
+      c(
+        "Renda Fixa Duração Livre Crédito Livre",
+        "Renda Fixa Duração Livre Grau de Investimento",
+        "Renda Fixa Duração Baixa Grau de Investimento",
+        "Renda Fixa Duração Livre Soberano"
+      )
+  ) %>%
   distinct(`Tipo ANBIMA`, Ano, CDI) %>%
   mutate(
     x = as.factor(Ano),
@@ -727,22 +830,32 @@ linhas_cdi <- rentabilidade_anual_fundos_rf %>%
   )
 
 
-rentabilidade_anual_fundos_rf %>% 
-  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
-  filter(`Tipo ANBIMA` %in% c(
-            "Renda Fixa Duração Livre Crédito Livre",
-            "Renda Fixa Duração Livre Grau de Investimento",
-            "Renda Fixa Duração Baixa Grau de Investimento",
-            "Renda Fixa Duração Livre Soberano")) %>% 
+rentabilidade_anual_fundos_rf %>%
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>%
+  filter(
+    `Tipo ANBIMA` %in%
+      c(
+        "Renda Fixa Duração Livre Crédito Livre",
+        "Renda Fixa Duração Livre Grau de Investimento",
+        "Renda Fixa Duração Baixa Grau de Investimento",
+        "Renda Fixa Duração Livre Soberano"
+      )
+  ) %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
-  geom_violin(fill = "skyblue", color = "gray30", alpha = 0.8, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_violin(
+    fill = "skyblue",
+    color = "gray30",
+    alpha = 0.8,
+    draw_quantiles = c(0.25, 0.5, 0.75)
+  ) +
   geom_segment(
     data = linhas_cdi,
     aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
-    color = "red", linewidth = 0.6,
+    color = "red",
+    linewidth = 0.6,
     inherit.aes = FALSE
   ) +
-  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  facet_wrap(~`Tipo ANBIMA`, scales = "free_y", ncol = 2) +
   labs(
     title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
     x = "Ano",
@@ -774,12 +887,15 @@ Em síntese, os dados mostram que, mesmo entre os fundos de perfil mais conserva
 #| fig-align: "center"
 
 linhas_cdi <- rentabilidade_anual_fundos_rf %>%
-  filter(!`Tipo ANBIMA` %in% c(
-    "Renda Fixa Duração Livre Crédito Livre",
-    "Renda Fixa Duração Livre Grau de Investimento",
-    "Renda Fixa Duração Baixa Grau de Investimento",
-    "Renda Fixa Duração Livre Soberano"
-  )) %>% 
+  filter(
+    !`Tipo ANBIMA` %in%
+      c(
+        "Renda Fixa Duração Livre Crédito Livre",
+        "Renda Fixa Duração Livre Grau de Investimento",
+        "Renda Fixa Duração Baixa Grau de Investimento",
+        "Renda Fixa Duração Livre Soberano"
+      )
+  ) %>%
   distinct(`Tipo ANBIMA`, Ano, CDI) %>%
   mutate(
     x = as.factor(Ano),
@@ -787,25 +903,32 @@ linhas_cdi <- rentabilidade_anual_fundos_rf %>%
   )
 
 
-rentabilidade_anual_fundos_rf %>% 
-  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>% 
-  filter(!`Tipo ANBIMA` %in% c(
-            "Renda Fixa Duração Livre Crédito Livre",
-            "Renda Fixa Duração Livre Grau de Investimento",
-            "Renda Fixa Duração Baixa Grau de Investimento",
-            "Renda Fixa Duração Livre Soberano")) %>% 
+rentabilidade_anual_fundos_rf %>%
+  filter(!CNPJ_FUNDO %in% fundos_out$CNPJ_FUNDO) %>%
+  filter(
+    !`Tipo ANBIMA` %in%
+      c(
+        "Renda Fixa Duração Livre Crédito Livre",
+        "Renda Fixa Duração Livre Grau de Investimento",
+        "Renda Fixa Duração Baixa Grau de Investimento",
+        "Renda Fixa Duração Livre Soberano"
+      )
+  ) %>%
   ggplot(aes(x = factor(Ano), y = `Rent (%)`)) +
-  geom_violin(fill = "skyblue", 
-              color = "gray30", 
-              alpha = 0.8, 
-              draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_violin(
+    fill = "skyblue",
+    color = "gray30",
+    alpha = 0.8,
+    draw_quantiles = c(0.25, 0.5, 0.75)
+  ) +
   geom_segment(
     data = linhas_cdi,
     aes(x = x_num - 0.6, xend = x_num + 0.6, y = CDI, yend = CDI),
-    color = "red", linewidth = 0.6,
+    color = "red",
+    linewidth = 0.6,
     inherit.aes = FALSE
   ) +
-  facet_wrap(~ `Tipo ANBIMA`, scales = "free_y", ncol = 2) +
+  facet_wrap(~`Tipo ANBIMA`, scales = "free_y", ncol = 2) +
   labs(
     title = "Distribuição da Rentabilidade por Tipo ANBIMA e Ano",
     x = "Ano",
@@ -818,7 +941,6 @@ rentabilidade_anual_fundos_rf %>%
     panel.spacing = unit(1, "lines")
   )
 ```
-
 
 A categoria **Outros** engloba fundos de Renda Fixa que não se enquadram nas classificações padronizadas da ANBIMA, podendo incluir estratégias mais específicas ou híbridas. A rentabilidade média ao longo dos anos foi positiva, com medianas geralmente entre 7% e 15%, demonstrando relativa consistência. Em certos anos, como 2013, 2018 e 2022, a dispersão dos retornos foi mais acentuada, indicando uma maior heterogeneidade entre os fundos da categoria. Em 2024, a rentabilidade permanece positiva, com uma distribuição moderadamente ampla.
 
@@ -839,9 +961,3 @@ Gostaria de destacar alguns pontos. Em primeiro lugar, constatamos que a maioria
 Outro aspecto notável diz respeito à distribuição dos retornos. Embora grande parte deles se concentre próxima ao CDI, ocorrem distorções significativas tanto para cima quanto para baixo. Surge então a questão de saber se essas discrepâncias são inerentes à indústria ou se podem refletir inconsistências nos dados. Uma análise mais aprofundada será necessária para entender melhor essa dinâmica.
 
 Encerro aqui nossa análise e fico à disposição para discutirmos qualquer aspecto do código ou dos dados. No próximo post, trataremos agora dos fundos multimercados. Agradeço a todos que dedicaram um tempo para ler este texto e nos encontramos em breve.
-
-
-
-
-
-
