@@ -28,5 +28,8 @@
   },
   "posts/desempenho_fundos_rf/index.rmarkdown": {
     "index.html": "55ba6ad3"
+  },
+  "posts/scores_fundos/index.qmd": {
+    "index.html": "4e87ca86"
   }
 }

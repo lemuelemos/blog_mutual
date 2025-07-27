@@ -1,0 +1,15 @@
+---
+title: "Scores de Fundos"
+author: "Lemuel Lemos"
+date: "2025-07-26"
+categories: [fundos de investimentos, scores,risco,fechamento]
+image: "score.jpg"
+execute:
+  warning: false
+  message: false
+format:
+  html:
+    code-fold: true         # Mostra botão para esconder/exibir o código
+    code-summary: "Mostrar código"  # Texto do botão (padrão: "Code")
+---
+
