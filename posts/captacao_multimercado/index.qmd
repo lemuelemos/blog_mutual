@@ -1,0 +1,378 @@
+---
+title: "A Crise de Captação dos Fundos Multimercados"
+author: "Lemuel Lemos"
+date: "2026-06-13"
+categories: [fundos de investimentos, multimercado, captação, macroeconomia]
+image: "image.jpg"
+execute:
+  warning: false
+  message: false
+format:
+  html:
+    code-fold: true
+    code-summary: "Mostrar código"
+---
+
+Os fundos multimercados viveram uma das maiores crises de captação da história recente do mercado financeiro brasileiro. Após quase uma década de crescimento contínuo — com o patrimônio líquido do setor ultrapassando R$ 1 trilhão — a indústria entrou em colapso de fluxos a partir de 2022, devolvendo aos investidores parte relevante dos recursos captados ao longo dos anos anteriores.
+
+Este post vai além do diagnóstico superficial. O objetivo é dissecar os dados de captação dos últimos 10 anos, mês a mês, para entender quando essa reversão começou, quais tipos de fundos sofreram mais, como a dinâmica de captação e resgate se relaciona com o ambiente de juros, e o que os dados nos dizem sobre o estado atual da indústria.
+
+```{r setup}
+library(dplyr)
+library(dbplyr)
+library(tidyr)
+library(reactable)
+library(htmltools)
+library(ggplot2)
+library(scales)
+library(ggimprensa)
+library(zoo)
+library(echarts4r)
+library(lubridate)
+library(rbcb)
+
+con <- DBI::dbConnect(
+  duckdb::duckdb(),
+  dbdir = "fundos_db.duckdb",
+  read_only = FALSE
+)
+
+informes_diarios <- tbl(con, "informes_diarios")
+
+informes_diarios %>%
+  mutate(
+    CNPJ_FUNDO = case_when(
+      is.na(CNPJ_FUNDO) ~ CNPJ_FUNDO_CLASSE,
+      .default = CNPJ_FUNDO
+    ),
+    TP_FUNDO = case_when(is.na(TP_FUNDO) ~ TP_FUNDO_CLASSE, .default = TP_FUNDO)
+  ) %>%
+  mutate(CNPJ_FUNDO = sql("regexp_replace(CNPJ_FUNDO, '[^0-9]', '', 'g')")) %>%
+  left_join(
+    tbl(con, "fundos_175_anbima") %>%
+      filter(`CNPJ do Fundo` != "58137699000116") %>%
+      select(
+        `CNPJ do Fundo`,
+        `Categoria ANBIMA`,
+        `Tipo ANBIMA`,
+        `Tipo de Investidor`,
+        `Característica do Investidor`
+      ),
+    by = c("CNPJ_FUNDO" = "CNPJ do Fundo")
+  ) %>%
+  filter(`Categoria ANBIMA` == "Multimercados") -> fundos_mm
+```
+
+## Captação Bruta e Resgates Mensais
+
+O primeiro passo é olhar para os dados brutos: quanto entra e quanto sai dos fundos multimercados a cada mês. Esse nível de granularidade mensal é mais revelador do que o trimestral, pois permite identificar com precisão os pontos de virada.
+
+```{r captacao-mensal}
+fundos_mm %>%
+  mutate(
+    Ano  = as.numeric(strftime(DT_COMPTC, "%Y")),
+    Mes  = sql("CAST(strftime(DT_COMPTC, '%m') AS INTEGER)")
+  ) %>%
+  filter(Ano >= 2015 & Ano <= 2024) %>%
+  summarise(
+    Captação = sum(CAPTC_DIA, na.rm = TRUE) / 1e9,
+    Resgates = -sum(RESG_DIA, na.rm = TRUE) / 1e9,
+    .by = c("Ano", "Mes")
+  ) %>%
+  collect() %>%
+  mutate(
+    Competência  = as.Date(paste(Ano, Mes, "01", sep = "-")),
+    CAPTC_LIQ    = Captação + Resgates
+  ) %>%
+  arrange(Competência) %>%
+  mutate(`Captação líquida acumulada` = cumsum(CAPTC_LIQ)) -> captacao_mensal
+
+captacao_mensal %>%
+  e_charts(Competência) %>%
+  e_bar(Captação, name = "Captação bruta", color = "steelblue", stack = "total") %>%
+  e_bar(Resgates, name = "Resgates", color = "tomato", stack = "total") %>%
+  e_line(CAPTC_LIQ, name = "Captação líquida", color = "darkgreen") %>%
+  e_title(
+    text = "Captação Bruta e Resgates Mensais — Fundos Multimercados",
+    subtext = "Valores em R$ bilhões | 2015–2024"
+  ) %>%
+  e_legend(right = TRUE) %>%
+  e_tooltip(trigger = "axis") %>%
+  e_y_axis(
+    axisLabel = list(formatter = JS("function(v){ return v.toFixed(0) + ' B'; }"))
+  ) %>%
+  e_x_axis(axisLabel = list(rotate = 45)) %>%
+  e_grid(left = "10%", right = "10%")
+```
+
+O gráfico revela com clareza os dois regimes distintos vividos pela indústria. De 2015 a meados de 2021, a captação bruta superou consistentemente os resgates na maioria dos meses, com a captação líquida oscilando próxima a zero ou em território positivo — e com picos expressivos nos períodos de maior euforia do mercado, como 2019 e 2020.
+
+A virada ocorreu de forma gradual a partir do segundo semestre de 2021 e se consolidou ao longo de 2022. A partir dali, os resgates passaram a superar as captações na grande maioria dos meses, com períodos em que o saldo líquido mensal chegou a ser fortemente negativo. O movimento não foi um episódio pontual, mas uma tendência prolongada que se estendeu por todo o período subsequente.
+
+## Captação Líquida e Taxa Selic
+
+Uma das narrativas mais frequentes para explicar a crise dos multimercados é a elevação dos juros. Com a Selic em patamares historicamente altos, a renda fixa tradicional passou a competir diretamente com estratégias que antes justificavam prêmios de risco e taxas de administração elevadas. O gráfico a seguir coloca os dois dados lado a lado.
+
+```{r captacao-selic}
+selic_mensal <- rbcb::get_series(4189, start_date = "2015-01-01", end_date = "2024-12-31") %>%
+  rename(Selic = `4189`) %>%
+  mutate(Competência = as.Date(paste(year(date), month(date), "01", sep = "-"))) %>%
+  group_by(Competência) %>%
+  summarise(Selic = last(Selic))
+
+captacao_mensal %>%
+  left_join(selic_mensal, by = "Competência") %>%
+  e_charts(Competência) %>%
+  e_bar(CAPTC_LIQ, name = "Captação líquida (R$ bi)", color = "#2c7bb6") %>%
+  e_line(Selic,
+    name = "Selic meta (%)",
+    color = "#d7191c",
+    y_index = 1
+  ) %>%
+  e_title(
+    text = "Captação Líquida vs. Taxa Selic",
+    subtext = "Fundos Multimercados | 2015–2024"
+  ) %>%
+  e_y_axis(
+    index = 0,
+    name = "Captação líquida (R$ bi)",
+    axisLabel = list(formatter = JS("function(v){ return v.toFixed(0) + ' B'; }"))
+  ) %>%
+  e_y_axis(
+    index = 1,
+    name = "Selic meta (%)",
+    axisLabel = list(formatter = JS("function(v){ return v + '%'; }"))
+  ) %>%
+  e_legend(right = TRUE) %>%
+  e_tooltip(trigger = "axis") %>%
+  e_x_axis(axisLabel = list(rotate = 45)) %>%
+  e_grid(left = "12%", right = "12%")
+```
+
+A relação entre os dois indicadores é visualmente nítida. Os períodos de captação líquida positiva coincidem com os momentos em que a Selic estava em queda ou em patamares historicamente baixos — como entre 2017 e 2018 (ciclo de queda) e sobretudo entre 2020 e 2021, quando a taxa básica chegou a 2% ao ano.
+
+A reversão dos fluxos acompanhou de perto o ciclo de alta dos juros iniciado em 2021. À medida que a Selic voltou a subir — atingindo 13,75% em 2022 e permanecendo em dois dígitos nos anos seguintes — os resgates se aceleraram e a captação líquida mergulhou no vermelho. O dado é especialmente relevante porque confirma que a perda de atratividade relativa dos multimercados tem uma dimensão macroeconômica clara e estrutural.
+
+## Captação Líquida Acumulada
+
+Com os dados mensais em mãos, é possível calcular a trajetória acumulada da captação líquida — que mostra, em termos absolutos, o quanto os fundos multimercados captaram ou devolveram desde 2015.
+
+```{r captacao-acumulada}
+captacao_mensal %>%
+  e_charts(Competência) %>%
+  e_line(`Captação líquida acumulada`,
+    name = "Captação líquida acumulada",
+    color = "#1a1a2e",
+    smooth = TRUE
+  ) %>%
+  e_area(`Captação líquida acumulada`,
+    name = "Captação líquida acumulada",
+    color = "#1a1a2e",
+    itemStyle = list(opacity = 0.15)
+  ) %>%
+  e_title(
+    text = "Captação Líquida Acumulada — Fundos Multimercados",
+    subtext = "Base: janeiro de 2015 | Valores em R$ bilhões"
+  ) %>%
+  e_tooltip(trigger = "axis") %>%
+  e_y_axis(
+    axisLabel = list(formatter = JS("function(v){ return v.toFixed(0) + ' B'; }"))
+  ) %>%
+  e_x_axis(axisLabel = list(rotate = 45)) %>%
+  e_grid(left = "12%", right = "10%") %>%
+  e_legend(show = FALSE)
+```
+
+O gráfico da captação acumulada conta uma história completa em uma única curva. A trajetória positiva e sustentada entre 2015 e 2021 reflete quase sete anos de fluxos majoritariamente positivos, que construíram um volume expressivo de recursos no setor. O pico, atingido por volta de 2021, representa o tamanho da aposta que o mercado fez nos multimercados como alternativa de investimento.
+
+A partir dali, a curva inverte e cai de forma consistente. O que impressiona não é apenas a magnitude da queda, mas a sua persistência — mês após mês de resgates líquidos que foram corroendo o que havia sido construído ao longo de anos. A velocidade com que os recursos saíram foi maior do que a velocidade com que entraram no período anterior.
+
+## Captação por Tipo ANBIMA
+
+Nem todos os tipos de fundos multimercados sofreram igualmente. O comportamento dos fluxos varia de forma significativa entre as diferentes estratégias — e entender essa heterogeneidade é fundamental para compreender a dinâmica do setor.
+
+```{r captacao-tipo-anbima}
+fundos_mm %>%
+  mutate(
+    Ano = as.numeric(strftime(DT_COMPTC, "%Y")),
+    Mes = sql("CAST(strftime(DT_COMPTC, '%m') AS INTEGER)")
+  ) %>%
+  filter(Ano >= 2015 & Ano <= 2024) %>%
+  summarise(
+    Captação = sum(CAPTC_DIA, na.rm = TRUE) / 1e9,
+    Resgates = -sum(RESG_DIA, na.rm = TRUE) / 1e9,
+    .by = c("Ano", "Mes", "Tipo ANBIMA")
+  ) %>%
+  collect() %>%
+  mutate(
+    Competência = as.Date(paste(Ano, Mes, "01", sep = "-")),
+    CAPTC_LIQ   = Captação + Resgates
+  ) %>%
+  arrange(Competência) -> captacao_tipo
+
+captacao_tipo %>%
+  summarise(
+    CAPTC_LIQ = sum(CAPTC_LIQ),
+    .by = c("Competência", "Tipo ANBIMA")
+  ) %>%
+  group_by(`Tipo ANBIMA`) %>%
+  e_charts(Competência) %>%
+  e_bar(CAPTC_LIQ, stack = "total", series = "Tipo ANBIMA") %>%
+  e_tooltip(trigger = "axis") %>%
+  e_title(
+    text = "Captação Líquida Mensal por Tipo ANBIMA",
+    subtext = "Valores em R$ bilhões | 2015–2024"
+  ) %>%
+  e_y_axis(
+    name = "Captação Líquida (R$ bi)",
+    axisLabel = list(formatter = JS("function(v){ return v.toFixed(0) + ' B'; }"))
+  ) %>%
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(bottom = 120, top = 60)
+```
+
+A decomposição por tipo ANBIMA torna evidente que a crise de captação não foi distribuída uniformemente. Os **Multimercados Livre** e os **Multimercados Macro** foram os principais protagonistas tanto na fase de expansão quanto na de retração — são as categorias que mais captaram nos anos de bonança e que mais sofreram resgates na virada do ciclo.
+
+Os **Multimercados Investimento no Exterior** apresentam um comportamento ligeiramente diferente, com picos de resgate mais concentrados em determinados períodos, refletindo as mudanças no cenário de câmbio e nas oportunidades externas. Já as categorias menores — como Juros e Moedas, Long and Short e Trading — tiveram participação mais discreta tanto nas captações quanto nos resgates.
+
+## Captação Acumulada por Tipo ANBIMA
+
+Para entender o saldo líquido de cada estratégia ao longo do período, o gráfico abaixo mostra a captação acumulada individualizada por tipo.
+
+```{r captacao-acumulada-tipo}
+captacao_tipo %>%
+  arrange(Competência) %>%
+  group_by(`Tipo ANBIMA`) %>%
+  mutate(Acumulado = cumsum(CAPTC_LIQ)) %>%
+  ungroup() %>%
+  group_by(`Tipo ANBIMA`) %>%
+  e_charts(Competência) %>%
+  e_line(Acumulado, smooth = TRUE, series = "Tipo ANBIMA") %>%
+  e_tooltip(trigger = "axis") %>%
+  e_title(
+    text = "Captação Líquida Acumulada por Tipo ANBIMA",
+    subtext = "Base: janeiro de 2015 | Valores em R$ bilhões"
+  ) %>%
+  e_y_axis(
+    name = "Acumulado (R$ bi)",
+    axisLabel = list(formatter = JS("function(v){ return v.toFixed(0) + ' B'; }"))
+  ) %>%
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(bottom = 120, top = 60)
+```
+
+A visão acumulada por tipo revela trajetórias bem distintas. Os **Multimercados Livre** atingiram o maior saldo positivo acumulado, refletindo anos de forte captação antes de 2022. Após o pico, a linha cai de forma pronunciada, indicando que boa parte dos recursos foi devolvida. Os **Multimercados Macro**, que também apresentaram captações relevantes em períodos anteriores, registram queda igualmente acentuada.
+
+Um padrão interessante aparece nos **Multimercados Investimento no Exterior**: a captação acumulada teve momento de forte crescimento entre 2018 e 2021 — período em que o cenário externo era favorável e a diversificação geográfica era uma tese forte — mas também entrou em reversão subsequentemente.
+
+As categorias mais defensivas, como **Juros e Moedas** e **Balanceados**, mostram trajetórias acumuladas mais estáveis, com menor amplitude em ambos os sentidos, o que reflete tanto menor exposição ao ciclo de euforia quanto menor impacto na crise.
+
+## Sazonalidade da Captação
+
+Existe um padrão sazonal na captação dos fundos multimercados? Alguns meses tendem a concentrar mais entradas ou saídas de recursos?
+
+```{r sazonalidade}
+captacao_mensal %>%
+  mutate(Mes_nome = factor(
+    month.abb[Mes],
+    levels = month.abb
+  )) %>%
+  group_by(Mes_nome) %>%
+  summarise(
+    `Média` = mean(CAPTC_LIQ),
+    `Mediana` = median(CAPTC_LIQ),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(cols = c("Média", "Mediana"), names_to = "Estatística", values_to = "Valor") %>%
+  ggplot(aes(x = Mes_nome, y = Valor, fill = Estatística)) +
+  geom_col(position = "dodge", alpha = 0.85) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
+  scale_fill_manual(values = c("Média" = "steelblue", "Mediana" = "tomato")) +
+  scale_y_continuous(labels = function(x) paste0(round(x, 1), " B")) +
+  labs(
+    title = "Sazonalidade da Captação Líquida Mensal",
+    subtitle = "Média e mediana por mês do ano | Fundos Multimercados 2015–2024",
+    x = NULL,
+    y = "Captação líquida (R$ bilhões)",
+    fill = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+```
+
+O padrão sazonal é revelador. Janeiro se destaca de forma consistente como o mês com maior captação líquida positiva em média — fenômeno que pode estar associado ao reinício do ciclo de alocações no início de cada ano, quando gestores e assessores de investimentos revisam as carteiras. Outros meses de captação historicamente mais positiva incluem março e setembro.
+
+Em contrapartida, dezembro tende a registrar captação líquida negativa — efeito de resgates feitos por investidores que precisam de liquidez no final do ano, seja para pagamento de impostos, seja por ajustes de carteira antes do fechamento do exercício. Julho e agosto também apresentam médias mais negativas, possivelmente associados a rebalanceamentos de meio de ano.
+
+Importante ressaltar que esse padrão sazonal é calculado sobre toda a série 2015–2024 e, portanto, incorpora tanto os anos de fluxo positivo quanto os de retração. O padrão estrutural sazonal existe, mas é dominado pela tendência de longo prazo observada a partir de 2022.
+
+## Patrimônio Líquido: O Resultado Final
+
+A captação é apenas um dos determinantes do patrimônio líquido (PL) — a rentabilidade dos ativos também importa. Mas para avaliar o impacto dos fluxos, vale observar como o PL total evoluiu ao longo do período.
+
+```{r patrimonio-liquido}
+fundos_mm %>%
+  mutate(
+    Ano = as.numeric(strftime(DT_COMPTC, "%Y")),
+    Mes = sql("CAST(strftime(DT_COMPTC, '%m') AS INTEGER)")
+  ) %>%
+  filter(Ano >= 2015 & Ano <= 2024) %>%
+  summarise(
+    PL = sum(VL_PATRIM_LIQ, na.rm = TRUE) / 1e9,
+    .by = c("Ano", "Mes", "Tipo ANBIMA")
+  ) %>%
+  collect() %>%
+  mutate(Competência = as.Date(paste(Ano, Mes, "01", sep = "-"))) %>%
+  arrange(Competência) %>%
+  group_by(`Tipo ANBIMA`) %>%
+  e_charts(Competência) %>%
+  e_bar(PL, stack = "total", series = "Tipo ANBIMA") %>%
+  e_tooltip(trigger = "axis") %>%
+  e_title(
+    text = "Patrimônio Líquido por Tipo ANBIMA",
+    subtext = "Valores em R$ bilhões | 2015–2024"
+  ) %>%
+  e_y_axis(
+    name = "PL (R$ bi)",
+    axisLabel = list(formatter = JS("function(v){ return v.toFixed(0) + ' B'; }"))
+  ) %>%
+  e_legend(
+    orient = "horizontal",
+    bottom = 10,
+    left = "center"
+  ) %>%
+  e_grid(bottom = 120, top = 60)
+```
+
+O PL total dos fundos multimercados cresceu de forma robusta até o pico em 2021, quando o setor chegou a acumular mais de R$ 1,7 trilhão em patrimônio. Após esse ponto, a combinação de resgates líquidos persistentes e eventual desvalorização de alguns ativos pressionou o patrimônio para baixo.
+
+Mesmo assim, o PL se manteve relativamente elevado em termos históricos, o que indica que parte do encolhimento foi amortecida pela rentabilidade dos ativos remanescentes — especialmente das carteiras com exposição a juros, que se beneficiaram da elevação da Selic. Isso ajuda a entender por que o setor, mesmo em crise de fluxos, não entrou em colapso total de patrimônio.
+
+## Conclusão
+
+Os dados de captação dos últimos 10 anos pintam um retrato inequívoco: os fundos multimercados viveram uma década dividida em dois momentos opostos. A primeira fase — de 2015 a 2021 — foi de expansão acelerada, impulsionada por um ambiente de juros em queda, pela busca por alternativas à renda fixa tradicional e pelo interesse crescente em estratégias sofisticadas. A segunda fase, iniciada com o ciclo de alta da Selic em 2021 e consolidada ao longo de 2022 e anos seguintes, representou uma reversão sistêmica que erode até hoje a base de recursos da indústria.
+
+Três fatores se destacam como determinantes dessa inversão:
+
+1. **Nível de juros**: A elevação da Selic reduziu de forma substancial o prêmio de risco que justificava a escolha pelos multimercados em detrimento da renda fixa. Com o CDI entregando retornos reais positivos sem taxas de administração relevantes, a equação de custo-benefício dos multimercados se deteriorou.
+
+2. **Tributação dos fundos exclusivos**: A introdução do *come-cotas* para fundos exclusivos — que até 2023 tinham como principal vantagem o diferimento tributário — eliminou um dos principais incentivos para a permanência nesses veículos, levando parte dos investidores de alta renda a buscar outras estruturas.
+
+3. **Desempenho relativo**: A análise de rentabilidade dos anos recentes mostra que muitos fundos multimercados não conseguiram superar o CDI de forma consistente — especialmente após 2022 — o que reforça o argumento do resgate: se o fundo não entrega retorno acima do benchmark de custo zero, o investidor não tem incentivo para permanecer.
+
+O futuro próximo ainda se mostra desafiador. Enquanto a taxa de juros permanecer em patamares elevados e a memória recente de desempenho insatisfatório persistir, o fluxo de retomada tende a ser lento. A recuperação da indústria dependerá da capacidade das gestoras de demonstrar valor consistente e do eventual ciclo de queda dos juros — que, quando vier, poderá recolocar os multimercados no centro das estratégias de alocação dos investidores brasileiros.
+
+```{r cleanup}
+DBI::dbDisconnect(con)
+```
