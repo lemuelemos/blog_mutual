@@ -1,13 +1,12 @@
 ---
 title: ""
-format: 
+format:
   html:
-    theme: journal
     css: styles.css
     title: " "
 editor: visual
 knitr:
-  opts_chunk: 
+  opts_chunk:
     echo: false
     message: false
     warning: false
@@ -19,12 +18,16 @@ knitr:
 library(readr)
 library(dplyr)
 library(shiny)
-dados_cv <- read_delim("dados_cv.csv", delim = ";", 
-                       escape_double = FALSE, locale = locale(encoding = "WINDOWS-1252"), 
-                       trim_ws = TRUE)
+dados_cv <- read_delim(
+  "dados_cv.csv",
+  delim = ";",
+  escape_double = FALSE,
+  locale = locale(encoding = "WINDOWS-1252"),
+  trim_ws = TRUE
+)
 ```
 
-::: columns
+:::::: columns
 ::: {#sidebar .column width="30%"}
 <center><a href='https://www.linkedin.com/in/lemuelemos/' target='_blank'> ![](https://avatars.githubusercontent.com/u/17839354?v=4){width="80%" style="border-radius: 50%; padding-top: 5px;"}</center>
 
@@ -51,41 +54,33 @@ dados_cv <- read_delim("dados_cv.csv", delim = ";",
 :::
 
 ::: {.column width="68%"}
-<!-- Functions -->
-
-<!-- Main content -->
-
 ## **Lemuel de Lemos Romão**
 
 ## <i class="fa-solid fa-suitcase"></i> Experiência Profissional
 
 ```{r}
-
-tbl_experiencia <- function(dados_cv,intituicao){
+tbl_experiencia <- function(dados_cv, intituicao) {
   dados_cv %>%
     dplyr::filter(secao == "profissional") %>%
     dplyr::filter(Intituição == intituicao) %>%
-    select(-secao,-Intituição) %>%
-    mutate(Fim = as.character(Fim)) %>% 
-    mutate(Fim = case_when(is.na(Fim) ~ "Atual",
-                           .default = Fim)) %>% 
-    gt::gt(janitor::make_clean_names(intituicao)) %>%
+    select(-secao, -Intituição) %>%
+    mutate(Fim = as.character(Fim)) %>%
+    mutate(Fim = case_when(is.na(Fim) ~ "Atual", .default = Fim)) %>%
+    gt::gt() %>%
     gt::tab_header(
-      title = gt::md(paste0("**",intituicao,"**"))
-    ) %>% 
-    gt::tab_options(table.width = gt::pct(100)) %>% 
+      title = gt::md(paste0("**", intituicao, "**"))
+    ) %>%
+    gt::tab_options(table.width = gt::pct(100)) %>%
     espnscrapeR::gt_theme_538()
 }
 
-lapply(unique(dados_cv$Intituição),function(intituicao){
-  tbl_experiencia(dados_cv,intituicao) %>% 
+lapply(unique(dados_cv$Intituição), function(intituicao) {
+  tbl_experiencia(dados_cv, intituicao) %>%
     gt::as_raw_html()
 }) -> lista_experiencia
 
-purrr::map(lista_experiencia,htmltools::HTML) %>% 
+purrr::map(lista_experiencia, htmltools::HTML) %>%
   htmltools::tagList()
-
-
 ```
 
 <p class="small">
@@ -94,7 +89,7 @@ Currículo feito com o [Quarto](https://quarto.org/). Última Atualização em `
 
 </p>
 :::
-:::
+::::::
 
 ```{=html}
 <script src="https://kit.fontawesome.com/2794920b14.js" crossorigin="anonymous"></script>

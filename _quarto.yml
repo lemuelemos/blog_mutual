@@ -4,6 +4,8 @@ project:
 
 website:
   title: "Mutual Blog"
+  site-url: "https://lemuelemos.github.io/blog_mutual-1"
+  description: "Blog sobre análise de dados, modelagem quantitativa e programação em R aplicados ao mercado financeiro."
   navbar:
     right:
       - text: Posts
@@ -12,10 +14,10 @@ website:
       - text: Currículo
         href: curriculo.qmd
       - icon: github
-        href: https://github.com/
+        href: https://github.com/lemuelemos
       - icon: twitter
-        href: https://twitter.com
-      
+        href: https://twitter.com/lemuelemos
+
 format:
   html:
     theme: cosmo
@@ -25,6 +27,3 @@ execute:
   freeze: auto
 
 lang: pt
-  
-
-  

@@ -2,7 +2,7 @@
 title: "Análise dos Fundos de Ações"
 author: "Lemuel Lemos"
 date: "2025-04-22"
-categories: [fundos de investimentos, desempenho, fondos de ações]
+categories: [fundos de investimentos, desempenho, fundos de ações]
 image: "eficiencia-financeira.jpg"
 execute:
   warning: false

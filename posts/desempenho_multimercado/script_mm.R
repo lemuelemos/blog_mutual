@@ -10,12 +10,21 @@ library(ggimprensa)
 library(zoo)
 library(echarts4r)
 
-# Conectando a base de dados
-con <- DBI::dbConnect(
-  duckdb::duckdb(),
-  dbdir = "posts/desempenho_fundos_rf/fundos_db.duckdb",
-  read_only = FALSE
+bootstrap_candidates <- c(
+  file.path("R", "bootstrap.R"),
+  file.path("..", "..", "R", "bootstrap.R")
 )
+
+bootstrap_path <- bootstrap_candidates[file.exists(bootstrap_candidates)][1]
+
+if (is.na(bootstrap_path)) {
+  stop("Arquivo de bootstrap nao encontrado.", call. = FALSE)
+}
+
+source(bootstrap_path, local = TRUE)
+
+# Conectando a base de dados
+con <- connect_blog_db(read_only = FALSE)
 
 informes_diarios <- tbl(con, "informes_diarios")
 
@@ -101,19 +110,6 @@ fundos_mm %>%
       )
     )
   )
-
-extrato_fi <- readr::read_delim(
-  "posts/desempenho_fundos_rf/extrato_fi.csv",
-  delim = ";",
-  escape_double = FALSE,
-  locale = readr::locale(encoding = "WINDOWS-1252"),
-  trim_ws = TRUE,
-  quote = ""
-) %>%
-  mutate(
-    CNPJ_FUNDO_CLASSE = stringr::str_remove_all(CNPJ_FUNDO_CLASSE, "\\.|/|-")
-  )
-
 
 fundos_mm %>%
   left_join(
