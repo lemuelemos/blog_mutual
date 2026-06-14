@@ -1,1 +1,1 @@
-Sitemap: https://lemuelemos.github.io/blog_mutual-1/sitemap.xml
+Sitemap: https://lemuelemos.github.io/blog_mutual/sitemap.xml

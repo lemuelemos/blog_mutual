@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+.DS_Store
 /.quarto/
 /_site/
 # Mantemos `docs/` e `_freeze/` versionados; `_site/` e transientes locais nao.

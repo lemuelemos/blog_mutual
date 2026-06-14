@@ -15,7 +15,7 @@ format:
 
 Entre 2022 e 2025, os fundos multimercados acumularam um dos maiores ciclos de saída de recursos da história recente da indústria de fundos brasileira. Depois de quase uma década de crescimento relativamente contínuo — período em que o patrimônio líquido agregado do setor chegou a superar R$ 1,7 trilhão —, os fluxos se inverteram de forma abrupta, e uma parcela expressiva dos recursos captados nos anos anteriores foi devolvida aos cotistas.
 
-O que explica essa reversão? Este post não tem como objetivo oferecer uma resposta definitiva, mas tenta organizar os dados disponíveis dos últimos dez anos para mapear o fenômeno em quatro dimensões: o comportamento da captação ano a ano, o saldo acumulado de cada classe ao longo do período, a evolução do patrimônio líquido e, por fim, a distribuição dos retornos. O objetivo é menos estabelecer causas do que identificar padrões.
+O ponto aqui não é fechar um diagnóstico definitivo, e sim organizar os dados para entender a escala e a natureza dessa reversão. A análise está dividida em quatro frentes: a captação anual, a trajetória acumulada dos fluxos, a evolução do patrimônio líquido e a distribuição dos retornos.
 
 
 
@@ -135,9 +135,9 @@ source("script_captacao_multimercado.R")
 
 ## 📊 Bloco 1 — Comportamento da Captação por Ano
 
-A primeira lente é a captação líquida consolidada por ano. Trabalhar nesse nível de granularidade ajuda a enxergar os ciclos de forma mais nítida, reduzindo parte do ruído que a sazonalidade mensal tende a introduzir na leitura.
+A primeira leitura é a da captação líquida anual. Nesse recorte, os ciclos da indústria aparecem com mais nitidez e o ruído de curto prazo perde relevância.
 
-Antes dos gráficos, vale uma decisão de modelagem. A tabela abaixo mostra quantos fundos existiam em cada tipo ANBIMA, ano a ano. Para evitar um excesso de categorias muito pequenas e tornar os gráficos legíveis, vamos manter abertas apenas as classes que tiveram **mais de 100 fundos em todos os anos da amostra**. Com esse critério, permanecem apenas **Multimercados Investimento no Exterior**, **Multimercados Livre** e **Multimercados Macro**. Todas as demais categorias serão agrupadas em **Outros** ao longo do restante do post.
+Antes dos gráficos, há uma escolha metodológica importante. Para evitar que categorias residuais distorçam a leitura, o recorte mantém abertas apenas as classes que tiveram **mais de 100 fundos em todos os anos da amostra**. Com isso, a análise passa a girar em torno de **Multimercados Investimento no Exterior**, **Multimercados Livre** e **Multimercados Macro**; o restante fica concentrado em **Outros**.
 
 ```{r tabela-contagem-tipos}
 contagem_tipos_anual |>
@@ -305,9 +305,9 @@ dados_captacao_anual |>
   )
 ```
 
-O quadro anual sugere que a concentração do fenômeno em poucas classes é bastante pronunciada. **Multimercados Livre** e **Multimercados Macro** respondem pela maior parte do volume nos dois sentidos: foram as categorias que mais captaram nos anos de expansão e, ao mesmo tempo, as que registraram as maiores saídas a partir de 2022 — o que levanta a hipótese de que a mudança no regime macroeconômico afetou de forma desproporcionalmente intensa as estratégias com maior liberdade de alocação.
+O quadro anual mostra que o movimento ficou concentrado em poucas classes. **Multimercados Livre** e **Multimercados Macro** lideraram a captação no ciclo de expansão e passaram a concentrar também as maiores saídas a partir de 2022. É nelas, portanto, que a mudança de regime aparece de forma mais nítida.
 
-Para entender melhor o momento da virada, o próximo gráfico desce para o nível mensal e coloca lado a lado a captação bruta e os resgates. Esse confronto entre as duas grandezas permite observar quando — e com que velocidade — o equilíbrio de fluxos começou a se alterar.
+Para localizar melhor a inflexão, vale descer ao dado mensal e colocar captação bruta e resgates na mesma série. É nesse confronto que o desequilíbrio começa a aparecer.
 
 ```{r captacao-mensal}
 dados_fundos_multimercado |>
@@ -368,9 +368,9 @@ captacao_mensal |>
   echarts4r::e_grid(left = "10%", right = "10%")
 ```
 
-A visualização mensal parece apontar para dois regimes bastante distintos ao longo do período. De 2015 até meados de 2021, a captação bruta tendeu a superar os resgates na maior parte dos meses, com saldos líquidos predominantemente positivos. A partir do segundo semestre de 2021, esse padrão começa a se deteriorar gradualmente — e ao longo de 2022 os resgates passam a superar as captações de forma mais sistemática, gerando saldos mensais negativos que se repetem com frequência crescente nos períodos seguintes.
+O gráfico mensal divide a década em dois momentos. De 2015 até meados de 2021, a captação bruta superou os resgates na maior parte do tempo. A partir do segundo semestre de 2021, essa relação começa a se inverter; em 2022, o saldo negativo deixa de ser exceção e passa a se repetir com regularidade.
 
-Para reduzir a volatilidade inerente à série mensal e tentar identificar se o movimento é estrutural ou pontual, o gráfico abaixo aplica uma janela móvel de 12 meses sobre a captação líquida. A ideia é simples: em vez de olhar mês a mês, acumula-se o resultado dos últimos doze meses — o que suaviza sazonalidades e torna mais visível a direção do fluxo num horizonte de médio prazo. Quando essa linha cruza o zero de cima para baixo, o setor acumulou, ao longo de um ano inteiro, mais saídas do que entradas.
+Como a série mensal é volátil, a leitura seguinte usa uma janela móvel de 12 meses. Esse recorte suaviza a sazonalidade e mostra com mais clareza quando a perda de fôlego deixa de ser episódica e passa a caracterizar uma mudança de tendência.
 
 ```{r captacao-12m-movel}
 dados_fundos_multimercado |>
@@ -422,11 +422,11 @@ dados_fundos_multimercado |>
   echarts4r::e_grid(bottom = 120, top = 60)
 ```
 
-A linha tracejada em vermelho marca o zero. O cruzamento abaixo dessa referência, que parece ocorrer progressivamente entre 2022 e 2023 a depender da categoria, fornece um indício mais robusto de mudança estrutural do que a leitura mensal isolada: indica que, em uma janela contínua de doze meses, as saídas superaram as entradas — não como evento pontual, mas como padrão acumulado.
+O ponto central está no momento em que as curvas passam a rodar abaixo de zero, em diferentes momentos entre 2022 e 2023, a depender da categoria. Nesse trecho, a indústria deixa de registrar episódios isolados de resgate e passa a exibir um padrão persistente de saídas em base anualizada.
 
 ## 📈 Bloco 2 — Captação Acumulada nos Últimos 10 Anos
 
-Com o comportamento anual e mensal mapeado, vale agora observar o saldo acumulado de cada classe ao longo de toda a década. Essa perspectiva permite enxergar a trajetória integral de cada categoria — não apenas o resultado em um ano específico, mas o quanto foi captado e o quanto foi devolvido na soma do período.
+Depois de mapear o comportamento anual e mensal, faz sentido olhar para o saldo acumulado de cada classe ao longo da década. É esse recorte que mostra o tamanho efetivo do avanço e, depois, da devolução de recursos.
 
 ```{r captacao-acumulada-total}
 captacao_mensal |>
@@ -466,7 +466,7 @@ captacao_mensal |>
   echarts4r::e_legend(show = FALSE)
 ```
 
-A curva acumulada total resume bem a dinâmica do período em um único traço. Entre 2015 e 2021, a trajetória é ascendente e relativamente contínua, sugerindo que os fluxos eram majoritariamente positivos ao longo de quase todos esses anos. O pico da curva, atingido em torno de 2021, dá uma ideia da dimensão do capital que migrou para os multimercados durante o ciclo de expansão. A partir dali, o saldo começa a recuar — e o que chama atenção é que a velocidade de saída parece ter sido mais acentuada do que a de entrada nos anos anteriores.
+A curva acumulada resume a história da década em um único traço. Entre 2015 e 2021, o movimento é de alta quase contínua, refletindo uma indústria que ainda atraía capital de forma recorrente. A partir do pico, em torno de 2021, a trajetória se inverte e a devolução de recursos ganha velocidade.
 
 Desagregando por categoria, os padrões se diferenciam:
 
@@ -511,11 +511,11 @@ dados_fundos_multimercado |>
   echarts4r::e_grid(bottom = 120, top = 60)
 ```
 
-Entre as categorias com maior presença individual no gráfico, os **Multimercados Livre** parecem ter registrado o maior saldo positivo acumulado ao longo do período — e também a queda mais pronunciada depois de 2022. Os **Multimercados Macro** seguem uma trajetória semelhante, mas com amplitude consideravelmente menor. Os **Multimercados Investimento no Exterior** passaram por um ciclo de crescimento entre 2018 e 2021 — coincidindo com a proliferação de fundos com mandato internacional —, mas também entraram em reversão a partir dali. O grupo **Outros** — que agrega categorias tipicamente mais defensivas, como Juros e Moedas e Balanceados — sugere uma trajetória mais estável, com menor participação tanto na fase de expansão quanto na fase de contração dos fluxos.
+Entre as classes abertas no gráfico, **Multimercados Livre** concentram o maior ganho acumulado no ciclo de expansão e também a correção mais intensa depois de 2022. **Multimercados Macro** seguem a mesma direção, mas em escala menor. **Multimercados Investimento no Exterior** avançam com força entre 2018 e 2021, no auge da demanda por exposição externa, e depois entram no mesmo processo de reversão. Já **Outros** têm trajetória mais estável e peso marginal tanto na fase de entrada quanto na de saída.
 
 ## 💼 Bloco 3 — Evolução do Patrimônio Líquido
 
-A captação líquida é um dos fatores que movem o patrimônio líquido (PL) de uma indústria — mas não é o único. A rentabilidade dos ativos dentro dos fundos também influi no estoque total. É possível, por exemplo, que um setor com captação negativa ainda consiga sustentar seu patrimônio se os retornos forem suficientemente altos para compensar as saídas. O gráfico a seguir mostra como o PL total de cada categoria se comportou ao longo do período.
+Captação não é sinônimo de patrimônio. O estoque de recursos também responde ao desempenho dos ativos e, por isso, pode cair menos do que os fluxos sugerem. O gráfico a seguir mostra como o patrimônio líquido de cada categoria evoluiu ao longo do período.
 
 ```{r patrimonio-liquido}
 pl_fechamento_fundo_anual <- dados_fundos_multimercado |>
@@ -610,7 +610,7 @@ dados_pl_anual_grafico |>
   echarts4r::e_grid(bottom = 120, top = 60)
 ```
 
-O PL de fechamento anual parece ter encolhido menos do que os gráficos de captação, vistos isoladamente, poderiam sugerir. Isso não representa necessariamente uma inconsistência: captação líquida é uma medida de fluxo — dinheiro entrando e saindo —, enquanto o PL é um estoque, influenciado também pela rentabilidade dos ativos que permaneceram nos fundos. Para tentar entender melhor a relação entre as duas dimensões, o gráfico a seguir decompõe a variação anual do patrimônio entre a parcela atribuível aos fluxos (captação líquida) e um resíduo denominado rentabilidade implícita — que captura o efeito do retorno dos ativos e eventuais diferenças de cobertura entre as bases de dados.
+O patrimônio encolhe menos do que a captação isolada faria supor. A explicação é direta: captação mede fluxo; patrimônio mede estoque. Para aproximar essas duas dimensões, o gráfico seguinte decompõe a variação anual do PL entre captação líquida e um resíduo tratado aqui como rentabilidade implícita.
 
 ```{r reconciliacao-pl}
 pl_fechamento_anual_total <- pl_fechamento_fundo_anual |>
@@ -681,13 +681,13 @@ reconciliacao_pl |>
   echarts4r::e_grid(bottom = 120, top = 60)
 ```
 
-A decomposição ajuda a colocar os números em perspectiva. Em vários anos, a rentabilidade implícita aparece como um fator de amortecimento: mesmo com captação líquida negativa, os retornos gerados pelos ativos dentro dos fundos contribuíram para sustentar — ou ao menos desacelerar a queda do — patrimônio total. Vale lembrar que a rentabilidade implícita aqui é um resíduo, não uma medida direta de retorno — ela captura tudo o que não é fluxo de caixa. Isso inclui o retorno dos ativos, mas também assimetrias de mensuração introduzidas pela própria construção da base. Um exemplo concreto: fundos encerrados ao longo do ano são mantidos na base com seus dados até a última data disponível. O PL de fechamento anual desses fundos corresponde ao último valor reportado antes do encerramento — que pode não ser zero, caso a liquidação total tenha ocorrido após o último informe. A captação líquida, por outro lado, inclui os resgates processados durante o encerramento. Essa assimetria entre as duas séries é absorvida inteiramente pelo resíduo. Ainda assim, a ordem de grandeza sugere que a leitura dos gráficos de captação de forma isolada pode superestimar a contração do estoque de recursos no setor.
+A decomposição melhora a leitura do ajuste. Em vários anos, a rentabilidade implícita funciona como colchão: mesmo com saídas líquidas relevantes, o retorno dos ativos ajuda a preservar parte do patrimônio. É importante, porém, tratar esse número com cautela. Não se trata de uma medida direta de performance, mas de um resíduo que também absorve diferenças de cobertura entre as bases. Isso é particularmente relevante em fundos encerrados ao longo do ano, cujo PL pode permanecer registrado na última data disponível, enquanto os resgates já aparecem integralmente na série de captação. Ainda assim, a ordem de grandeza sugere que olhar apenas para os fluxos exagera a contração do estoque de recursos da indústria.
 
 ## 📉 Bloco 4 — Rentabilidade por Categoria
 
-Fluxos contam parte da história, mas deixam em aberto uma pergunta relevante: como foi o retorno entregue pelos fundos ao longo do mesmo período? Um investidor que resgata pode estar fazendo isso por insatisfação com o produto, mas também por uma mudança no ambiente de juros que tornou alternativas mais simples comparativamente mais atrativas — independentemente do desempenho do gestor. Olhar para os retornos não responde à pergunta com precisão, mas ajuda a contextualizar o comportamento dos fluxos.
+Fluxo não explica tudo. Para entender por que o investidor saiu, é preciso olhar também para o que os fundos entregaram em retorno num ambiente em que o CDI voltou a competir com força.
 
-O gráfico a seguir mostra a distribuição dos retornos anuais dos fundos por categoria. Cada caixa representa a dispersão dos resultados individuais dentro do grupo — a linha central indica a mediana, e as bordas delimitam o intervalo entre o primeiro e o terceiro quartil, capturando onde se concentrou a maior parte dos fundos em cada ano. Os outliers foram removidos pelo critério do IQR para tornar a visualização mais legível. A linha vermelha em cada caixa indica o CDI daquele ano, servindo como referência de custo de oportunidade.
+O gráfico abaixo traz a distribuição dos retornos anuais por categoria, com o CDI como referência de custo de oportunidade. Os outliers foram retirados pelo critério do IQR para evitar que poucos casos extremos contaminem a leitura do conjunto.
 
 ```{r rentabilidade-anual}
 #| include: false
@@ -821,15 +821,15 @@ rentabilidade_plot |>
   )
 ```
 
-O padrão dos retornos parece guardar alguma coerência com o que os dados de captação já sugeriam. Nos anos em que a Selic estava em queda — aproximadamente entre 2017 e 2020 —, as medianas de retorno tenderam a ser positivas na maior parte das categorias, e a dispersão entre gestores era relativamente ampla, o que pode indicar que havia diferenciação real de resultado dentro de cada classe. A partir de 2022, as medianas parecem se comprimir e, em vários casos, ficam abaixo ou próximas ao CDI do período.
+Os retornos ajudam a entender por que a captação piorou. No ciclo de juros mais baixos, entre 2017 e 2020, as medianas eram mais favoráveis e a dispersão entre gestores indicava espaço para diferenciação. A partir de 2022, esse quadro muda: as medianas comprimem e, em vários casos, passam a orbitar o CDI ou ficar abaixo dele.
 
-Esse padrão, por si só, não é suficiente para explicar os resgates — mas levanta uma hipótese plausível. Em um ambiente de juro elevado, o custo de oportunidade de permanecer em um fundo multimercado — com taxa de administração, come-cotas e risco de gestor — ficou comparativamente mais alto. Quando os retornos medianos não compensam esse diferencial de forma clara, a saída do cotista passa a ter uma lógica econômica relativamente direta, independentemente de qualquer julgamento sobre a qualidade da gestão.
+Sozinho, esse dado não encerra a discussão. Mas ele reforça um ponto central: com juros altos, taxa de administração, come-cotas e risco de execução passaram a cobrar um preço maior. Se o retorno mediano não entrega prêmio claro sobre o CDI, o resgate deixa de ser exceção e passa a ser uma decisão economicamente racional.
 
 ## 🔍 Conclusão
 
-Tomados em conjunto, os dados sugerem uma divisão bastante marcada na trajetória da indústria ao longo da década. Entre 2015 e 2021, os fluxos foram predominantemente positivos e o patrimônio cresceu de forma relativamente consistente. A partir de 2022, a dinâmica parece ter se invertido: as saídas passaram a superar as entradas de forma recorrente, e a contração dos fluxos acumulados ficou visível em praticamente todas as categorias.
+Os dados dividem a década em dois períodos muito claros. Até 2021, a indústria expandiu patrimônio e captou recursos de forma recorrente. A partir de 2022, o sinal virou: os resgates passaram a dominar a dinâmica do setor e a perda de tração apareceu em praticamente todas as categorias relevantes.
 
-A queda do patrimônio líquido, por sua vez, foi menos intensa do que os gráficos de captação isolados poderiam sugerir — o que é coerente com o fato de que a rentabilidade positiva em alguns anos ajudou a amortecer o efeito das saídas sobre o estoque.
+O patrimônio caiu menos do que a captação isolada sugeriria, o que indica que a rentabilidade ainda funcionou, em parte do período, como amortecedor das saídas.
 
 Três elementos parecem ter contribuído para essa inversão, ainda que seja difícil isolar o peso de cada um:
 
@@ -839,7 +839,7 @@ Três elementos parecem ter contribuído para essa inversão, ainda que seja dif
 
 3. 📉 **Desempenho relativo**: A incapacidade de parcela relevante dos fundos de superar o CDI de forma consistente após 2022 pode ter reforçado a decisão de resgate. Quando o retorno do fundo fica sistematicamente abaixo do custo de oportunidade, a racionalidade econômica favorece a saída.
 
-O cenário à frente permanece incerto. A eventual queda da taxa de juros poderia reduzir o custo de oportunidade e tornar os multimercados comparativamente mais atrativos — mas a velocidade de recuperação dos fluxos dependeria também da capacidade das gestoras de reconstruir um histórico de retorno que justifique a alocação. Por ora, os dados disponíveis apontam para uma indústria ainda em processo de ajuste, sem sinalização clara de reversão estrutural.
+O próximo capítulo depende de duas variáveis: juros e entrega. Uma queda mais consistente da taxa básica tende a aliviar o custo de oportunidade, mas isso talvez não baste. Para recuperar fluxo, a indústria precisará voltar a oferecer retorno que justifique complexidade, taxa e iliquidez relativa. Por ora, os dados ainda descrevem um setor em ajuste, e não uma retomada.
 
 ```{r cleanup}
 #| include: false
