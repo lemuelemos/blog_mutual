@@ -1,0 +1,8 @@
+fundos_db.duckdb
+data-raw/dados_fundos.duckdb
+data-raw/dados_fundos.duckdb.wal
+*.zip
+index_cache
+informe_diario
+extrato_fi*.csv
+fundos-175-*.xlsx

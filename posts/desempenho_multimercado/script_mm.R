@@ -10,21 +10,12 @@ library(ggimprensa)
 library(zoo)
 library(echarts4r)
 
-bootstrap_candidates <- c(
-  file.path("R", "bootstrap.R"),
-  file.path("..", "..", "R", "bootstrap.R")
-)
-
-bootstrap_path <- bootstrap_candidates[file.exists(bootstrap_candidates)][1]
-
-if (is.na(bootstrap_path)) {
-  stop("Arquivo de bootstrap nao encontrado.", call. = FALSE)
-}
-
-source(bootstrap_path, local = TRUE)
-
 # Conectando a base de dados
-con <- connect_blog_db(read_only = FALSE)
+con <- DBI::dbConnect(
+  duckdb::duckdb(),
+  dbdir = here::here("fundos_db.duckdb"),
+  read_only = FALSE
+)
 
 informes_diarios <- tbl(con, "informes_diarios")
 

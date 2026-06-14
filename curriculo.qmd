@@ -1,9 +1,8 @@
 ---
-title: ""
+title: "Currículo"
 format:
   html:
     css: styles.css
-    title: " "
 editor: visual
 knitr:
   opts_chunk:

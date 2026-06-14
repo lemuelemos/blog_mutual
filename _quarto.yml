@@ -4,7 +4,7 @@ project:
 
 website:
   title: "Mutual Blog"
-  site-url: "https://lemuelemos.github.io/blog_mutual-1"
+  site-url: "https://lemuelemos.github.io/blog_mutual"
   description: "Blog sobre análise de dados, modelagem quantitativa e programação em R aplicados ao mercado financeiro."
   navbar:
     right:
