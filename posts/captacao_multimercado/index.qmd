@@ -1,9 +1,9 @@
 ---
-title: "A Morte do Multimercado"
+title: "A Década Perdida dos Multimercados"
 author: "Lemuel Lemos"
-date: "2026-06-13"
-categories: [fundos de investimentos, multimercado, captação, macroeconomia]
-image: "image.jpg"
+date: "2026-06-14"
+categories: [fundos de investimentos, multimercado, captação]
+image: "decada.png"
 execute:
   warning: false
   message: false
