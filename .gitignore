@@ -12,3 +12,4 @@ fundos_db.duckdb
 fundos-175-caracteristicas-publico-22-02-2025-12-01-14.xlsx
 .Renviron
 air.toml
+.vscode/launch.json
